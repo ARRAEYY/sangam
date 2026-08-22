@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  @apply bg-cream-100 text-slate-900 antialiased;
+  background-image: radial-gradient(circle at 100% 0%, #fff3ec 0%, transparent 45%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Fraunces', serif;
+}
+
+.input {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100;
+}
+
+.card {
+  @apply rounded-2xl border border-slate-100 bg-white shadow-soft;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700;
+}
+
+.pill {
+  @apply rounded-full px-2.5 py-1 text-xs font-medium;
+}
+
+.icon-nav-btn {
+  @apply relative flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition hover:bg-brand-50 hover:text-brand-500;
+}
+
+.icon-nav-btn.active {
+  @apply bg-brand-50 text-brand-600;
+}
+
+::selection {
+  background-color: #fdd0b3;
+}

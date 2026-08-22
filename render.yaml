@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: campus-log-api
+    runtime: node
+    plan: free
+    rootDir: Campus-log/backend
+    buildCommand: npm install && npm run migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE_MINUTES
+        value: 10080
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
