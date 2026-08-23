@@ -44,8 +44,6 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
 export const api = {
   register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
-  loginWithGoogle: (credential) =>
-    request('/api/auth/google', { method: 'POST', body: { credential } }),
 
   getProfile: (token) => request('/api/users/profile', { token }),
   updateProfile: (payload, token) =>
