@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Rocket } from 'lucide-react'
 import SkillTagInput from '../components/SkillTagInput.jsx'
-import GoogleSignInButton from '../components/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const currentYear = new Date().getFullYear()
@@ -91,17 +90,7 @@ export default function Auth() {
           <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>
         )}
 
-        <div className="mb-5">
-          <GoogleSignInButton
-            onSuccess={() => navigate('/explore')}
-            onError={(msg) => setError(msg)}
-          />
-          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-400">
-            <div className="h-px flex-1 bg-slate-100" />
-            or continue with email
-            <div className="h-px flex-1 bg-slate-100" />
-          </div>
-        </div>
+
 
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">

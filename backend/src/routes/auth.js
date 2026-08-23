@@ -1,12 +1,10 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
-const { OAuth2Client } = require('google-auth-library')
 const { User, Skill } = require('../models')
 const { signToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
 
 const router = express.Router()
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase()
@@ -136,77 +134,5 @@ router.post('/login', async (req, res, next) => {
   }
 })
 
-// Google OAuth: the frontend uses Google Identity Services to obtain a signed
-// ID token (JWT `credential`) and sends it here. We verify it server-side
-// with Google's public keys - the client never gets to assert who it is.
-router.post('/google', async (req, res, next) => {
-  try {
-    const credential = String(req.body?.credential || '').trim()
-    if (!credential) {
-      return res.status(400).json({ detail: 'Missing Google credential.' })
-    }
-    if (!process.env.GOOGLE_CLIENT_ID) {
-      return res.status(500).json({ detail: 'Google Sign-In is not configured on the server.' })
-    }
-
-    let payload
-    try {
-      const ticket = await googleClient.verifyIdToken({
-        idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      })
-      payload = ticket.getPayload()
-    } catch (verifyError) {
-      return res.status(401).json({ detail: 'Google authentication failed or expired. Please try again.' })
-    }
-
-    if (!payload || !payload.email) {
-      return res.status(401).json({ detail: 'Google account has no verified email.' })
-    }
-    if (!payload.email_verified) {
-      return res.status(401).json({ detail: 'Your Google email is not verified.' })
-    }
-
-    const email = normalizeEmail(payload.email)
-    if (!isCampusEmail(email)) {
-      return res
-        .status(400)
-        .json({ detail: 'Only @nst.rishihood.edu.in and @rishiood.edu.in email addresses are allowed.' })
-    }
-
-    // One email = one account. If a user already registered with
-    // email/password, link the Google identity to that same account instead
-    // of creating a duplicate.
-    let user = await User.findOne({ where: { email } })
-
-    if (user) {
-      const updates = {}
-      if (!user.google_id) updates.google_id = payload.sub
-      if (!user.avatar_url && payload.picture) updates.avatar_url = payload.picture
-      if (Object.keys(updates).length > 0) {
-        await user.update(updates)
-      }
-    } else {
-      // New user via Google - profile fields like branch/graduation_year are
-      // required by our schema, so create a minimal account and prompt the
-      // user to complete onboarding afterwards from the dashboard.
-      user = await User.create({
-        email,
-        password_hash: null,
-        google_id: payload.sub,
-        auth_provider: 'GOOGLE',
-        full_name: payload.name || email.split('@')[0],
-        avatar_url: payload.picture || null,
-        branch: 'Undeclared',
-        graduation_year: new Date().getFullYear() + 1,
-      })
-    }
-
-    const token = signToken(user)
-    return res.json({ access_token: token })
-  } catch (error) {
-    return next(error)
-  }
-})
 
 module.exports = router
