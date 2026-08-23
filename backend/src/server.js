@@ -64,13 +64,10 @@ async function start() {
   try {
     await sequelize.authenticate()
 
-    // Local SQLite dev: auto-sync the schema so there's zero setup friction.
-    // Postgres (DATABASE_URL set, i.e. staging/production): the schema is
-    // owned by migrations (`npm run migrate`) so we never auto-sync against
-    // a real database - sync() can silently alter production tables.
-    if (!process.env.DATABASE_URL) {
-      await sequelize.sync()
-    }
+    // Sync creates any tables that don't yet exist (safe – it never drops
+    // existing tables or columns). Acts as a reliable safety net so the
+    // app works even if a migration step was skipped.
+    await sequelize.sync()
 
     app.listen(port, '0.0.0.0', () => {
       console.log(`Campus Platform API running on port ${port}`)
