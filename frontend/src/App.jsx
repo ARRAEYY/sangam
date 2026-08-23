@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import MobileBottomNav from './components/MobileBottomNav.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Landing from './pages/Landing.jsx'
 import Auth from './pages/Auth.jsx'
@@ -13,18 +14,25 @@ import TalentSearch from './pages/TalentSearch.jsx'
 import Notifications from './pages/Notifications.jsx'
 
 // Landing and Auth are full-bleed marketing/entry screens; every other
-// route lives inside the app shell with the floating icon sidebar.
-const NO_SIDEBAR_PATHS = ['/', '/auth']
+// route lives inside the app shell with the floating icon sidebar on desktop
+// and bottom navigation on mobile.
+const NO_SHELL_PATHS = ['/', '/auth']
 
 export default function App() {
   const location = useLocation()
-  const showSidebar = !NO_SIDEBAR_PATHS.includes(location.pathname)
+  const inAppShell = !NO_SHELL_PATHS.includes(location.pathname)
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col bg-cream-100 text-slate-900 antialiased">
       <Navbar />
-      <div className={showSidebar ? 'mx-auto flex max-w-6xl gap-6 px-4 pt-6 sm:px-6' : ''}>
-        {showSidebar && <Sidebar />}
+      <main
+        className={`flex-1 ${
+          inAppShell
+            ? 'mx-auto w-full max-w-6xl px-3 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 md:flex md:gap-6'
+            : 'w-full'
+        }`}
+      >
+        {inAppShell && <Sidebar />}
         <div className="min-w-0 flex-1">
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -58,7 +66,10 @@ export default function App() {
             />
           </Routes>
         </div>
-      </div>
+      </main>
+
+      {/* Mobile Bottom Navigation Bar on mobile screens */}
+      {inAppShell && <MobileBottomNav />}
     </div>
   )
 }

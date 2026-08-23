@@ -33,22 +33,24 @@ export default function Explore() {
 
   return (
     <div className="pb-16 pt-2">
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-slate-900">Open projects</h1>
-          <p className="mt-0.5 text-sm text-slate-500">Teams on campus looking for their next builder.</p>
+          <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
+          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
         </div>
         <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center gap-2">
-          <div className="relative flex-1">
+          <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
             <input
               value={skill}
               onChange={(e) => setSkill(e.target.value)}
               placeholder="Filter by skill, e.g. React"
-              className="input pl-10"
+              className="input pl-10 text-xs sm:text-sm"
             />
           </div>
-          <button className="btn-primary">Search</button>
+          <button type="submit" className="btn-primary shrink-0 !px-4 !py-2.5 text-xs sm:text-sm">
+            Search
+          </button>
         </form>
       </div>
 
@@ -56,12 +58,12 @@ export default function Explore() {
       {loading && <p className="text-sm text-slate-500">Loading projects…</p>}
 
       {!loading && projects.length === 0 && (
-        <p className="card border-dashed py-14 text-center text-slate-500">
+        <p className="card border-dashed py-14 text-center text-sm text-slate-500">
           No projects found. Be the first to post one!
         </p>
       )}
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <ProjectCard key={project.id} project={project} />
         ))}

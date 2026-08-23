@@ -110,24 +110,24 @@ export default function Dashboard() {
     <div className="max-w-4xl pb-16 pt-2">
       {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
-      <section className="card mb-10 p-6 sm:p-7">
+      <section className="card mb-10 p-5 sm:p-7">
         {!editingProfile ? (
           <>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-50 text-lg font-bold text-brand-600">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-brand-50 text-base sm:text-lg font-bold text-brand-600">
                   {initials}
                 </span>
-                <div>
-                  <h1 className="font-display text-xl font-semibold text-slate-900">{user.full_name}</h1>
-                  <p className="text-sm text-slate-500">
+                <div className="min-w-0">
+                  <h1 className="font-display text-lg sm:text-xl font-semibold text-slate-900 truncate">{user.full_name}</h1>
+                  <p className="text-xs sm:text-sm text-slate-500">
                     {user.branch} · Class of {user.graduation_year}
                   </p>
-                  {user.headline && <p className="mt-0.5 text-sm text-slate-600">{user.headline}</p>}
+                  {user.headline && <p className="mt-0.5 text-xs sm:text-sm text-slate-600">{user.headline}</p>}
                   {user.location && <p className="mt-0.5 text-xs text-slate-400">{user.location}</p>}
                 </div>
               </div>
-              <button onClick={startEditing} className="btn-secondary shrink-0 !px-3.5 !py-1.5 text-xs">
+              <button onClick={startEditing} className="btn-secondary self-start sm:self-auto shrink-0 !px-3.5 !py-1.5 text-xs">
                 <Pencil size={13} /> Edit profile
               </button>
             </div>
@@ -175,7 +175,7 @@ export default function Dashboard() {
           </>
         ) : (
           <form onSubmit={saveProfile} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Full name">
                 <input
                   className="input"
@@ -199,7 +199,7 @@ export default function Dashboard() {
                 onChange={(e) => setProfileDraft({ ...profileDraft, graduation_year: e.target.value })}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Headline (optional)">
                 <input
                   className="input"
@@ -220,11 +220,12 @@ export default function Dashboard() {
             <Field label="Bio">
               <textarea
                 className="input"
+                rows={3}
                 value={profileDraft.bio}
                 onChange={(e) => setProfileDraft({ ...profileDraft, bio: e.target.value })}
               />
             </Field>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="GitHub">
                 <input
                   className="input"
@@ -247,7 +248,7 @@ export default function Dashboard() {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="LeetCode (optional)">
                 <input
                   className="input"
@@ -269,11 +270,11 @@ export default function Dashboard() {
                 onChange={(skills) => setProfileDraft({ ...profileDraft, skills })}
               />
             </Field>
-            <div className="flex gap-2">
-              <button className="btn-primary">
+            <div className="flex gap-2 pt-1">
+              <button className="btn-primary !px-5">
                 <Check size={15} /> Save
               </button>
-              <button type="button" onClick={() => setEditingProfile(false)} className="btn-secondary">
+              <button type="button" onClick={() => setEditingProfile(false)} className="btn-secondary !px-4">
                 <XIcon size={15} /> Cancel
               </button>
             </div>
@@ -291,7 +292,7 @@ export default function Dashboard() {
             </Link>
           </p>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {myProjects.map((p) => (
               <ProjectCard key={p.id} project={p} />
             ))}
@@ -306,9 +307,9 @@ export default function Dashboard() {
             You haven't applied to any projects yet.
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {myApplications.map((app) => (
-              <div key={app.id} className="card flex items-center justify-between p-4">
+              <div key={app.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                 <div>
                   <Link to={`/projects/${app.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600">
                     View project
@@ -346,9 +347,9 @@ export default function Dashboard() {
             No pending connection requests right now.
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {pendingRequests.map((req) => (
-              <div key={req.id} className="card flex items-center justify-between p-4">
+              <div key={req.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                 <div>
                   <p className="font-semibold text-slate-900">{req.requester.full_name}</p>
                   <p className="text-xs text-slate-500">
