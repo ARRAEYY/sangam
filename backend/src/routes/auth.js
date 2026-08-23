@@ -15,9 +15,15 @@ function normalizeSkillName(value) {
 }
 
 function isCampusEmail(email) {
-  const allowedDomains = ['nst.rishihood.edu.in', 'rishiood.edu.in']
-  const domain = String(email || '').toLowerCase().split('@')[1]
-  return Boolean(domain && allowedDomains.includes(domain))
+  const domain = String(email || '').trim().toLowerCase().split('@')[1]
+  if (!domain) return false
+  // Allows any department under Rishihood (e.g. name.enroll@depart.rishihood.edu.in or you@rishihood.edu.in)
+  return (
+    domain === 'rishihood.edu.in' ||
+    domain.endsWith('.rishihood.edu.in') ||
+    domain === 'rishiood.edu.in' ||
+    domain.endsWith('.rishiood.edu.in')
+  )
 }
 
 async function assignSkills(user, skills = []) {
@@ -51,7 +57,7 @@ router.post('/register', async (req, res, next) => {
     if (!email || !isCampusEmail(email)) {
       return res
         .status(400)
-        .json({ detail: 'Only @nst.rishihood.edu.in and @rishiood.edu.in email addresses are allowed.' })
+        .json({ detail: 'Only Rishihood email addresses (e.g. you@depart.rishihood.edu.in or you@rishihood.edu.in) are allowed.' })
     }
     if (password.length < 8) {
       return res.status(400).json({ detail: 'Password must be at least 8 characters long.' })
@@ -104,7 +110,7 @@ router.post('/login', async (req, res, next) => {
     if (!isCampusEmail(email)) {
       return res
         .status(400)
-        .json({ detail: 'Only @nst.rishihood.edu.in and @rishiood.edu.in email addresses are allowed.' })
+        .json({ detail: 'Only Rishihood email addresses (e.g. you@depart.rishihood.edu.in or you@rishihood.edu.in) are allowed.' })
     }
 
     const user = await User.findOne({
@@ -114,12 +120,6 @@ router.post('/login', async (req, res, next) => {
 
     if (!user) {
       return res.status(401).json({ detail: 'Invalid email or password.' })
-    }
-
-    if (!user.password_hash) {
-      return res.status(400).json({
-        detail: 'This account uses Google Sign-In. Please continue with Google instead.',
-      })
     }
 
     const isValid = await bcrypt.compare(password, user.password_hash)
@@ -133,6 +133,5 @@ router.post('/login', async (req, res, next) => {
     return next(error)
   }
 })
-
 
 module.exports = router

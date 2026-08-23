@@ -98,7 +98,7 @@ export default function Auth() {
               <input
                 type="email"
                 required
-                placeholder="you@rishihood.edu.in"
+                placeholder="you@depart.rishihood.edu.in"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                 className="input"
@@ -129,7 +129,7 @@ export default function Auth() {
               <input
                 type="email"
                 required
-                placeholder="you@rishihood.edu.in"
+                placeholder="you@depart.rishihood.edu.in"
                 value={regForm.email}
                 onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
                 className="input"
