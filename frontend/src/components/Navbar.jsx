@@ -14,16 +14,41 @@ import {
   LogIn,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { api } from '../api'
 import NotificationBell from './NotificationBell.jsx'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, token, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const profileMenuRef = useRef(null)
   const mobileMenuRef = useRef(null)
+
+  // Fetch unread count for mobile drawer
+  useEffect(() => {
+    if (!user || !token) {
+      setUnreadCount(0)
+      return
+    }
+
+    let cancelled = false
+    const fetchCount = async () => {
+      try {
+        const { count } = await api.unreadNotificationCount(token)
+        if (!cancelled) setUnreadCount(count || 0)
+      } catch {}
+    }
+
+    fetchCount()
+    const interval = setInterval(fetchCount, 15000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [user, token])
 
   // Close menus on click outside
   useEffect(() => {
@@ -55,13 +80,19 @@ export default function Navbar() {
     { to: '/explore', label: 'Explore projects', icon: LayoutGrid },
     { to: '/talent', label: 'Find talent', icon: Users2 },
     { to: '/create', label: 'Post a project', icon: PlusCircle, requiresAuth: true, highlight: true },
-    { to: '/notifications', label: 'Notifications', icon: Bell, requiresAuth: true },
+    {
+      to: '/notifications',
+      label: 'Notifications',
+      icon: Bell,
+      requiresAuth: true,
+      badge: unreadCount,
+    },
     { to: '/dashboard', label: 'Your dashboard', icon: User, requiresAuth: true },
   ]
 
   return (
     <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-3.5 py-3 sm:px-6">
         {/* Brand / Logo */}
         <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm sm:h-9 sm:w-9">
@@ -130,11 +161,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Header Right Icons */}
+        {/* Mobile Header Toggle */}
         <div className="flex items-center gap-1.5 md:hidden">
-          {user && <NotificationBell />}
-
-          {/* Hamburger Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen((open) => !open)}
             aria-label="Toggle navigation menu"
@@ -145,15 +173,14 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Slide-Down / Dropdown Drawer */}
+      {/* Mobile Dropdown Menu Drawer */}
       {mobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="border-t border-slate-100 bg-white px-4 pb-6 pt-3 shadow-lg md:hidden animate-in slide-in-from-top-2"
+          className="border-t border-slate-100 bg-white px-4 pb-5 pt-3 shadow-lg md:hidden"
         >
-          {/* User Profile Card on Mobile */}
           {user ? (
-            <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 p-3">
+            <div className="mb-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white shadow-sm">
                   {initials}
@@ -172,29 +199,28 @@ export default function Navbar() {
               </Link>
             </div>
           ) : (
-            <div className="mb-4">
+            <div className="mb-3">
               <Link
                 to="/auth"
                 onClick={() => setMobileMenuOpen(false)}
                 className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-center text-sm"
               >
-                <LogIn size={16} /> Sign in / Join Campus Launchpad
+                <LogIn size={16} /> Sign in / Join
               </Link>
             </div>
           )}
 
-          {/* Navigation Links list */}
           <div className="space-y-1">
             {navLinks
               .filter((item) => !item.requiresAuth || user)
-              .map(({ to, label, icon: Icon, highlight }) => {
+              .map(({ to, label, icon: Icon, highlight, badge }) => {
                 const active = location.pathname === to
                 return (
                   <Link
                     key={to}
                     to={to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
+                    className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                       highlight && !active
                         ? 'bg-brand-50 text-brand-700 font-semibold'
                         : active
@@ -202,23 +228,33 @@ export default function Navbar() {
                         : 'text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span>{label}</span>
+                    <div className="flex items-center gap-3">
+                      <Icon size={18} />
+                      <span>{label}</span>
+                    </div>
+                    {Boolean(badge && badge > 0) && (
+                      <span
+                        className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                          active ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
+                        }`}
+                      >
+                        {badge}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
           </div>
 
-          {/* Log Out option */}
           {user && (
-            <div className="mt-4 border-t border-slate-100 pt-3">
+            <div className="mt-3 border-t border-slate-100 pt-2">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false)
                   logout()
                   navigate('/')
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
               >
                 <LogOut size={18} />
                 <span>Log out</span>

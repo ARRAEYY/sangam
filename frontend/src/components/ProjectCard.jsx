@@ -8,6 +8,12 @@ const STATUS_STYLES = {
   COMPLETED: 'bg-slate-100 text-slate-500',
 }
 
+function formatDate(dateString) {
+  if (!dateString) return 'Recently'
+  const date = new Date(dateString)
+  return isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString()
+}
+
 export default function ProjectCard({ project }) {
   return (
     <Link
@@ -16,16 +22,16 @@ export default function ProjectCard({ project }) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-display font-semibold text-slate-900">{project.title}</h3>
-        <span className={`pill shrink-0 ${STATUS_STYLES[project.status]}`}>
-          {project.status.replace('_', ' ')}
+        <span className={`pill shrink-0 ${STATUS_STYLES[project.status] || 'bg-slate-100 text-slate-600'}`}>
+          {(project.status || 'OPEN').replace('_', ' ')}
         </span>
       </div>
 
       <p className="line-clamp-3 text-sm text-slate-600">{project.description}</p>
 
       <div className="flex flex-wrap gap-1.5">
-        {project.required_skills.slice(0, 5).map((s) => (
-          <span key={s.id} className="pill bg-slate-100 text-slate-600">
+        {(project.required_skills || []).slice(0, 5).map((s) => (
+          <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600">
             {s.name}
           </span>
         ))}
@@ -36,7 +42,7 @@ export default function ProjectCard({ project }) {
           <Users size={13} /> {project.team_size_needed} needed
         </span>
         <span className="flex items-center gap-1">
-          <Clock size={13} /> {new Date(project.created_at).toLocaleDateString()}
+          <Clock size={13} /> {formatDate(project.created_at)}
         </span>
       </div>
     </Link>
