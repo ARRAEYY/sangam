@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import {
-  Rocket,
   ChevronDown,
   User,
   LogOut,
@@ -16,6 +15,7 @@ import {
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
 import NotificationBell from './NotificationBell.jsx'
+import { SangamEmblem } from './SangamLogo.jsx'
 
 export default function Navbar() {
   const { user, token, logout } = useAuth()
@@ -93,13 +93,13 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-3.5 py-3 sm:px-6">
-        {/* Brand / Logo */}
+        {/* Brand / Logo - Sangam */}
         <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm sm:h-9 sm:w-9">
-            <Rocket size={17} strokeWidth={2.25} />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm sm:h-9 sm:w-9">
+            <SangamEmblem size={20} className="text-white" />
           </span>
-          <span className="font-display text-base font-semibold leading-tight tracking-tight text-slate-900 sm:text-[17px]">
-            Campus Launchpad
+          <span className="font-sans text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+            Sangam
           </span>
         </Link>
 
@@ -205,7 +205,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-center text-sm"
               >
-                <LogIn size={16} /> Sign in / Join
+                <LogIn size={16} /> Sign in / Join Sangam
               </Link>
             </div>
           )}

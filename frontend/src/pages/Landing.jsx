@@ -1,7 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Rocket, Search, Users, ShieldCheck, ArrowRight } from 'lucide-react'
+import { Search, Users, ShieldCheck, ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { SangamEmblem } from '../components/SangamLogo.jsx'
 
 export default function Landing() {
   const { user } = useAuth()
@@ -35,8 +36,8 @@ export default function Landing() {
         </svg>
 
         <div className="relative">
-          <span className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-brand-100 ring-1 ring-white/20 backdrop-blur">
-            <Rocket size={26} strokeWidth={2.25} />
+          <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10 text-white ring-1 ring-white/20 backdrop-blur shadow-inner">
+            <SangamEmblem size={34} className="text-white" />
           </span>
           <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
             Find your next co-founder,

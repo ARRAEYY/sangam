@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Rocket } from 'lucide-react'
 import SkillTagInput from '../components/SkillTagInput.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { SangamEmblem } from '../components/SangamLogo.jsx'
 
 const currentYear = new Date().getFullYear()
 
@@ -55,11 +55,11 @@ export default function Auth() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-12">
       <div className="mb-7 text-center">
-        <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm">
-          <Rocket size={22} strokeWidth={2.25} />
+        <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+          <SangamEmblem size={30} className="text-white" />
         </span>
-        <h1 className="font-display text-2xl font-semibold text-slate-900">
-          {mode === 'login' ? 'Welcome back' : 'Join Campus Launchpad'}
+        <h1 className="font-sans text-2xl font-bold tracking-tight text-slate-900">
+          {mode === 'login' ? 'Welcome back to Sangam' : 'Join Sangam'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {mode === 'login' ? 'Sign in with your campus email.' : 'Only campus email addresses are accepted.'}
