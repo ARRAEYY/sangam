@@ -8,7 +8,7 @@ export default function Landing() {
   const { user } = useAuth()
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:px-6">
+    <div className="mx-auto max-w-[90%] px-4 pb-20 pt-10 sm:px-6">
       {/* Signature hero: dark maroon panel with radiating glow lines */}
       <div className="relative overflow-hidden rounded-4xl bg-gradient-to-br from-[#3d0012] via-[#5c0019] to-[#800023] px-6 py-16 text-center shadow-card sm:px-12 sm:py-20">
         <svg
