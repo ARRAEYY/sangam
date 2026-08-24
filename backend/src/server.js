@@ -68,10 +68,31 @@ async function start() {
   try {
     await sequelize.authenticate()
 
-    // Sync creates any tables that don't yet exist (safe – it never drops
-    // existing tables or columns). Acts as a reliable safety net so the
-    // app works even if a migration step was skipped.
+    // Sync creates any tables that don't yet exist
     await sequelize.sync()
+
+    // Safety net: ensure new columns exist even if migrations were skipped or DB already existed
+    const queryInterface = sequelize.getQueryInterface()
+    try {
+      const tableInfo = await queryInterface.describeTable('users')
+      if (!tableInfo.email_verified) {
+        await queryInterface.addColumn('users', 'email_verified', {
+          type: sequelize.Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: true, // Default existing users to verified so they are not locked out
+        })
+        // Backfill existing records to verified
+        await sequelize.query('UPDATE users SET email_verified = true WHERE email_verified IS NULL;')
+      }
+      if (!tableInfo.email_verification_token) {
+        await queryInterface.addColumn('users', 'email_verification_token', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+    } catch (err) {
+      console.warn('Column check warning:', err.message)
+    }
 
     app.listen(port, '0.0.0.0', () => {
       console.log(`Campus Platform API running on port ${port}`)
