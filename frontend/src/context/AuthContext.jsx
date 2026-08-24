@@ -4,44 +4,52 @@ import { api } from '../api'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => localStorage.getItem('campus_token'))
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // On mount, check if we have a valid session cookie
   useEffect(() => {
     api
-      .getProfile()
+      .getProfile(token)
       .then(setUser)
-      .catch(() => setUser(null))
+      .catch(() => {
+        setToken(null)
+        localStorage.removeItem('campus_token')
+        setUser(null)
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [token])
 
   const login = async (email, password) => {
     const data = await api.login({ email, password })
-    // The cookie is set automatically by the browser
-    const profile = await api.getProfile()
+    if (data.access_token) {
+      localStorage.setItem('campus_token', data.access_token)
+      setToken(data.access_token)
+    }
+    const profile = data.user || (await api.getProfile(data.access_token))
     setUser(profile)
     return profile
   }
 
   const register = async (payload) => {
-    // Registration no longer auto-logs in — it requires email verification
     const result = await api.register(payload)
-    return result  // { message: "..." }
+    return result
   }
 
   const logout = async () => {
     try {
       await api.logout()
     } catch {
-      // ignore — cookie may already be expired
+      // ignore
     }
+    localStorage.removeItem('campus_token')
+    setToken(null)
     setUser(null)
   }
 
   const refreshProfile = async () => {
     try {
-      const profile = await api.getProfile()
+      const profile = await api.getProfile(token)
       setUser(profile)
     } catch {
       setUser(null)
@@ -50,7 +58,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, refreshProfile }}
+      value={{ token, user, loading, login, register, logout, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

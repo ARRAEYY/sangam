@@ -50,7 +50,7 @@ function setTokenCookie(res, jwt) {
   res.cookie('token', jwt, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     maxAge: TOKEN_EXPIRE_MINUTES * 60 * 1000,
     path: '/',
   })
@@ -204,7 +204,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
     const jwt = signToken(user)
     setTokenCookie(res, jwt)
 
-    return res.json({ user: serializeUser(user) })
+    return res.json({ access_token: jwt, user: serializeUser(user) })
   } catch (error) {
     return next(error)
   }
