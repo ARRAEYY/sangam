@@ -24,6 +24,11 @@ router.get('/', async (req, res, next) => {
     const skillFilter = String(req.query.skill || '').trim()
 
     const query = {
+      where: {
+        status: {
+          [Op.ne]: 'ARCHIVED',
+        },
+      },
       include: [
         { model: Skill, as: 'required_skills' },
         { model: User, as: 'owner', attributes: ['id', 'full_name'] },
@@ -107,6 +112,55 @@ router.post('/', requireAuth, async (req, res, next) => {
   }
 })
 
+router.put('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const project = await Project.findByPk(req.params.id)
+    if (!project) {
+      return res.status(404).json({ detail: 'Project not found.' })
+    }
+    if (project.owner_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Only the project owner can update this project.' })
+    }
+
+    const payload = req.body || {}
+    if (payload.title !== undefined) {
+      const title = String(payload.title || '').trim()
+      if (!title) return res.status(400).json({ detail: 'Title is required.' })
+      project.title = title
+    }
+    if (payload.description !== undefined) {
+      const description = String(payload.description || '').trim()
+      if (!description) return res.status(400).json({ detail: 'Description is required.' })
+      project.description = description
+    }
+    if (payload.team_size_needed !== undefined) {
+      const teamSizeNeeded = Number(payload.team_size_needed)
+      if (!Number.isInteger(teamSizeNeeded) || teamSizeNeeded < 1) {
+        return res.status(400).json({ detail: 'Team size needed must be a positive integer.' })
+      }
+      project.team_size_needed = teamSizeNeeded
+    }
+
+    await project.save()
+
+    if (payload.skills !== undefined) {
+      const skills = Array.isArray(payload.skills) ? payload.skills : []
+      await assignSkills(project, skills)
+    }
+
+    const updated = await Project.findByPk(project.id, {
+      include: [
+        { model: Skill, as: 'required_skills' },
+        { model: User, as: 'owner', attributes: ['id', 'full_name'] },
+      ],
+    })
+
+    return res.json(serializeProject(updated))
+  } catch (error) {
+    return next(error)
+  }
+})
+
 router.patch('/:id/status', requireAuth, async (req, res, next) => {
   try {
     const project = await Project.findByPk(req.params.id)
@@ -118,9 +172,9 @@ router.patch('/:id/status', requireAuth, async (req, res, next) => {
     }
 
     const status = String(req.body?.status || '').trim().toUpperCase()
-    const validStatuses = ['OPEN', 'IN_PROGRESS', 'COMPLETED']
+    const validStatuses = ['OPEN', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ detail: 'Status must be OPEN, IN_PROGRESS or COMPLETED.' })
+      return res.status(400).json({ detail: 'Status must be OPEN, IN_PROGRESS, COMPLETED, or ARCHIVED.' })
     }
 
     await project.update({ status })

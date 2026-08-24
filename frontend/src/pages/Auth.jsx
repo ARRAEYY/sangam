@@ -158,6 +158,8 @@ export default function Auth() {
                 <input
                   type="number"
                   required
+                  min={currentYear - 5}
+                  max={currentYear + 5}
                   value={regForm.graduation_year}
                   onChange={(e) => setRegForm({ ...regForm, graduation_year: e.target.value })}
                   className="input"

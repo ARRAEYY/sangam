@@ -46,14 +46,21 @@ export const api = {
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
 
   getProfile: (token) => request('/api/users/profile', { token }),
+  getUserPublicProfile: (id, token) => request(`/api/users/${id}/public`, { token }),
   updateProfile: (payload, token) =>
     request('/api/users/profile', { method: 'PATCH', body: payload, token }),
   searchTalent: (params) => request('/api/users/talent', { params }),
+
+  addExperience: (payload, token) => request('/api/users/experience', { method: 'POST', body: payload, token }),
+  editExperience: (id, payload, token) => request(`/api/users/experience/${id}`, { method: 'PUT', body: payload, token }),
+  deleteExperience: (id, token) => request(`/api/users/experience/${id}`, { method: 'DELETE', token }),
 
   listProjects: (params) => request('/api/projects', { params }),
   getProject: (id) => request(`/api/projects/${id}`),
   createProject: (payload, token) =>
     request('/api/projects', { method: 'POST', body: payload, token }),
+  editProject: (id, payload, token) =>
+    request(`/api/projects/${id}`, { method: 'PUT', body: payload, token }),
   updateProjectStatus: (id, status, token) =>
     request(`/api/projects/${id}/status`, { method: 'PATCH', body: { status }, token }),
   applyToProject: (id, payload, token) =>

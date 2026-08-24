@@ -1,8 +1,8 @@
 const express = require('express')
 const { Op } = require('sequelize')
-const { User, Skill } = require('../models')
+const { User, Skill, Experience, Application, Project } = require('../models')
 const { requireAuth } = require('../middleware/auth')
-const { serializeUser } = require('../utils/serializers')
+const { serializeUser, serializeExperience, serializeProject } = require('../utils/serializers')
 
 const router = express.Router()
 
@@ -114,6 +114,96 @@ router.get('/talent', async (req, res, next) => {
 
     const users = await User.findAll(query)
     return res.json(users.map(serializeUser))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.get('/:id/public', requireAuth, async (req, res, next) => {
+  try {
+    const user = await loadUserWithSkills(req.params.id)
+    if (!user) {
+      return res.status(404).json({ detail: 'User not found.' })
+    }
+
+    const experiences = await Experience.findAll({
+      where: { user_id: req.params.id },
+      order: [['start_date', 'DESC']],
+    })
+
+    const applications = await Application.findAll({
+      where: { user_id: req.params.id, status: 'ACCEPTED' },
+      include: [{ model: Project, as: 'project' }],
+    })
+
+    const serializedUser = serializeUser(user)
+    serializedUser.experiences = experiences.map(serializeExperience)
+    serializedUser.accepted_projects = applications.map(app => serializeProject(app.project))
+
+    return res.json(serializedUser)
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.post('/experience', requireAuth, async (req, res, next) => {
+  try {
+    const { organization, role, description, start_date, end_date } = req.body
+    if (!organization || !role || !start_date) {
+      return res.status(400).json({ detail: 'Organization, role, and start_date are required.' })
+    }
+
+    const experience = await Experience.create({
+      user_id: req.user.id,
+      organization,
+      role,
+      description: description || null,
+      start_date,
+      end_date: end_date || null,
+    })
+
+    return res.status(201).json(serializeExperience(experience))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.put('/experience/:id', requireAuth, async (req, res, next) => {
+  try {
+    const experience = await Experience.findByPk(req.params.id)
+    if (!experience) {
+      return res.status(404).json({ detail: 'Experience not found.' })
+    }
+    if (experience.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only edit your own experience.' })
+    }
+
+    const { organization, role, description, start_date, end_date } = req.body
+    if (organization) experience.organization = organization
+    if (role) experience.role = role
+    if (description !== undefined) experience.description = description || null
+    if (start_date) experience.start_date = start_date
+    if (end_date !== undefined) experience.end_date = end_date || null
+
+    await experience.save()
+    return res.json(serializeExperience(experience))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.delete('/experience/:id', requireAuth, async (req, res, next) => {
+  try {
+    const experience = await Experience.findByPk(req.params.id)
+    if (!experience) {
+      return res.status(404).json({ detail: 'Experience not found.' })
+    }
+    if (experience.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only delete your own experience.' })
+    }
+
+    await experience.destroy()
+    return res.status(204).send()
   } catch (error) {
     return next(error)
   }

@@ -26,7 +26,7 @@ const Project = sequelize.define(
       },
     },
     status: {
-      type: DataTypes.ENUM('OPEN', 'IN_PROGRESS', 'COMPLETED'),
+      type: DataTypes.ENUM('OPEN', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED'),
       allowNull: false,
       defaultValue: 'OPEN',
     },

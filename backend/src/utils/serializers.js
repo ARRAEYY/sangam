@@ -60,6 +60,19 @@ function serializeNotification(notification) {
   }
 }
 
+function serializeExperience(experience) {
+  if (!experience) return null
+  const plain = experience.toJSON ? experience.toJSON() : experience
+  return {
+    id: plain.id,
+    organization: plain.organization,
+    role: plain.role,
+    description: plain.description,
+    start_date: plain.start_date,
+    end_date: plain.end_date,
+  }
+}
+
 function serializeConnectionRequest(connectionRequest) {
   if (!connectionRequest) return null
   const plain = connectionRequest.toJSON ? connectionRequest.toJSON() : connectionRequest
@@ -134,4 +147,5 @@ module.exports = {
   serializeSkills,
   serializeNotification,
   serializeConnectionRequest,
+  serializeExperience,
 }

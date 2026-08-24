@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Users, Mail, Github } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Users, Mail, Github, Pencil, Trash2, Check, X as XIcon } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -19,6 +19,10 @@ export default function ProjectDetail() {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [showApplyForm, setShowApplyForm] = useState(false)
+  
+  const navigate = useNavigate()
+  const [isEditingProject, setIsEditingProject] = useState(false)
+  const [projectForm, setProjectForm] = useState(null)
 
   useEffect(() => {
     api.getProject(id).then(setProject).catch((err) => setError(err.message))
@@ -54,34 +58,107 @@ export default function ProjectDetail() {
     }
   }
 
+  const startEditing = () => {
+    setProjectForm({
+      title: project.title,
+      description: project.description,
+      team_size_needed: project.team_size_needed,
+      skills: project.required_skills.map((s) => s.name),
+    })
+    setIsEditingProject(true)
+  }
+
+  const handleEditProject = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const updated = await api.editProject(id, projectForm, token)
+      setProject(updated)
+      setIsEditingProject(false)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteProject = async () => {
+    if (!window.confirm('Are you sure you want to delete this project? It will be moved to your past projects.')) return
+    try {
+      await api.updateProjectStatus(id, 'ARCHIVED', token)
+      navigate('/')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   if (error && !project) return <p className="py-10 text-red-600">{error}</p>
   if (!project) return <p className="py-10 text-slate-500">Loading…</p>
 
   return (
     <div className="max-w-3xl pb-16 pt-2">
       <div className="card p-6 sm:p-8">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="font-display text-2xl font-semibold text-slate-900">{project.title}</h1>
-          <span className={`pill shrink-0 ${STATUS_STYLES[project.status]}`}>
-            {project.status.replace('_', ' ')}
-          </span>
-        </div>
-        <p className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
-          Posted by {project.owner.full_name} · <Users size={13} className="inline" />{' '}
-          {project.team_size_needed} needed
-        </p>
+        {!isEditingProject ? (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-slate-900">{project.title}</h1>
+                <p className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
+                  Posted by {project.owner.full_name} · <Users size={13} className="inline" />{' '}
+                  {project.team_size_needed} needed
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className={`pill ${STATUS_STYLES[project.status] || 'bg-slate-100 text-slate-500'}`}>
+                  {project.status.replace('_', ' ')}
+                </span>
+                {isOwner && (
+                  <div className="flex gap-2">
+                    <button onClick={startEditing} className="text-slate-400 hover:text-brand-600 p-1" title="Edit project">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={handleDeleteProject} className="text-slate-400 hover:text-red-600 p-1" title="Delete project">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        <p className="mt-5 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">
-          {project.description}
-        </p>
+            <p className="mt-5 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">
+              {project.description}
+            </p>
 
-        <div className="mt-5 flex flex-wrap gap-1.5">
-          {project.required_skills.map((s) => (
-            <span key={s.id} className="pill bg-brand-50 text-brand-700">
-              {s.name}
-            </span>
-          ))}
-        </div>
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {project.required_skills.map((s) => (
+                <span key={s.id} className="pill bg-brand-50 text-brand-700">
+                  {s.name}
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <form onSubmit={handleEditProject} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Project Title</label>
+              <input required className="input" value={projectForm.title} onChange={(e) => setProjectForm({...projectForm, title: e.target.value})} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Description</label>
+              <textarea required rows={5} className="input" value={projectForm.description} onChange={(e) => setProjectForm({...projectForm, description: e.target.value})} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Team Size Needed</label>
+              <input required type="number" min="1" className="input max-w-[150px]" value={projectForm.team_size_needed} onChange={(e) => setProjectForm({...projectForm, team_size_needed: parseInt(e.target.value) || 1})} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Required Skills (comma separated)</label>
+              <input className="input" value={projectForm.skills.join(', ')} onChange={(e) => setProjectForm({...projectForm, skills: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} placeholder="e.g. React, Node, Figma" />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary !px-5"><Check size={15} /> Save Changes</button>
+              <button type="button" onClick={() => setIsEditingProject(false)} className="btn-secondary !px-4"><XIcon size={15} /> Cancel</button>
+            </div>
+          </form>
+        )}
 
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
         {status && (

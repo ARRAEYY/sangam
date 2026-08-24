@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Github, Linkedin, Globe, Pencil, Check, X as XIcon, UserCheck, UserX, Code2 } from 'lucide-react'
+import { Github, Linkedin, Globe, Pencil, Check, X as XIcon, UserCheck, UserX, Code2, Plus, Briefcase, Trash2 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
@@ -22,6 +22,15 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [pendingRequests, setPendingRequests] = useState([])
   const [connections, setConnections] = useState([])
+  const [experiences, setExperiences] = useState([])
+  const [showAddExperience, setShowAddExperience] = useState(false)
+  const [experienceForm, setExperienceForm] = useState({
+    organization: '',
+    role: '',
+    description: '',
+    start_date: '',
+    end_date: '',
+  })
 
   const loadConnections = () => {
     if (!token) return
@@ -41,6 +50,10 @@ export default function Dashboard() {
       .myApplications(token)
       .then(setMyApplications)
       .catch((err) => setError(err.message))
+    api
+      .getUserPublicProfile(user.id, token)
+      .then((data) => setExperiences(data.experiences || []))
+      .catch(console.error)
     loadConnections()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token])
@@ -92,6 +105,29 @@ export default function Dashboard() {
       )
       await refreshProfile()
       setEditingProfile(false)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleAddExperience = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const added = await api.addExperience(experienceForm, token)
+      setExperiences([added, ...experiences])
+      setShowAddExperience(false)
+      setExperienceForm({ organization: '', role: '', description: '', start_date: '', end_date: '' })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteExperience = async (id) => {
+    if (!window.confirm('Delete this experience?')) return
+    try {
+      await api.deleteExperience(id, token)
+      setExperiences(experiences.filter(exp => exp.id !== id))
     } catch (err) {
       setError(err.message)
     }
@@ -194,6 +230,8 @@ export default function Dashboard() {
             <Field label="Graduation year">
               <input
                 type="number"
+                min={new Date().getFullYear() - 5}
+                max={new Date().getFullYear() + 5}
                 className="input max-w-[160px]"
                 value={profileDraft.graduation_year}
                 onChange={(e) => setProfileDraft({ ...profileDraft, graduation_year: e.target.value })}
@@ -283,6 +321,74 @@ export default function Dashboard() {
       </section>
 
       <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-lg font-semibold text-slate-900">Work experience</h2>
+          <button onClick={() => setShowAddExperience(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+            <Plus size={13} /> Add
+          </button>
+        </div>
+
+        {showAddExperience && (
+          <form onSubmit={handleAddExperience} className="card p-4 sm:p-5 mb-4 space-y-3 bg-slate-50 border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Organization *">
+                <input required className="input bg-white" value={experienceForm.organization} onChange={(e) => setExperienceForm({...experienceForm, organization: e.target.value})} />
+              </Field>
+              <Field label="Role *">
+                <input required className="input bg-white" value={experienceForm.role} onChange={(e) => setExperienceForm({...experienceForm, role: e.target.value})} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Start Date *">
+                <input required type="date" className="input bg-white" value={experienceForm.start_date} onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value})} />
+              </Field>
+              <Field label="End Date">
+                <input type="date" className="input bg-white" value={experienceForm.end_date} onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value})} />
+              </Field>
+            </div>
+            <Field label="Description">
+              <textarea rows={2} className="input bg-white" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary !px-5 text-sm">Save</button>
+              <button type="button" onClick={() => setShowAddExperience(false)} className="btn-secondary !px-4 text-sm">Cancel</button>
+            </div>
+          </form>
+        )}
+
+        {experiences.length === 0 && !showAddExperience ? (
+          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
+            No work experience added yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {experiences.map((exp) => (
+              <div key={exp.id} className="card p-4 flex gap-3">
+                <div className="mt-1">
+                  <Briefcase className="text-slate-400" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{exp.role}</h3>
+                      <p className="text-sm text-slate-600">{exp.organization}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {new Date(exp.start_date).toLocaleDateString(undefined, {month: 'short', year: 'numeric'})} - {exp.end_date ? new Date(exp.end_date).toLocaleDateString(undefined, {month: 'short', year: 'numeric'}) : 'Present'}
+                      </p>
+                    </div>
+                    <button onClick={() => handleDeleteExperience(exp.id)} className="text-slate-400 hover:text-red-600 p-1">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  {exp.description && <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{exp.description}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mb-10">
         <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Your posted projects</h2>
         {myProjects.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
@@ -292,10 +398,29 @@ export default function Dashboard() {
             </Link>
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {myProjects.map((p) => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider">Active Projects</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
+                  <ProjectCard key={p.id} project={p} />
+                ))}
+                {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).length === 0 && (
+                  <p className="text-sm text-slate-500 col-span-2">No active projects.</p>
+                )}
+              </div>
+            </div>
+            
+            {myProjects.filter(p => ['COMPLETED', 'ARCHIVED'].includes(p.status)).length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider mt-6">Past Projects</h3>
+                <div className="grid gap-4 sm:grid-cols-2 opacity-75">
+                  {myProjects.filter(p => ['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
+                    <ProjectCard key={p.id} project={p} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

@@ -100,7 +100,7 @@ export default function Notifications() {
       </div>
 
       <div className="mb-5 flex gap-2">
-        {['all', 'unread', 'read'].map((f) => (
+        {['all', 'unread'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
