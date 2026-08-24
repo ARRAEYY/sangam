@@ -99,7 +99,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
       return res.status(409).json({ detail: 'An account with that email already exists.' })
     }
 
-    // Generate an email verification token
+    const requireVerification = process.env.ENABLE_EMAIL_VERIFICATION === 'true'
     const verificationToken = crypto.randomBytes(32).toString('hex')
 
     const passwordHash = await bcrypt.hash(password, 10)
@@ -113,19 +113,27 @@ router.post('/register', authLimiter, async (req, res, next) => {
       bio: payload.bio || null,
       linkedin_url: payload.linkedin_url || null,
       portfolio_url: payload.portfolio_url || null,
-      email_verified: false,
-      email_verification_token: verificationToken,
+      email_verified: !requireVerification,
+      email_verification_token: requireVerification ? verificationToken : null,
     })
 
     await assignSkills(user, skills)
 
-    // Log verification link (plug in a real email provider in production)
-    const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
-    console.log(`\n📧 Email verification link for ${email}:\n   ${verifyUrl}\n`)
+    if (requireVerification) {
+      const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
+      console.log(`\n📧 Email verification link for ${email}:\n   ${verifyUrl}\n`)
+      return res.status(201).json({
+        message: 'Account created! Please check your email to verify your account before logging in.',
+        requires_verification: true,
+      })
+    }
+
+    const jwt = signToken(user)
+    setTokenCookie(res, jwt)
 
     return res.status(201).json({
-      message: 'Account created! Please check your email to verify your account before logging in.',
-      verify_url: process.env.NODE_ENV !== 'production' ? verifyUrl : undefined,
+      access_token: jwt,
+      user: serializeUser(user),
     })
   } catch (error) {
     return next(error)
@@ -193,8 +201,8 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ detail: 'Invalid email or password.' })
     }
 
-    // Block unverified users
-    if (!user.email_verified) {
+    // Only block if email verification is explicitly enabled via environment variable
+    if (process.env.ENABLE_EMAIL_VERIFICATION === 'true' && !user.email_verified) {
       return res.status(403).json({
         detail: 'Please verify your email before logging in. Check your inbox for the verification link.',
         email_unverified: true,

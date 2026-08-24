@@ -81,8 +81,10 @@ async function start() {
           allowNull: false,
           defaultValue: true, // Default existing users to verified so they are not locked out
         })
-        // Backfill existing records to verified
-        await sequelize.query('UPDATE users SET email_verified = true WHERE email_verified IS NULL;')
+        // Backfill existing records to verified so no user is blocked
+        await sequelize.query('UPDATE users SET email_verified = true WHERE email_verified = false OR email_verified IS NULL;')
+      } else {
+        await sequelize.query('UPDATE users SET email_verified = true WHERE email_verified = false OR email_verified IS NULL;')
       }
       if (!tableInfo.email_verification_token) {
         await queryInterface.addColumn('users', 'email_verification_token', {
