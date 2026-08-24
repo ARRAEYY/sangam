@@ -7,6 +7,7 @@ const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
 const { requireAuth } = require('../middleware/auth')
+const { sendForgotPasswordEmail } = require('../utils/mailer')
 
 const router = express.Router()
 
@@ -292,13 +293,14 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
     const tempHash = await bcrypt.hash(tempPassword, 10)
     await user.update({ password_hash: tempHash })
 
-    // Log to console (in production, send via email/SMTP)
-    console.log(`\n🔑 Temporary password for ${email}: ${tempPassword}\n`)
+    // Send email (via Nodemailer if SMTP configured, else logs to console)
+    const mailResult = await sendForgotPasswordEmail(email, tempPassword)
 
     return res.json({
-      message: 'If an account with that email exists, a temporary password has been sent.',
-      // Expose in non-production so the user can see it during development
-      temp_password: process.env.NODE_ENV !== 'production' ? tempPassword : undefined,
+      message: 'If an account with that email exists, a temporary password has been sent to your email.',
+      simulated: mailResult.simulated,
+      // Expose in non-production or simulated mode so the user can see it during local testing
+      temp_password: mailResult.simulated ? tempPassword : undefined,
     })
   } catch (error) {
     return next(error)
