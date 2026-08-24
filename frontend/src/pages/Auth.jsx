@@ -1,15 +1,41 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import SkillTagInput from '../components/SkillTagInput.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
+import { api } from '../api'
 
 const currentYear = new Date().getFullYear()
 
+function getPasswordStrength(password) {
+  if (!password) return { score: 0, label: '', color: '' }
+  let score = 0
+  if (password.length >= 12) score += 1
+  if (/[A-Z]/.test(password)) score += 1
+  if (/[a-z]/.test(password)) score += 1
+  if (/[0-9]/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+
+  const levels = [
+    { label: 'Very Weak', color: 'bg-red-500' },
+    { label: 'Weak', color: 'bg-orange-500' },
+    { label: 'Fair', color: 'bg-amber-500' },
+    { label: 'Good', color: 'bg-emerald-500' },
+    { label: 'Strong', color: 'bg-emerald-600' },
+  ]
+  const idx = Math.min(Math.max(score - 1, 0), 4)
+  return { score, label: levels[idx].label, color: levels[idx].color }
+}
+
 export default function Auth() {
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState('login')
   const [error, setError] = useState('')
+  const [infoMsg, setInfoMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resendSuccess, setResendSuccess] = useState('')
+
   const { login, register } = useAuth()
   const navigate = useNavigate()
 
@@ -24,15 +50,26 @@ export default function Auth() {
     skills: [],
   })
 
+  useEffect(() => {
+    if (searchParams.get('verified') === 'true') {
+      setInfoMsg('Your email has been verified successfully! You can now sign in.')
+    }
+  }, [searchParams])
+
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
+    setInfoMsg('')
+    setResendSuccess('')
     setSubmitting(true)
     try {
       await login(loginForm.email, loginForm.password)
       navigate('/explore')
     } catch (err) {
       setError(err.message)
+      if (err.data?.email_unverified) {
+        setResendEmail(loginForm.email)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -41,16 +78,31 @@ export default function Auth() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setError('')
+    setInfoMsg('')
+    setResendSuccess('')
     setSubmitting(true)
     try {
-      await register({ ...regForm, graduation_year: Number(regForm.graduation_year) })
-      navigate('/explore')
+      const res = await register({ ...regForm, graduation_year: Number(regForm.graduation_year) })
+      setInfoMsg(res.message || 'Account created! Please check your email/console to verify your account.')
+      setMode('login')
     } catch (err) {
       setError(err.message)
     } finally {
       setSubmitting(false)
     }
   }
+
+  const handleResendVerification = async () => {
+    if (!resendEmail) return
+    try {
+      const res = await api.resendVerification(resendEmail)
+      setResendSuccess(res.message || 'Verification link resent.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const strength = getPasswordStrength(regForm.password)
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-12">
@@ -72,7 +124,7 @@ export default function Auth() {
             className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
               mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
             }`}
-            onClick={() => setMode('login')}
+            onClick={() => { setMode('login'); setError(''); setInfoMsg(''); }}
           >
             Sign in
           </button>
@@ -80,17 +132,36 @@ export default function Auth() {
             className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
               mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
             }`}
-            onClick={() => setMode('register')}
+            onClick={() => { setMode('register'); setError(''); setInfoMsg(''); }}
           >
             Create account
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>
+        {infoMsg && (
+          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{infoMsg}</div>
         )}
 
+        {error && (
+          <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            {error}
+            {resendEmail && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  className="font-semibold underline text-red-800 hover:text-red-900"
+                >
+                  Resend verification link
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
+        {resendSuccess && (
+          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{resendSuccess}</div>
+        )}
 
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">
@@ -139,11 +210,26 @@ export default function Auth() {
               <input
                 type="password"
                 required
-                minLength={8}
+                minLength={12}
                 value={regForm.password}
                 onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
                 className="input"
+                placeholder="Min 12 chars, upper/lower/digit/special"
               />
+              {regForm.password && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Strength: {strength.label}</span>
+                    <span>{strength.score}/5</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${strength.color} transition-all duration-300`}
+                      style={{ width: `${(strength.score / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Branch / major">

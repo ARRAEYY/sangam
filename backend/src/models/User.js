@@ -31,6 +31,15 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: 'LOCAL',
     },
+    email_verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    email_verification_token: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     avatar_url: {
       type: DataTypes.TEXT,
       allowNull: true,

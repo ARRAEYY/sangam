@@ -1,10 +1,15 @@
 const express = require('express')
+const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
 const { User, Skill } = require('../models')
 const { signToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
+const { validatePassword } = require('../utils/passwordPolicy')
+const { authLimiter } = require('../middleware/rateLimit')
 
 const router = express.Router()
+
+const TOKEN_EXPIRE_MINUTES = Number(process.env.JWT_EXPIRE_MINUTES || 10080)
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase()
@@ -40,7 +45,20 @@ async function assignSkills(user, skills = []) {
   await user.setSkills(skillRecords)
 }
 
-router.post('/register', async (req, res, next) => {
+/** Helper: set the auth cookie on the response */
+function setTokenCookie(res, jwt) {
+  res.cookie('token', jwt, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: TOKEN_EXPIRE_MINUTES * 60 * 1000,
+    path: '/',
+  })
+}
+
+// ─── Register ────────────────────────────────────────────────
+
+router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const payload = req.body || {}
     const email = normalizeEmail(payload.email)
@@ -59,9 +77,13 @@ router.post('/register', async (req, res, next) => {
         .status(400)
         .json({ detail: 'Only Rishihood email addresses (e.g. you@depart.rishihood.edu.in or you@rishihood.edu.in) are allowed.' })
     }
-    if (password.length < 8) {
-      return res.status(400).json({ detail: 'Password must be at least 8 characters long.' })
+
+    // Password strength validation
+    const pwResult = validatePassword(password)
+    if (!pwResult.valid) {
+      return res.status(400).json({ detail: pwResult.errors.join(' ') })
     }
+
     if (!branch) {
       return res.status(400).json({ detail: 'Branch is required.' })
     }
@@ -77,6 +99,9 @@ router.post('/register', async (req, res, next) => {
       return res.status(409).json({ detail: 'An account with that email already exists.' })
     }
 
+    // Generate an email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+
     const passwordHash = await bcrypt.hash(password, 10)
     const user = await User.create({
       email,
@@ -88,18 +113,59 @@ router.post('/register', async (req, res, next) => {
       bio: payload.bio || null,
       linkedin_url: payload.linkedin_url || null,
       portfolio_url: payload.portfolio_url || null,
+      email_verified: false,
+      email_verification_token: verificationToken,
     })
 
     await assignSkills(user, skills)
 
-    const token = signToken(user)
-    return res.status(201).json({ access_token: token })
+    // Log verification link (plug in a real email provider in production)
+    const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
+    console.log(`\n📧 Email verification link for ${email}:\n   ${verifyUrl}\n`)
+
+    return res.status(201).json({
+      message: 'Account created! Please check your email to verify your account before logging in.',
+      verify_url: process.env.NODE_ENV !== 'production' ? verifyUrl : undefined,
+    })
   } catch (error) {
     return next(error)
   }
 })
 
-router.post('/login', async (req, res, next) => {
+// ─── Email verification ──────────────────────────────────────
+
+router.get('/verify-email', async (req, res, next) => {
+  try {
+    const token = String(req.query.token || '').trim()
+    if (!token) {
+      return res.status(400).json({ detail: 'Verification token is required.' })
+    }
+
+    const user = await User.findOne({ where: { email_verification_token: token } })
+    if (!user) {
+      return res.status(400).json({ detail: 'Invalid or expired verification token.' })
+    }
+
+    if (user.email_verified) {
+      return res.json({ message: 'Email already verified. You can log in.' })
+    }
+
+    await user.update({
+      email_verified: true,
+      email_verification_token: null,
+    })
+
+    // In production, redirect to the frontend login page
+    const frontendUrl = process.env.CORS_ORIGINS?.split(',')[0]?.trim() || 'http://localhost:5173'
+    return res.redirect(`${frontendUrl}/auth?verified=true`)
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Login ───────────────────────────────────────────────────
+
+router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email)
     const password = String(req.body?.password || '')
@@ -127,11 +193,82 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ detail: 'Invalid email or password.' })
     }
 
-    const token = signToken(user)
-    return res.json({ access_token: token })
+    // Block unverified users
+    if (!user.email_verified) {
+      return res.status(403).json({
+        detail: 'Please verify your email before logging in. Check your inbox for the verification link.',
+        email_unverified: true,
+      })
+    }
+
+    const jwt = signToken(user)
+    setTokenCookie(res, jwt)
+
+    return res.json({ user: serializeUser(user) })
   } catch (error) {
     return next(error)
   }
+})
+
+// ─── Logout ──────────────────────────────────────────────────
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    path: '/',
+  })
+  return res.json({ message: 'Logged out.' })
+})
+
+// ─── Resend verification ─────────────────────────────────────
+
+router.post('/resend-verification', authLimiter, async (req, res, next) => {
+  try {
+    const email = normalizeEmail(req.body?.email)
+    if (!email) {
+      return res.status(400).json({ detail: 'Email is required.' })
+    }
+
+    const user = await User.findOne({ where: { email } })
+    if (!user) {
+      // Don't reveal whether the account exists
+      return res.json({ message: 'If an account with that email exists, a verification link has been sent.' })
+    }
+
+    if (user.email_verified) {
+      return res.json({ message: 'Email is already verified. You can log in.' })
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    await user.update({ email_verification_token: verificationToken })
+
+    const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
+    console.log(`\n📧 Resent verification link for ${email}:\n   ${verifyUrl}\n`)
+
+    return res.json({
+      message: 'If an account with that email exists, a verification link has been sent.',
+      verify_url: process.env.NODE_ENV !== 'production' ? verifyUrl : undefined,
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Password rules (public endpoint for frontend) ──────────
+
+router.get('/password-rules', (req, res) => {
+  return res.json({
+    rules: [
+      'Minimum 12 characters',
+      'At least one uppercase letter',
+      'At least one lowercase letter',
+      'At least one digit',
+      'At least one special character (!@#$%…)',
+      'Not a commonly-breached password',
+    ],
+  })
 })
 
 module.exports = router

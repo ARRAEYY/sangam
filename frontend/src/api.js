@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-async function request(path, { method = 'GET', body, token, params } = {}) {
+async function request(path, { method = 'GET', body, params } = {}) {
   let url = `${API_BASE}${path}`
   if (params) {
     const query = new URLSearchParams(
@@ -10,13 +10,13 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
   }
 
   const headers = { 'Content-Type': 'application/json' }
-  if (token) headers.Authorization = `Bearer ${token}`
 
   let res
   try {
     res = await fetch(url, {
       method,
       headers,
+      credentials: 'include',          // ← send/receive httpOnly cookies
       body: body ? JSON.stringify(body) : undefined,
     })
   } catch (err) {
@@ -28,13 +28,18 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
 
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
+    let extra = {}
     try {
       const data = await res.json()
       detail = data.detail || detail
+      extra = data
     } catch {
       // ignore parse errors
     }
-    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
+    const error = new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
+    error.status = res.status
+    error.data = extra
+    throw error
   }
 
   if (res.status === 204) return null
@@ -44,55 +49,58 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
 export const api = {
   register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
+  logout: () => request('/api/auth/logout', { method: 'POST' }),
+  resendVerification: (email) =>
+    request('/api/auth/resend-verification', { method: 'POST', body: { email } }),
+  getPasswordRules: () => request('/api/auth/password-rules'),
 
-  getProfile: (token) => request('/api/users/profile', { token }),
-  getUserPublicProfile: (id, token) => request(`/api/users/${id}/public`, { token }),
-  updateProfile: (payload, token) =>
-    request('/api/users/profile', { method: 'PATCH', body: payload, token }),
+  getProfile: () => request('/api/users/profile'),
+  getUserPublicProfile: (id) => request(`/api/users/${id}/public`),
+  updateProfile: (payload) =>
+    request('/api/users/profile', { method: 'PATCH', body: payload }),
   searchTalent: (params) => request('/api/users/talent', { params }),
 
-  addExperience: (payload, token) => request('/api/users/experience', { method: 'POST', body: payload, token }),
-  editExperience: (id, payload, token) => request(`/api/users/experience/${id}`, { method: 'PUT', body: payload, token }),
-  deleteExperience: (id, token) => request(`/api/users/experience/${id}`, { method: 'DELETE', token }),
+  addExperience: (payload) => request('/api/users/experience', { method: 'POST', body: payload }),
+  editExperience: (id, payload) => request(`/api/users/experience/${id}`, { method: 'PUT', body: payload }),
+  deleteExperience: (id) => request(`/api/users/experience/${id}`, { method: 'DELETE' }),
 
   listProjects: (params) => request('/api/projects', { params }),
   getProject: (id) => request(`/api/projects/${id}`),
-  createProject: (payload, token) =>
-    request('/api/projects', { method: 'POST', body: payload, token }),
-  editProject: (id, payload, token) =>
-    request(`/api/projects/${id}`, { method: 'PUT', body: payload, token }),
-  updateProjectStatus: (id, status, token) =>
-    request(`/api/projects/${id}/status`, { method: 'PATCH', body: { status }, token }),
-  applyToProject: (id, payload, token) =>
-    request(`/api/projects/${id}/apply`, { method: 'POST', body: payload, token }),
-  getApplicants: (id, token) => request(`/api/projects/${id}/apps`, { token }),
+  createProject: (payload) =>
+    request('/api/projects', { method: 'POST', body: payload }),
+  editProject: (id, payload) =>
+    request(`/api/projects/${id}`, { method: 'PUT', body: payload }),
+  updateProjectStatus: (id, status) =>
+    request(`/api/projects/${id}/status`, { method: 'PATCH', body: { status } }),
+  applyToProject: (id, payload) =>
+    request(`/api/projects/${id}/apply`, { method: 'POST', body: payload }),
+  getApplicants: (id) => request(`/api/projects/${id}/apps`),
 
-  myApplications: (token) => request('/api/applications/mine', { token }),
-  updateApplicationStatus: (id, status, token) =>
-    request(`/api/applications/${id}`, { method: 'PATCH', body: { status }, token }),
+  myApplications: () => request('/api/applications/mine'),
+  updateApplicationStatus: (id, status) =>
+    request(`/api/applications/${id}`, { method: 'PATCH', body: { status } }),
 
   // Notifications
-  listNotifications: (token) => request('/api/notifications', { token }),
-  unreadNotificationCount: (token) => request('/api/notifications/unread-count', { token }),
-  markNotificationRead: (id, token) =>
-    request(`/api/notifications/${id}/read`, { method: 'PATCH', token }),
-  markAllNotificationsRead: (token) =>
-    request('/api/notifications/read-all', { method: 'PATCH', token }),
-  deleteNotification: (id, token) =>
-    request(`/api/notifications/${id}`, { method: 'DELETE', token }),
+  listNotifications: () => request('/api/notifications'),
+  unreadNotificationCount: () => request('/api/notifications/unread-count'),
+  markNotificationRead: (id) =>
+    request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllNotificationsRead: () =>
+    request('/api/notifications/read-all', { method: 'PATCH' }),
+  deleteNotification: (id) =>
+    request(`/api/notifications/${id}`, { method: 'DELETE' }),
 
   // Connections
-  sendConnectionRequest: (recipientId, message, token) =>
+  sendConnectionRequest: (recipientId, message) =>
     request('/api/connections/requests', {
       method: 'POST',
       body: { recipient_id: recipientId, message },
-      token,
     }),
-  listConnectionRequests: (direction, token) =>
-    request('/api/connections/requests', { params: { direction }, token }),
-  respondToConnectionRequest: (id, status, token) =>
-    request(`/api/connections/requests/${id}`, { method: 'PATCH', body: { status }, token }),
-  withdrawConnectionRequest: (id, token) =>
-    request(`/api/connections/requests/${id}`, { method: 'DELETE', token }),
-  listConnections: (token) => request('/api/connections', { token }),
+  listConnectionRequests: (direction) =>
+    request('/api/connections/requests', { params: { direction } }),
+  respondToConnectionRequest: (id, status) =>
+    request(`/api/connections/requests/${id}`, { method: 'PATCH', body: { status } }),
+  withdrawConnectionRequest: (id) =>
+    request(`/api/connections/requests/${id}`, { method: 'DELETE' }),
+  listConnections: () => request('/api/connections'),
 }

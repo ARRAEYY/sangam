@@ -4,59 +4,53 @@ import { api } from '../api'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('campus_token'))
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // On mount, check if we have a valid session cookie
   useEffect(() => {
-    if (!token) {
-      setLoading(false)
-      return
-    }
     api
-      .getProfile(token)
+      .getProfile()
       .then(setUser)
-      .catch(() => {
-        setToken(null)
-        localStorage.removeItem('campus_token')
-      })
+      .catch(() => setUser(null))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [])
 
   const login = async (email, password) => {
-    const { access_token } = await api.login({ email, password })
-    localStorage.setItem('campus_token', access_token)
-    setToken(access_token)
-    const profile = await api.getProfile(access_token)
+    const data = await api.login({ email, password })
+    // The cookie is set automatically by the browser
+    const profile = await api.getProfile()
     setUser(profile)
     return profile
   }
-
 
   const register = async (payload) => {
-    const { access_token } = await api.register(payload)
-    localStorage.setItem('campus_token', access_token)
-    setToken(access_token)
-    const profile = await api.getProfile(access_token)
-    setUser(profile)
-    return profile
+    // Registration no longer auto-logs in — it requires email verification
+    const result = await api.register(payload)
+    return result  // { message: "..." }
   }
 
-  const logout = () => {
-    localStorage.removeItem('campus_token')
-    setToken(null)
+  const logout = async () => {
+    try {
+      await api.logout()
+    } catch {
+      // ignore — cookie may already be expired
+    }
     setUser(null)
   }
 
   const refreshProfile = async () => {
-    if (!token) return
-    const profile = await api.getProfile(token)
-    setUser(profile)
+    try {
+      const profile = await api.getProfile()
+      setUser(profile)
+    } catch {
+      setUser(null)
+    }
   }
 
   return (
     <AuthContext.Provider
-      value={{ token, user, loading, login, register, logout, refreshProfile }}
+      value={{ user, loading, login, register, logout, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

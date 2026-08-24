@@ -2,13 +2,20 @@ const { User } = require('../models')
 const { verifyToken } = require('../utils/auth')
 
 async function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization
+  // 1. Prefer httpOnly cookie
+  let token = req.cookies?.token
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ detail: 'Authentication required.' })
+  // 2. Fall back to Authorization header (API / mobile clients)
+  if (!token) {
+    const authHeader = req.headers.authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.replace('Bearer ', '').trim()
+    }
   }
 
-  const token = authHeader.replace('Bearer ', '').trim()
+  if (!token) {
+    return res.status(401).json({ detail: 'Authentication required.' })
+  }
 
   try {
     const decoded = verifyToken(token)

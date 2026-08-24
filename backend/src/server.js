@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const express = require('express')
 const cors = require('cors')
+const cookieParser = require('cookie-parser')
 const { sequelize } = require('./models')
 const authRoutes = require('./routes/auth')
 const userRoutes = require('./routes/users')
@@ -10,6 +11,7 @@ const applicationRoutes = require('./routes/applications')
 const notificationRoutes = require('./routes/notifications')
 const connectionRoutes = require('./routes/connections')
 const errorHandler = require('./middleware/errorHandler')
+const { generalLimiter } = require('./middleware/rateLimit')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
@@ -31,7 +33,9 @@ app.use(
     credentials: true,
   })
 )
+app.use(cookieParser())
 app.use(express.json({ limit: '1mb' }))
+app.use(generalLimiter)
 
 app.get('/api/health', async (req, res) => {
   try {
