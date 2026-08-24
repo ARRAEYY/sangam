@@ -56,6 +56,10 @@ export const api = {
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   resendVerification: (email) =>
     request('/api/auth/resend-verification', { method: 'POST', body: { email } }),
+  forgotPassword: (email) =>
+    request('/api/auth/forgot-password', { method: 'POST', body: { email } }),
+  changePassword: (current_password, new_password, token) =>
+    request('/api/auth/change-password', { method: 'POST', body: { current_password, new_password }, token }),
   getPasswordRules: () => request('/api/auth/password-rules'),
 
   getProfile: (token) => request('/api/users/profile', { token }),

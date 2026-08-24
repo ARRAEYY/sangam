@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Github, Linkedin, Globe, Pencil, Check, X as XIcon, UserCheck, UserX, Code2, Plus, Briefcase, Trash2 } from 'lucide-react'
+import { Github, Linkedin, Globe, Pencil, Check, X as XIcon, UserCheck, UserX, Code2, Plus, Briefcase, Trash2, Lock } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
@@ -31,6 +31,28 @@ export default function Dashboard() {
     start_date: '',
     end_date: '',
   })
+
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '' })
+  const [passwordMsg, setPasswordMsg] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordMsg('')
+    setChangingPassword(true)
+    try {
+      const res = await api.changePassword(passwordForm.current_password, passwordForm.new_password, token)
+      setPasswordMsg(res.message || 'Password changed successfully.')
+      setPasswordForm({ current_password: '', new_password: '' })
+    } catch (err) {
+      setPasswordError(err.message)
+    } finally {
+      setChangingPassword(false)
+    }
+  }
 
   const loadConnections = () => {
     if (!token) return
@@ -316,6 +338,51 @@ export default function Dashboard() {
                 <XIcon size={15} /> Cancel
               </button>
             </div>
+          </form>
+        )}
+      </section>
+
+      {/* Change password */}
+      <section className="mb-10">
+        <button
+          onClick={() => { setShowChangePassword(!showChangePassword); setPasswordMsg(''); setPasswordError(''); }}
+          className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600 transition"
+        >
+          <Lock size={15} />
+          {showChangePassword ? 'Hide' : 'Change password'}
+        </button>
+
+        {showChangePassword && (
+          <form onSubmit={handleChangePassword} className="card mt-3 p-5 space-y-4 max-w-md">
+            {passwordMsg && (
+              <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{passwordMsg}</div>
+            )}
+            {passwordError && (
+              <div className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{passwordError}</div>
+            )}
+            <Field label="Current password">
+              <input
+                type="password"
+                required
+                value={passwordForm.current_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                className="input"
+              />
+            </Field>
+            <Field label="New password">
+              <input
+                type="password"
+                required
+                minLength={12}
+                placeholder="Min 12 chars, upper/lower/digit/special"
+                value={passwordForm.new_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                className="input"
+              />
+            </Field>
+            <button type="submit" disabled={changingPassword} className="btn-primary !px-5">
+              {changingPassword ? 'Updating…' : 'Update password'}
+            </button>
           </form>
         )}
       </section>

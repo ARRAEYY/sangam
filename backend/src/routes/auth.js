@@ -6,6 +6,7 @@ const { signToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
+const { requireAuth } = require('../middleware/auth')
 
 const router = express.Router()
 
@@ -259,6 +260,81 @@ router.post('/resend-verification', authLimiter, async (req, res, next) => {
       message: 'If an account with that email exists, a verification link has been sent.',
       verify_url: process.env.NODE_ENV !== 'production' ? verifyUrl : undefined,
     })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Forgot password ─────────────────────────────────────────
+
+router.post('/forgot-password', authLimiter, async (req, res, next) => {
+  try {
+    const email = normalizeEmail(req.body?.email)
+    if (!email) {
+      return res.status(400).json({ detail: 'Email is required.' })
+    }
+    if (!isCampusEmail(email)) {
+      return res.status(400).json({
+        detail: 'Only Rishihood email addresses are allowed.',
+      })
+    }
+
+    const user = await User.findOne({ where: { email } })
+    if (!user) {
+      // Don't reveal whether the account exists
+      return res.json({
+        message: 'If an account with that email exists, a temporary password has been sent.',
+      })
+    }
+
+    // Generate a random 16-char temporary password
+    const tempPassword = crypto.randomBytes(8).toString('hex') + 'A1!'
+    const tempHash = await bcrypt.hash(tempPassword, 10)
+    await user.update({ password_hash: tempHash })
+
+    // Log to console (in production, send via email/SMTP)
+    console.log(`\n🔑 Temporary password for ${email}: ${tempPassword}\n`)
+
+    return res.json({
+      message: 'If an account with that email exists, a temporary password has been sent.',
+      // Expose in non-production so the user can see it during development
+      temp_password: process.env.NODE_ENV !== 'production' ? tempPassword : undefined,
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Change password (authenticated) ─────────────────────────
+
+router.post('/change-password', requireAuth, async (req, res, next) => {
+  try {
+    const currentPassword = String(req.body?.current_password || '')
+    const newPassword = String(req.body?.new_password || '')
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ detail: 'Current password and new password are required.' })
+    }
+
+    const user = await User.findByPk(req.user.id)
+    if (!user) {
+      return res.status(404).json({ detail: 'User not found.' })
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password_hash)
+    if (!isValid) {
+      return res.status(401).json({ detail: 'Current password is incorrect.' })
+    }
+
+    const pwResult = validatePassword(newPassword)
+    if (!pwResult.valid) {
+      return res.status(400).json({ detail: pwResult.errors.join(' ') })
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10)
+    await user.update({ password_hash: newHash })
+
+    return res.json({ message: 'Password changed successfully.' })
   } catch (error) {
     return next(error)
   }

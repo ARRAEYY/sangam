@@ -36,6 +36,11 @@ export default function Auth() {
   const [resendEmail, setResendEmail] = useState('')
   const [resendSuccess, setResendSuccess] = useState('')
 
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotMsg, setForgotMsg] = useState('')
+  const [forgotSubmitting, setForgotSubmitting] = useState(false)
+
   const { login, register } = useAuth()
   const navigate = useNavigate()
 
@@ -72,6 +77,24 @@ export default function Auth() {
       }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setForgotMsg('')
+    setForgotSubmitting(true)
+    try {
+      const res = await api.forgotPassword(forgotEmail)
+      setForgotMsg(res.message || 'A temporary password has been sent to your email.')
+      if (res.temp_password) {
+        setForgotMsg(`Temporary password: ${res.temp_password} — use it to log in, then change your password from the dashboard.`)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setForgotSubmitting(false)
     }
   }
 
@@ -162,28 +185,60 @@ export default function Auth() {
         )}
 
         {mode === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <Field label="Campus email">
-              <input
-                type="email"
-                required
-                placeholder="you@depart.rishihood.edu.in"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                className="input"
-              />
-            </Field>
-            <Field label="Password">
-              <input
-                type="password"
-                required
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="input"
-              />
-            </Field>
-            <SubmitButton submitting={submitting} label="Sign in" />
-          </form>
+          <>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Field label="Campus email">
+                <input
+                  type="email"
+                  required
+                  placeholder="you@depart.rishihood.edu.in"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <Field label="Password">
+                <input
+                  type="password"
+                  required
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <SubmitButton submitting={submitting} label="Sign in" />
+            </form>
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => { setForgotMode(!forgotMode); setForgotMsg(''); setError(''); }}
+                className="text-sm font-medium text-brand-600 hover:text-brand-700 transition"
+              >
+                Forgot password?
+              </button>
+            </div>
+            {forgotMode && (
+              <form onSubmit={handleForgotPassword} className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs text-slate-600">
+                  Enter your campus email and we'll send you a temporary password.
+                </p>
+                {forgotMsg && (
+                  <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{forgotMsg}</div>
+                )}
+                <Field label="Campus email">
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@depart.rishihood.edu.in"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="input bg-white"
+                  />
+                </Field>
+                <SubmitButton submitting={forgotSubmitting} label="Reset password" />
+              </form>
+            )}
+          </>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
             <Field label="Full name">
