@@ -94,11 +94,9 @@ export default function Navbar() {
     <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-3.5 py-3 sm:px-6">
         {/* Brand / Logo - Sangam */}
-        <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm sm:h-9 sm:w-9">
-            <SangamEmblem size={20} className="text-white" />
-          </span>
-          <span className="font-sans text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+        <Link to="/" className="flex items-center gap-2.5">
+          <SangamEmblem size={28} className="text-slate-900" />
+          <span className="font-sans text-xl font-bold tracking-tight text-slate-900">
             Sangam
           </span>
         </Link>

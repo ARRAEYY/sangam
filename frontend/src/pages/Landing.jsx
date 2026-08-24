@@ -36,9 +36,7 @@ export default function Landing() {
         </svg>
 
         <div className="relative">
-          <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10 text-white ring-1 ring-white/20 backdrop-blur shadow-inner">
-            <SangamEmblem size={34} className="text-white" />
-          </span>
+          <SangamEmblem size={48} className="mx-auto mb-6 text-white" />
           <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
             Find your next co-founder,
             <br className="hidden sm:block" /> teammate, or hackathon squad.
