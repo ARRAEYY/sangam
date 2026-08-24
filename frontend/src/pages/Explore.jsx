@@ -40,12 +40,12 @@ export default function Explore() {
         </div>
         <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center gap-2">
           <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               value={skill}
               onChange={(e) => setSkill(e.target.value)}
               placeholder="Filter by skill, e.g. React"
-              className="input pl-10 text-xs sm:text-sm"
+              className="input !pl-10 text-xs sm:text-sm"
             />
           </div>
           <button type="submit" className="btn-primary shrink-0 !px-4 !py-2.5 text-xs sm:text-sm">
