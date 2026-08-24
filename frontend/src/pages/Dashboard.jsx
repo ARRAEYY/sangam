@@ -480,6 +480,11 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-500">
                     {req.requester.branch} · Class of {req.requester.graduation_year}
                   </p>
+                  {req.message && (
+                    <p className="mt-2 text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 italic">
+                      "{req.message}"
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
