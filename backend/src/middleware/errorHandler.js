@@ -6,8 +6,10 @@ function errorHandler(err, req, res, next) {
     console.error(err)
   }
 
-  // Temporarily expose full error detail to diagnose production 500s
-  const detail = err.message || 'Something went wrong.'
+  // Only expose custom error messages for 4xx client errors; sanitize 5xx server errors
+  const detail = isServerError
+    ? 'Internal server error. Please try again later.'
+    : err.message || 'Something went wrong.'
 
   res.status(status).json({ detail })
 }

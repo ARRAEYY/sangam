@@ -53,11 +53,15 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
 export const api = {
   register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
+  loginWithGoogle: (credential) =>
+    request('/api/auth/google', { method: 'POST', body: { credential } }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   resendVerification: (email) =>
     request('/api/auth/resend-verification', { method: 'POST', body: { email } }),
   forgotPassword: (email) =>
     request('/api/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, new_password) =>
+    request('/api/auth/reset-password', { method: 'POST', body: { token, new_password } }),
   changePassword: (current_password, new_password, token) =>
     request('/api/auth/change-password', { method: 'POST', body: { current_password, new_password }, token }),
   getPasswordRules: () => request('/api/auth/password-rules'),
@@ -66,18 +70,36 @@ export const api = {
   getUserPublicProfile: (id, token) => request(`/api/users/${id}/public`, { token }),
   updateProfile: (payload, token) =>
     request('/api/users/profile', { method: 'PATCH', body: payload, token }),
+  deleteAccount: (token) =>
+    request('/api/users/profile', { method: 'DELETE', token }),
   searchTalent: (params) => request('/api/users/talent', { params }),
 
+  // Experience
   addExperience: (payload, token) => request('/api/users/experience', { method: 'POST', body: payload, token }),
   editExperience: (id, payload, token) => request(`/api/users/experience/${id}`, { method: 'PUT', body: payload, token }),
   deleteExperience: (id, token) => request(`/api/users/experience/${id}`, { method: 'DELETE', token }),
 
+  // Education
+  getEducation: (token) => request('/api/users/education', { token }),
+  addEducation: (payload, token) => request('/api/users/education', { method: 'POST', body: payload, token }),
+  editEducation: (id, payload, token) => request(`/api/users/education/${id}`, { method: 'PUT', body: payload, token }),
+  deleteEducation: (id, token) => request(`/api/users/education/${id}`, { method: 'DELETE', token }),
+
+  // Achievements
+  getAchievements: (token) => request('/api/users/achievements', { token }),
+  addAchievement: (payload, token) => request('/api/users/achievements', { method: 'POST', body: payload, token }),
+  editAchievement: (id, payload, token) => request(`/api/users/achievements/${id}`, { method: 'PUT', body: payload, token }),
+  deleteAchievement: (id, token) => request(`/api/users/achievements/${id}`, { method: 'DELETE', token }),
+
+  // Projects
   listProjects: (params) => request('/api/projects', { params }),
   getProject: (id) => request(`/api/projects/${id}`),
   createProject: (payload, token) =>
     request('/api/projects', { method: 'POST', body: payload, token }),
   editProject: (id, payload, token) =>
     request(`/api/projects/${id}`, { method: 'PUT', body: payload, token }),
+  deleteProject: (id, token) =>
+    request(`/api/projects/${id}`, { method: 'DELETE', token }),
   updateProjectStatus: (id, status, token) =>
     request(`/api/projects/${id}/status`, { method: 'PATCH', body: { status }, token }),
   applyToProject: (id, payload, token) =>
@@ -112,4 +134,6 @@ export const api = {
   withdrawConnectionRequest: (id, token) =>
     request(`/api/connections/requests/${id}`, { method: 'DELETE', token }),
   listConnections: (token) => request('/api/connections', { token }),
+  removeConnection: (id, token) =>
+    request(`/api/connections/${id}`, { method: 'DELETE', token }),
 }

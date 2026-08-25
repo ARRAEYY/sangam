@@ -36,6 +36,17 @@ export function AuthProvider({ children }) {
     return profile
   }
 
+  const loginWithGoogle = async (credential) => {
+    const data = await api.loginWithGoogle(credential)
+    if (data.access_token) {
+      localStorage.setItem('campus_token', data.access_token)
+      setToken(data.access_token)
+    }
+    const profile = data.user || (await api.getProfile(data.access_token))
+    setUser(profile)
+    return profile
+  }
+
   const register = async (payload) => {
     const result = await api.register(payload)
     return result
@@ -63,7 +74,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, user, loading, login, register, logout, refreshProfile }}
+      value={{ token, user, loading, login, loginWithGoogle, register, logout, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

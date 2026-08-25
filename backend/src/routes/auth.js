@@ -1,13 +1,14 @@
 const express = require('express')
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
+const { Sequelize, Op } = require('sequelize')
 const { sequelize, User, Skill } = require('../models')
 const { signToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
 const { requireAuth } = require('../middleware/auth')
-const { sendForgotPasswordEmail } = require('../utils/mailer')
+const { sendPasswordResetEmail } = require('../utils/mailer')
 
 const router = express.Router()
 
@@ -25,12 +26,7 @@ function isCampusEmail(email) {
   const domain = String(email || '').trim().toLowerCase().split('@')[1]
   if (!domain) return false
   // Allows any department under Rishihood (e.g. name.enroll@depart.rishihood.edu.in or you@rishihood.edu.in)
-  return (
-    domain === 'rishihood.edu.in' ||
-    domain.endsWith('.rishihood.edu.in') ||
-    domain === 'rishiood.edu.in' ||
-    domain.endsWith('.rishiood.edu.in')
-  )
+  return domain === 'rishihood.edu.in' || domain.endsWith('.rishihood.edu.in')
 }
 
 async function assignSkills(user, skills = [], options = {}) {
@@ -38,7 +34,10 @@ async function assignSkills(user, skills = [], options = {}) {
 
   const skillRecords = await Promise.all(
     names.map(async (name) => {
-      const record = await Skill.findOne({ where: { name }, ...options })
+      const record = await Skill.findOne({
+        where: Sequelize.where(Sequelize.fn('lower', Sequelize.col('name')), name.toLowerCase()),
+        ...options,
+      })
       if (record) return record
       return Skill.create({ name }, options)
     })
@@ -204,6 +203,12 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ detail: 'Invalid email or password.' })
     }
 
+    if (!user.password_hash) {
+      return res.status(400).json({
+        detail: 'This account was created with Google Sign-In. Please sign in with Google.',
+      })
+    }
+
     const isValid = await bcrypt.compare(password, user.password_hash)
     if (!isValid) {
       return res.status(401).json({ detail: 'Invalid email or password.' })
@@ -272,7 +277,7 @@ router.post('/resend-verification', authLimiter, async (req, res, next) => {
   }
 })
 
-// ─── Forgot password ─────────────────────────────────────────
+// ─── Forgot password (sends expiring scoped reset token) ──────
 
 router.post('/forgot-password', authLimiter, async (req, res, next) => {
   try {
@@ -294,11 +299,22 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
       })
     }
 
-    // Generate a random 16-char temporary password
-    const tempPassword = crypto.randomBytes(8).toString('hex') + 'A1!'
+    // Generate a secure 32-byte random token
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
 
-    // Attempt email delivery first BEFORE mutating database state to prevent locking out user on mail delivery failure
-    const mailResult = await sendForgotPasswordEmail(email, tempPassword)
+    // Save hashed token and expiry in DB
+    await user.update({
+      password_reset_token: hashedToken,
+      password_reset_expires_at: expiresAt,
+    })
+
+    const frontendUrl = process.env.CORS_ORIGINS?.split(',')[0]?.trim() || 'http://localhost:5173'
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`
+
+    // Send reset email containing the scoped reset link
+    const mailResult = await sendPasswordResetEmail(email, resetUrl)
 
     if (mailResult && !mailResult.sent && !mailResult.simulated) {
       console.error(`[AUTH FORGOT PASSWORD ERROR] Email delivery failed for ${email}: ${mailResult.error}`)
@@ -307,16 +323,65 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
       })
     }
 
-    // Hash and persist temporary password only after mail sending succeeded (or simulated in dev)
-    const tempHash = await bcrypt.hash(tempPassword, 10)
-    await user.update({ password_hash: tempHash })
-
     const isDevSimulated = mailResult && mailResult.simulated
 
     return res.json({
       message: isDevSimulated && process.env.NODE_ENV !== 'production'
-        ? 'Password reset initiated. (Note: Local backend has no RESEND_API_KEY in .env — temporary password printed to terminal console).'
+        ? `Password reset link generated for dev: ${resetUrl}`
         : 'If an account with that email exists, password reset instructions have been sent to your email.',
+      reset_url: isDevSimulated && process.env.NODE_ENV !== 'production' ? resetUrl : undefined,
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Reset password (verifies token and sets new password) ───
+
+router.post('/reset-password', authLimiter, async (req, res, next) => {
+  try {
+    const token = String(req.body?.token || '').trim()
+    const newPassword = String(req.body?.new_password || '').trim()
+
+    if (!token) {
+      return res.status(400).json({ detail: 'Password reset token is required.' })
+    }
+    if (!newPassword) {
+      return res.status(400).json({ detail: 'New password is required.' })
+    }
+
+    const pwResult = validatePassword(newPassword)
+    if (!pwResult.valid) {
+      return res.status(400).json({ detail: pwResult.errors.join(' ') })
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+
+    const user = await User.findOne({
+      where: {
+        password_reset_token: hashedToken,
+        password_reset_expires_at: {
+          [Op.gt]: new Date(),
+        },
+      },
+    })
+
+    if (!user) {
+      return res.status(400).json({
+        detail: 'Invalid or expired password reset link. Please request a new one.',
+      })
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10)
+
+    await user.update({
+      password_hash: newHash,
+      password_reset_token: null,
+      password_reset_expires_at: null,
+    })
+
+    return res.json({
+      message: 'Your password has been successfully reset. You can now log in with your new password.',
     })
   } catch (error) {
     return next(error)
@@ -353,6 +418,74 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
     await user.update({ password_hash: newHash })
 
     return res.json({ message: 'Password changed successfully.' })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Google OAuth Sign-In / Sign-Up ──────────────────────────
+
+router.post('/google', authLimiter, async (req, res, next) => {
+  try {
+    const credential = String(req.body?.credential || '').trim()
+    if (!credential) {
+      return res.status(400).json({ detail: 'Google credential ID token is required.' })
+    }
+
+    // Verify token with Google's tokeninfo API
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`)
+    const payload = await response.json()
+
+    if (!response.ok || !payload.email) {
+      return res.status(401).json({ detail: payload.error_description || 'Invalid Google credential token.' })
+    }
+
+    const email = normalizeEmail(payload.email)
+    if (!isCampusEmail(email)) {
+      return res.status(400).json({
+        detail: 'Only Rishihood email addresses (e.g. you@depart.rishihood.edu.in) are permitted to sign in.',
+      })
+    }
+
+    const googleId = payload.sub
+    let user = await User.findOne({
+      where: {
+        [Op.or]: [{ google_id: googleId }, { email }],
+      },
+      include: [{ model: Skill, as: 'skills' }],
+    })
+
+    if (user) {
+      // Update existing user with Google ID and verified status
+      const updates = {}
+      if (!user.google_id) updates.google_id = googleId
+      if (!user.email_verified) updates.email_verified = true
+      if (!user.avatar_url && payload.picture) updates.avatar_url = payload.picture
+      if (Object.keys(updates).length > 0) {
+        await user.update(updates)
+      }
+    } else {
+      // Create new user account via Google
+      const currentYear = new Date().getFullYear()
+      user = await User.create({
+        email,
+        full_name: payload.name || email.split('@')[0],
+        google_id: googleId,
+        auth_provider: 'GOOGLE',
+        email_verified: true,
+        branch: 'General',
+        graduation_year: currentYear + 2,
+        avatar_url: payload.picture || null,
+      })
+      user = await User.findByPk(user.id, {
+        include: [{ model: Skill, as: 'skills' }],
+      })
+    }
+
+    const jwt = signToken(user)
+    setTokenCookie(res, jwt)
+
+    return res.json({ access_token: jwt, user: serializeUser(user) })
   } catch (error) {
     return next(error)
   }

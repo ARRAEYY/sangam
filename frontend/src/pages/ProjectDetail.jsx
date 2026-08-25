@@ -81,10 +81,10 @@ export default function ProjectDetail() {
   }
 
   const handleDeleteProject = async () => {
-    if (!window.confirm('Are you sure you want to delete this project? It will be moved to your past projects.')) return
+    if (!window.confirm('Are you sure you want to permanently delete this project? This cannot be undone.')) return
     try {
-      await api.updateProjectStatus(id, 'ARCHIVED', token)
-      navigate('/')
+      await api.deleteProject(id, token)
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     }

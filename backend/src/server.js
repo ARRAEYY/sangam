@@ -16,6 +16,9 @@ const { generalLimiter } = require('./middleware/rateLimit')
 const app = express()
 const port = Number(process.env.PORT || 8000)
 
+// Trust the first proxy (Render, Cloudflare, etc.) so req.ip reflects real client IP for rate limiting
+app.set('trust proxy', 1)
+
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -89,6 +92,18 @@ async function start() {
       if (!tableInfo.email_verification_token) {
         await queryInterface.addColumn('users', 'email_verification_token', {
           type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+      if (!tableInfo.password_reset_token) {
+        await queryInterface.addColumn('users', 'password_reset_token', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+      if (!tableInfo.password_reset_expires_at) {
+        await queryInterface.addColumn('users', 'password_reset_expires_at', {
+          type: sequelize.Sequelize.DATE,
           allowNull: true,
         })
       }

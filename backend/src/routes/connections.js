@@ -188,4 +188,33 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 })
 
+// Remove an established connection by connection ID or other user's ID
+router.delete('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const targetId = req.params.id
+
+    // Try finding by connection ID first
+    let connection = await Connection.findByPk(targetId)
+
+    // If not found by connection ID, try finding by other user's ID
+    if (!connection) {
+      const [user_a_id, user_b_id] = orderedPair(req.user.id, targetId)
+      connection = await Connection.findOne({ where: { user_a_id, user_b_id } })
+    }
+
+    if (!connection) {
+      return res.status(404).json({ detail: 'Connection not found.' })
+    }
+
+    if (connection.user_a_id !== req.user.id && connection.user_b_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only remove your own connections.' })
+    }
+
+    await connection.destroy()
+    return res.json({ message: 'Connection removed successfully.' })
+  } catch (error) {
+    return next(error)
+  }
+})
+
 module.exports = router

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Search, Github, Linkedin, Globe, UserPlus, Check, X as XIcon, Briefcase, FolderGit2 } from 'lucide-react'
+import { Search, Github, Linkedin, Globe, UserPlus, Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -238,14 +238,71 @@ export default function TalentSearch() {
                 <>
                   {selectedUser.experiences && selectedUser.experiences.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2"><Briefcase size={16} className="text-slate-400"/> Work Experience</h3>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Briefcase size={16} className="text-slate-400" /> Work Experience
+                      </h3>
                       <div className="space-y-4">
-                        {selectedUser.experiences.map(exp => (
+                        {selectedUser.experiences.map((exp) => (
                           <div key={exp.id} className="border-l-2 border-brand-200 pl-4">
                             <h4 className="font-semibold text-slate-800">{exp.role}</h4>
                             <p className="text-sm text-brand-600">{exp.organization}</p>
-                            <p className="text-xs text-slate-500 mb-1">{new Date(exp.start_date).toLocaleDateString()} - {exp.end_date ? new Date(exp.end_date).toLocaleDateString() : 'Present'}</p>
+                            <p className="text-xs text-slate-500 mb-1">
+                              {new Date(exp.start_date).toLocaleDateString()} -{' '}
+                              {exp.end_date ? new Date(exp.end_date).toLocaleDateString() : 'Present'}
+                            </p>
                             {exp.description && <p className="text-sm text-slate-600">{exp.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUser.educations && selectedUser.educations.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <GraduationCap size={16} className="text-slate-400" /> Education
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedUser.educations.map((edu) => (
+                          <div key={edu.id} className="border-l-2 border-brand-200 pl-4">
+                            <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
+                            <p className="text-sm text-slate-600">
+                              {edu.institution}
+                              {edu.department ? ` (${edu.department})` : ''}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {edu.start_year} - {edu.graduation_year || 'Present'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUser.achievements && selectedUser.achievements.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Award size={16} className="text-slate-400" /> Achievements
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedUser.achievements.map((ach) => (
+                          <div key={ach.id} className="border-l-2 border-brand-200 pl-4">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-slate-800">{ach.title}</h4>
+                              <span className="pill bg-brand-50 text-brand-700 text-[10px] py-0.5">{ach.type}</span>
+                            </div>
+                            {ach.issuer && <p className="text-sm text-slate-600">{ach.issuer}</p>}
+                            {ach.description && <p className="text-sm text-slate-600 mt-1">{ach.description}</p>}
+                            {ach.url && (
+                              <a
+                                href={ach.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-1 inline-block text-xs font-semibold text-brand-600 hover:underline"
+                              >
+                                View Credential →
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -254,9 +311,11 @@ export default function TalentSearch() {
 
                   {selectedUser.accepted_projects && selectedUser.accepted_projects.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2"><FolderGit2 size={16} className="text-slate-400"/> Projects Working On</h3>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <FolderGit2 size={16} className="text-slate-400" /> Projects Working On
+                      </h3>
                       <div className="grid sm:grid-cols-2 gap-3">
-                        {selectedUser.accepted_projects.map(proj => (
+                        {selectedUser.accepted_projects.map((proj) => (
                           <div key={proj.id} className="card p-3 bg-slate-50">
                             <h4 className="font-semibold text-slate-800 text-sm truncate">{proj.title}</h4>
                             <p className="text-xs text-slate-500 mt-1 line-clamp-2">{proj.description}</p>

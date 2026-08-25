@@ -73,6 +73,33 @@ function serializeExperience(experience) {
   }
 }
 
+function serializeEducation(education) {
+  if (!education) return null
+  const plain = education.toJSON ? education.toJSON() : education
+  return {
+    id: plain.id,
+    institution: plain.institution,
+    degree: plain.degree,
+    department: plain.department,
+    start_year: plain.start_year,
+    graduation_year: plain.graduation_year,
+  }
+}
+
+function serializeAchievement(achievement) {
+  if (!achievement) return null
+  const plain = achievement.toJSON ? achievement.toJSON() : achievement
+  return {
+    id: plain.id,
+    type: plain.type,
+    title: plain.title,
+    description: plain.description,
+    issuer: plain.issuer,
+    date_awarded: plain.date_awarded,
+    url: plain.url,
+  }
+}
+
 function serializeConnectionRequest(connectionRequest) {
   if (!connectionRequest) return null
   const plain = connectionRequest.toJSON ? connectionRequest.toJSON() : connectionRequest
@@ -148,4 +175,6 @@ module.exports = {
   serializeNotification,
   serializeConnectionRequest,
   serializeExperience,
+  serializeEducation,
+  serializeAchievement,
 }

@@ -1,5 +1,5 @@
 const express = require('express')
-const { Op } = require('sequelize')
+const { Op, Sequelize } = require('sequelize')
 const { sequelize, Project, User, Skill, Application } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { serializeProject, serializeApplication } = require('../utils/serializers')
@@ -11,7 +11,10 @@ async function assignSkills(project, skills = [], options = {}) {
   const uniqueSkills = [...new Set((skills || []).map((skill) => String(skill).trim()).filter(Boolean))]
   const skillRecords = await Promise.all(
     uniqueSkills.map(async (name) => {
-      const record = await Skill.findOne({ where: { name }, ...options })
+      const record = await Skill.findOne({
+        where: Sequelize.where(Sequelize.fn('lower', Sequelize.col('name')), name.toLowerCase()),
+        ...options,
+      })
       if (record) return record
       return Skill.create({ name }, options)
     })
@@ -277,6 +280,35 @@ router.get('/:id/apps', requireAuth, async (req, res, next) => {
           : null,
       }))
     )
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.delete('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const project = await Project.findByPk(req.params.id)
+    if (!project) {
+      return res.status(404).json({ detail: 'Project not found.' })
+    }
+    if (project.owner_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only delete your own projects.' })
+    }
+
+    const { Notification } = require('../models')
+
+    await sequelize.transaction(async (t) => {
+      // Remove project notifications
+      await Notification.destroy({ where: { project_id: project.id }, transaction: t })
+      // Remove applications
+      await Application.destroy({ where: { project_id: project.id }, transaction: t })
+      // Clear required skills association
+      await project.setRequired_skills([], { transaction: t })
+      // Delete project
+      await project.destroy({ transaction: t })
+    })
+
+    return res.json({ message: 'Project deleted successfully.' })
   } catch (error) {
     return next(error)
   }

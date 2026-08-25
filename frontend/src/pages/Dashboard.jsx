@@ -1,6 +1,24 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Github, Linkedin, Globe, Pencil, Check, X as XIcon, UserCheck, UserX, Code2, Plus, Briefcase, Trash2, Lock } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Github,
+  Linkedin,
+  Globe,
+  Pencil,
+  Check,
+  X as XIcon,
+  UserCheck,
+  UserX,
+  UserMinus,
+  Code2,
+  Plus,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Trash2,
+  Lock,
+  AlertTriangle,
+} from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
@@ -14,7 +32,8 @@ const STATUS_COLORS = {
 }
 
 export default function Dashboard() {
-  const { user, token, refreshProfile } = useAuth()
+  const { user, token, refreshProfile, logout } = useAuth()
+  const navigate = useNavigate()
   const [myProjects, setMyProjects] = useState([])
   const [myApplications, setMyApplications] = useState([])
   const [editingProfile, setEditingProfile] = useState(false)
@@ -22,6 +41,8 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [pendingRequests, setPendingRequests] = useState([])
   const [connections, setConnections] = useState([])
+
+  // Work experience
   const [experiences, setExperiences] = useState([])
   const [showAddExperience, setShowAddExperience] = useState(false)
   const [experienceForm, setExperienceForm] = useState({
@@ -32,11 +53,38 @@ export default function Dashboard() {
     end_date: '',
   })
 
+  // Education
+  const [educations, setEducations] = useState([])
+  const [showAddEducation, setShowAddEducation] = useState(false)
+  const [educationForm, setEducationForm] = useState({
+    institution: '',
+    degree: '',
+    department: '',
+    start_year: new Date().getFullYear() - 2,
+    graduation_year: new Date().getFullYear() + 2,
+  })
+
+  // Achievements
+  const [achievements, setAchievements] = useState([])
+  const [showAddAchievement, setShowAddAchievement] = useState(false)
+  const [achievementForm, setAchievementForm] = useState({
+    type: 'HACKATHON',
+    title: '',
+    description: '',
+    issuer: '',
+    date_awarded: '',
+    url: '',
+  })
+
+  // Change password
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '' })
   const [passwordMsg, setPasswordMsg] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
+
+  // Account deletion
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
@@ -62,6 +110,18 @@ export default function Dashboard() {
     api.listConnections(token).then(setConnections).catch((err) => setError(err.message))
   }
 
+  const loadPortfolio = () => {
+    if (!user || !token) return
+    api
+      .getUserPublicProfile(user.id, token)
+      .then((data) => {
+        setExperiences(data.experiences || [])
+        setEducations(data.educations || [])
+        setAchievements(data.achievements || [])
+      })
+      .catch(console.error)
+  }
+
   useEffect(() => {
     if (!user) return
     api
@@ -72,10 +132,7 @@ export default function Dashboard() {
       .myApplications(token)
       .then(setMyApplications)
       .catch((err) => setError(err.message))
-    api
-      .getUserPublicProfile(user.id, token)
-      .then((data) => setExperiences(data.experiences || []))
-      .catch(console.error)
+    loadPortfolio()
     loadConnections()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token])
@@ -83,6 +140,16 @@ export default function Dashboard() {
   const respondToRequest = async (id, status) => {
     try {
       await api.respondToConnectionRequest(id, status, token)
+      loadConnections()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleRemoveConnection = async (connectionId) => {
+    if (!window.confirm('Are you sure you want to remove this connection?')) return
+    try {
+      await api.removeConnection(connectionId, token)
       loadConnections()
     } catch (err) {
       setError(err.message)
@@ -104,6 +171,7 @@ export default function Dashboard() {
       full_name: user.full_name,
       branch: user.branch,
       graduation_year: user.graduation_year,
+      avatar_url: user.avatar_url || '',
       headline: user.headline || '',
       location: user.location || '',
       bio: user.bio || '',
@@ -132,6 +200,7 @@ export default function Dashboard() {
     }
   }
 
+  // Work experience handlers
   const handleAddExperience = async (e) => {
     e.preventDefault()
     setError('')
@@ -149,9 +218,95 @@ export default function Dashboard() {
     if (!window.confirm('Delete this experience?')) return
     try {
       await api.deleteExperience(id, token)
-      setExperiences(experiences.filter(exp => exp.id !== id))
+      setExperiences(experiences.filter((exp) => exp.id !== id))
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  // Education handlers
+  const handleAddEducation = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const added = await api.addEducation(
+        {
+          ...educationForm,
+          start_year: Number(educationForm.start_year),
+          graduation_year: educationForm.graduation_year ? Number(educationForm.graduation_year) : null,
+        },
+        token
+      )
+      setEducations([added, ...educations])
+      setShowAddEducation(false)
+      setEducationForm({
+        institution: '',
+        degree: '',
+        department: '',
+        start_year: new Date().getFullYear() - 2,
+        graduation_year: new Date().getFullYear() + 2,
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteEducation = async (id) => {
+    if (!window.confirm('Delete this education record?')) return
+    try {
+      await api.deleteEducation(id, token)
+      setEducations(educations.filter((edu) => edu.id !== id))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  // Achievement handlers
+  const handleAddAchievement = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const added = await api.addAchievement(achievementForm, token)
+      setAchievements([added, ...achievements])
+      setShowAddAchievement(false)
+      setAchievementForm({
+        type: 'HACKATHON',
+        title: '',
+        description: '',
+        issuer: '',
+        date_awarded: '',
+        url: '',
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteAchievement = async (id) => {
+    if (!window.confirm('Delete this achievement?')) return
+    try {
+      await api.deleteAchievement(id, token)
+      setAchievements(achievements.filter((ach) => ach.id !== id))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  // Account deletion
+  const handleDeleteAccount = async () => {
+    const confirmPrompt = window.prompt(
+      'WARNING: This will permanently delete your account, projects, applications, connections, and portfolio data.\\n\\nType DELETE to confirm:'
+    )
+    if (confirmPrompt !== 'DELETE') return
+
+    setDeletingAccount(true)
+    try {
+      await api.deleteAccount(token)
+      await logout()
+      navigate('/')
+    } catch (err) {
+      setError(err.message)
+      setDeletingAccount(false)
     }
   }
 
@@ -173,9 +328,17 @@ export default function Dashboard() {
           <>
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex items-center gap-3.5 sm:gap-4">
-                <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-brand-50 text-base sm:text-lg font-bold text-brand-600">
-                  {initials}
-                </span>
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name}
+                    className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-full object-cover border border-slate-200"
+                  />
+                ) : (
+                  <span className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-brand-50 text-base sm:text-lg font-bold text-brand-600">
+                    {initials}
+                  </span>
+                )}
                 <div className="min-w-0">
                   <h1 className="font-display text-lg sm:text-xl font-semibold text-slate-900 truncate">{user.full_name}</h1>
                   <p className="text-xs sm:text-sm text-slate-500">
@@ -249,16 +412,26 @@ export default function Dashboard() {
                 />
               </Field>
             </div>
-            <Field label="Graduation year">
-              <input
-                type="number"
-                min={new Date().getFullYear() - 5}
-                max={new Date().getFullYear() + 5}
-                className="input max-w-[160px]"
-                value={profileDraft.graduation_year}
-                onChange={(e) => setProfileDraft({ ...profileDraft, graduation_year: e.target.value })}
-              />
-            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Graduation year">
+                <input
+                  type="number"
+                  min={new Date().getFullYear() - 5}
+                  max={new Date().getFullYear() + 5}
+                  className="input"
+                  value={profileDraft.graduation_year}
+                  onChange={(e) => setProfileDraft({ ...profileDraft, graduation_year: e.target.value })}
+                />
+              </Field>
+              <Field label="Avatar image URL (optional)">
+                <input
+                  className="input"
+                  placeholder="https://example.com/photo.jpg"
+                  value={profileDraft.avatar_url}
+                  onChange={(e) => setProfileDraft({ ...profileDraft, avatar_url: e.target.value })}
+                />
+              </Field>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Headline (optional)">
                 <input
@@ -387,6 +560,7 @@ export default function Dashboard() {
         )}
       </section>
 
+      {/* Work Experience */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-semibold text-slate-900">Work experience</h2>
@@ -455,6 +629,230 @@ export default function Dashboard() {
         )}
       </section>
 
+      {/* Education */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-lg font-semibold text-slate-900">Education</h2>
+          <button onClick={() => setShowAddEducation(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+            <Plus size={13} /> Add
+          </button>
+        </div>
+
+        {showAddEducation && (
+          <form onSubmit={handleAddEducation} className="card p-4 sm:p-5 mb-4 space-y-3 bg-slate-50 border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Institution *">
+                <input
+                  required
+                  placeholder="e.g. Rishihood University"
+                  className="input bg-white"
+                  value={educationForm.institution}
+                  onChange={(e) => setEducationForm({ ...educationForm, institution: e.target.value })}
+                />
+              </Field>
+              <Field label="Degree *">
+                <input
+                  required
+                  placeholder="e.g. B.Tech in Computer Science"
+                  className="input bg-white"
+                  value={educationForm.degree}
+                  onChange={(e) => setEducationForm({ ...educationForm, degree: e.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Department (optional)">
+                <input
+                  placeholder="e.g. Newton School of Technology"
+                  className="input bg-white"
+                  value={educationForm.department}
+                  onChange={(e) => setEducationForm({ ...educationForm, department: e.target.value })}
+                />
+              </Field>
+              <Field label="Start Year *">
+                <input
+                  required
+                  type="number"
+                  className="input bg-white"
+                  value={educationForm.start_year}
+                  onChange={(e) => setEducationForm({ ...educationForm, start_year: e.target.value })}
+                />
+              </Field>
+              <Field label="Graduation Year">
+                <input
+                  type="number"
+                  className="input bg-white"
+                  value={educationForm.graduation_year}
+                  onChange={(e) => setEducationForm({ ...educationForm, graduation_year: e.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary !px-5 text-sm">Save</button>
+              <button type="button" onClick={() => setShowAddEducation(false)} className="btn-secondary !px-4 text-sm">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {educations.length === 0 && !showAddEducation ? (
+          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
+            No education records added yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {educations.map((edu) => (
+              <div key={edu.id} className="card p-4 flex gap-3">
+                <div className="mt-1">
+                  <GraduationCap className="text-slate-400" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{edu.degree}</h3>
+                      <p className="text-sm text-slate-600">{edu.institution}{edu.department ? ` (${edu.department})` : ''}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {edu.start_year} - {edu.graduation_year || 'Present'}
+                      </p>
+                    </div>
+                    <button onClick={() => handleDeleteEducation(edu.id)} className="text-slate-400 hover:text-red-600 p-1">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Achievements & Awards */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-lg font-semibold text-slate-900">Achievements & Certifications</h2>
+          <button onClick={() => setShowAddAchievement(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+            <Plus size={13} /> Add
+          </button>
+        </div>
+
+        {showAddAchievement && (
+          <form onSubmit={handleAddAchievement} className="card p-4 sm:p-5 mb-4 space-y-3 bg-slate-50 border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Category *">
+                <select
+                  className="input bg-white"
+                  value={achievementForm.type}
+                  onChange={(e) => setAchievementForm({ ...achievementForm, type: e.target.value })}
+                >
+                  <option value="HACKATHON">Hackathon</option>
+                  <option value="CERTIFICATION">Certification</option>
+                  <option value="AWARD">Award / Honor</option>
+                  <option value="COMPETITION">Competition</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </Field>
+              <Field label="Title *">
+                <input
+                  required
+                  placeholder="e.g. Smart India Hackathon Winner"
+                  className="input bg-white"
+                  value={achievementForm.title}
+                  onChange={(e) => setAchievementForm({ ...achievementForm, title: e.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Issuer / Organization">
+                <input
+                  placeholder="e.g. Ministry of Education"
+                  className="input bg-white"
+                  value={achievementForm.issuer}
+                  onChange={(e) => setAchievementForm({ ...achievementForm, issuer: e.target.value })}
+                />
+              </Field>
+              <Field label="Date Awarded">
+                <input
+                  type="date"
+                  className="input bg-white"
+                  value={achievementForm.date_awarded}
+                  onChange={(e) => setAchievementForm({ ...achievementForm, date_awarded: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Credential URL / Link">
+              <input
+                placeholder="https://..."
+                className="input bg-white"
+                value={achievementForm.url}
+                onChange={(e) => setAchievementForm({ ...achievementForm, url: e.target.value })}
+              />
+            </Field>
+            <Field label="Description">
+              <textarea
+                rows={2}
+                className="input bg-white"
+                value={achievementForm.description}
+                onChange={(e) => setAchievementForm({ ...achievementForm, description: e.target.value })}
+              />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary !px-5 text-sm">Save</button>
+              <button type="button" onClick={() => setShowAddAchievement(false)} className="btn-secondary !px-4 text-sm">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {achievements.length === 0 && !showAddAchievement ? (
+          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
+            No achievements added yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {achievements.map((ach) => (
+              <div key={ach.id} className="card p-4 flex gap-3">
+                <div className="mt-1">
+                  <Award className="text-brand-500" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-900">{ach.title}</h3>
+                        <span className="pill bg-brand-50 text-brand-700 text-[10px] py-0.5">{ach.type}</span>
+                      </div>
+                      {ach.issuer && <p className="text-sm text-slate-600">{ach.issuer}</p>}
+                      {ach.date_awarded && (
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {new Date(ach.date_awarded).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                    <button onClick={() => handleDeleteAchievement(ach.id)} className="text-slate-400 hover:text-red-600 p-1">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  {ach.description && <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{ach.description}</p>}
+                  {ach.url && (
+                    <a
+                      href={ach.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                    >
+                      View Credential →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Projects */}
       <section className="mb-10">
         <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Your posted projects</h2>
         {myProjects.length === 0 ? (
@@ -492,7 +890,8 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section>
+      {/* Applications */}
+      <section className="mb-10">
         <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Your applications</h2>
         {myApplications.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
@@ -527,7 +926,8 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section id="connections" className="mt-10">
+      {/* Connection Requests */}
+      <section id="connections" className="mb-10">
         <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">
           Connection requests
           {pendingRequests.length > 0 && (
@@ -573,7 +973,8 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section className="mt-10">
+      {/* Your Connections */}
+      <section className="mb-10">
         <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">
           Your connections {connections.length > 0 && `(${connections.length})`}
         </h2>
@@ -588,25 +989,60 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {connections.map((c) => (
-              <div key={c.connection_id} className="card flex items-center gap-3 p-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
-                  {c.user.full_name
-                    .split(' ')
-                    .map((p) => p[0])
-                    .slice(0, 2)
-                    .join('')
-                    .toUpperCase()}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900">{c.user.full_name}</p>
-                  <p className="truncate text-xs text-slate-500">
-                    {c.user.branch} · Class of {c.user.graduation_year}
-                  </p>
+              <div key={c.connection_id} className="card flex items-center justify-between gap-3 p-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  {c.user.avatar_url ? (
+                    <img
+                      src={c.user.avatar_url}
+                      alt={c.user.full_name}
+                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200"
+                    />
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
+                      {c.user.full_name
+                        .split(' ')
+                        .map((p) => p[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-900">{c.user.full_name}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {c.user.branch} · Class of {c.user.graduation_year}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => handleRemoveConnection(c.connection_id)}
+                  title="Remove connection"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                >
+                  <UserMinus size={16} />
+                </button>
               </div>
             ))}
           </div>
         )}
+      </section>
+
+      {/* Danger Zone: Account Deletion */}
+      <section className="rounded-2xl border border-red-200 bg-red-50/50 p-5 sm:p-6">
+        <div className="flex items-center gap-2 text-red-800">
+          <AlertTriangle size={18} />
+          <h2 className="font-semibold text-sm uppercase tracking-wider">Danger Zone</h2>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-red-700">
+          Permanently delete your account and all associated data including your projects, applications, portfolio entries, and connections. This action cannot be undone.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          disabled={deletingAccount}
+          className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition disabled:opacity-50"
+        >
+          {deletingAccount ? 'Deleting account...' : 'Delete Account'}
+        </button>
       </section>
     </div>
   )

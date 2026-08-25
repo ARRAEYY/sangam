@@ -1,8 +1,26 @@
 const express = require('express')
-const { Op } = require('sequelize')
-const { sequelize, User, Skill, Experience, Application, Project } = require('../models')
+const { Op, Sequelize } = require('sequelize')
+const {
+  sequelize,
+  User,
+  Skill,
+  Experience,
+  Education,
+  Achievement,
+  Application,
+  Project,
+  Notification,
+  ConnectionRequest,
+  Connection,
+} = require('../models')
 const { requireAuth } = require('../middleware/auth')
-const { serializeUser, serializeExperience, serializeProject } = require('../utils/serializers')
+const {
+  serializeUser,
+  serializeExperience,
+  serializeEducation,
+  serializeAchievement,
+  serializeProject,
+} = require('../utils/serializers')
 
 const router = express.Router()
 
@@ -18,7 +36,10 @@ async function assignSkills(user, skills = [], options = {}) {
   const uniqueSkills = [...new Set((skills || []).map((skill) => String(skill).trim()).filter(Boolean))]
   const skillRecords = await Promise.all(
     uniqueSkills.map(async (name) => {
-      const record = await Skill.findOne({ where: { name }, ...options })
+      const record = await Skill.findOne({
+        where: Sequelize.where(Sequelize.fn('lower', Sequelize.col('name')), name.toLowerCase()),
+        ...options,
+      })
       if (record) return record
       return Skill.create({ name }, options)
     })
@@ -65,6 +86,7 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
       updates.graduation_year = value
     }
     if (payload.bio !== undefined) updates.bio = String(payload.bio || '') || null
+    if (payload.avatar_url !== undefined) updates.avatar_url = String(payload.avatar_url || '').trim() || null
     if (payload.github_url !== undefined) {
       const value = String(payload.github_url || '').trim()
       updates.github_url = value || null
@@ -91,6 +113,69 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
 
     const refreshed = await loadUserWithSkills(req.user.id)
     return res.json(serializeUser(refreshed))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// Self-service account deletion
+router.delete('/profile', requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id
+    const user = await User.findByPk(userId)
+    if (!user) {
+      return res.status(404).json({ detail: 'User not found.' })
+    }
+
+    await sequelize.transaction(async (t) => {
+      // 1. Delete notifications sent or received
+      await Notification.destroy({
+        where: { [Op.or]: [{ recipient_id: userId }, { actor_id: userId }] },
+        transaction: t,
+      })
+
+      // 2. Delete connections and connection requests
+      await Connection.destroy({
+        where: { [Op.or]: [{ user_a_id: userId }, { user_b_id: userId }] },
+        transaction: t,
+      })
+      await ConnectionRequest.destroy({
+        where: { [Op.or]: [{ requester_id: userId }, { recipient_id: userId }] },
+        transaction: t,
+      })
+
+      // 3. Delete portfolio items
+      await Experience.destroy({ where: { user_id: userId }, transaction: t })
+      await Education.destroy({ where: { user_id: userId }, transaction: t })
+      await Achievement.destroy({ where: { user_id: userId }, transaction: t })
+
+      // 4. Delete applications submitted by user
+      await Application.destroy({ where: { user_id: userId }, transaction: t })
+
+      // 5. Delete projects owned by user and their associated applications
+      const ownedProjects = await Project.findAll({ where: { owner_id: userId }, transaction: t })
+      for (const project of ownedProjects) {
+        await Application.destroy({ where: { project_id: project.id }, transaction: t })
+        await Notification.destroy({ where: { project_id: project.id }, transaction: t })
+        await project.setRequired_skills([], { transaction: t })
+        await project.destroy({ transaction: t })
+      }
+
+      // 6. Clear user skills
+      await user.setSkills([], { transaction: t })
+
+      // 7. Delete user
+      await user.destroy({ transaction: t })
+    })
+
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      path: '/',
+    })
+
+    return res.json({ message: 'Your account and all associated data have been permanently deleted.' })
   } catch (error) {
     return next(error)
   }
@@ -134,6 +219,16 @@ router.get('/:id/public', requireAuth, async (req, res, next) => {
       order: [['start_date', 'DESC']],
     })
 
+    const educations = await Education.findAll({
+      where: { user_id: req.params.id },
+      order: [['start_year', 'DESC']],
+    })
+
+    const achievements = await Achievement.findAll({
+      where: { user_id: req.params.id },
+      order: [['date_awarded', 'DESC'], ['created_at', 'DESC']],
+    })
+
     const applications = await Application.findAll({
       where: { user_id: req.params.id, status: 'ACCEPTED' },
       include: [{ model: Project, as: 'project' }],
@@ -141,6 +236,8 @@ router.get('/:id/public', requireAuth, async (req, res, next) => {
 
     const serializedUser = serializeUser(user)
     serializedUser.experiences = experiences.map(serializeExperience)
+    serializedUser.educations = educations.map(serializeEducation)
+    serializedUser.achievements = achievements.map(serializeAchievement)
     serializedUser.accepted_projects = applications.map(app => serializeProject(app.project))
 
     return res.json(serializedUser)
@@ -148,6 +245,8 @@ router.get('/:id/public', requireAuth, async (req, res, next) => {
     return next(error)
   }
 })
+
+// ─── Experience Endpoints ────────────────────────────────────
 
 router.post('/experience', requireAuth, async (req, res, next) => {
   try {
@@ -206,6 +305,166 @@ router.delete('/experience/:id', requireAuth, async (req, res, next) => {
     }
 
     await experience.destroy()
+    return res.status(204).send()
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Education Endpoints ─────────────────────────────────────
+
+router.get('/education', requireAuth, async (req, res, next) => {
+  try {
+    const educations = await Education.findAll({
+      where: { user_id: req.user.id },
+      order: [['start_year', 'DESC']],
+    })
+    return res.json(educations.map(serializeEducation))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.post('/education', requireAuth, async (req, res, next) => {
+  try {
+    const { institution, degree, department, start_year, graduation_year } = req.body
+    if (!institution || !degree || !start_year) {
+      return res.status(400).json({ detail: 'Institution, degree, and start_year are required.' })
+    }
+
+    const education = await Education.create({
+      user_id: req.user.id,
+      institution: String(institution).trim(),
+      degree: String(degree).trim(),
+      department: department ? String(department).trim() : null,
+      start_year: Number(start_year),
+      graduation_year: graduation_year ? Number(graduation_year) : null,
+    })
+
+    return res.status(201).json(serializeEducation(education))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.put('/education/:id', requireAuth, async (req, res, next) => {
+  try {
+    const education = await Education.findByPk(req.params.id)
+    if (!education) {
+      return res.status(404).json({ detail: 'Education record not found.' })
+    }
+    if (education.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only edit your own education records.' })
+    }
+
+    const { institution, degree, department, start_year, graduation_year } = req.body
+    if (institution) education.institution = String(institution).trim()
+    if (degree) education.degree = String(degree).trim()
+    if (department !== undefined) education.department = department ? String(department).trim() : null
+    if (start_year) education.start_year = Number(start_year)
+    if (graduation_year !== undefined) education.graduation_year = graduation_year ? Number(graduation_year) : null
+
+    await education.save()
+    return res.json(serializeEducation(education))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.delete('/education/:id', requireAuth, async (req, res, next) => {
+  try {
+    const education = await Education.findByPk(req.params.id)
+    if (!education) {
+      return res.status(404).json({ detail: 'Education record not found.' })
+    }
+    if (education.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only delete your own education records.' })
+    }
+
+    await education.destroy()
+    return res.status(204).send()
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Achievement Endpoints ───────────────────────────────────
+
+router.get('/achievements', requireAuth, async (req, res, next) => {
+  try {
+    const achievements = await Achievement.findAll({
+      where: { user_id: req.user.id },
+      order: [['date_awarded', 'DESC'], ['created_at', 'DESC']],
+    })
+    return res.json(achievements.map(serializeAchievement))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.post('/achievements', requireAuth, async (req, res, next) => {
+  try {
+    const { type, title, description, issuer, date_awarded, url } = req.body
+    if (!title) {
+      return res.status(400).json({ detail: 'Title is required.' })
+    }
+
+    const validTypes = Achievement.TYPES || ['HACKATHON', 'CERTIFICATION', 'AWARD', 'COMPETITION', 'OTHER']
+    const safeType = validTypes.includes(type) ? type : 'OTHER'
+
+    const achievement = await Achievement.create({
+      user_id: req.user.id,
+      type: safeType,
+      title: String(title).trim(),
+      description: description ? String(description).trim() : null,
+      issuer: issuer ? String(issuer).trim() : null,
+      date_awarded: date_awarded || null,
+      url: url ? String(url).trim() : null,
+    })
+
+    return res.status(201).json(serializeAchievement(achievement))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.put('/achievements/:id', requireAuth, async (req, res, next) => {
+  try {
+    const achievement = await Achievement.findByPk(req.params.id)
+    if (!achievement) {
+      return res.status(404).json({ detail: 'Achievement not found.' })
+    }
+    if (achievement.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only edit your own achievements.' })
+    }
+
+    const { type, title, description, issuer, date_awarded, url } = req.body
+    const validTypes = Achievement.TYPES || ['HACKATHON', 'CERTIFICATION', 'AWARD', 'COMPETITION', 'OTHER']
+    if (type && validTypes.includes(type)) achievement.type = type
+    if (title) achievement.title = String(title).trim()
+    if (description !== undefined) achievement.description = description ? String(description).trim() : null
+    if (issuer !== undefined) achievement.issuer = issuer ? String(issuer).trim() : null
+    if (date_awarded !== undefined) achievement.date_awarded = date_awarded || null
+    if (url !== undefined) achievement.url = url ? String(url).trim() : null
+
+    await achievement.save()
+    return res.json(serializeAchievement(achievement))
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.delete('/achievements/:id', requireAuth, async (req, res, next) => {
+  try {
+    const achievement = await Achievement.findByPk(req.params.id)
+    if (!achievement) {
+      return res.status(404).json({ detail: 'Achievement not found.' })
+    }
+    if (achievement.user_id !== req.user.id) {
+      return res.status(403).json({ detail: 'You can only delete your own achievements.' })
+    }
+
+    await achievement.destroy()
     return res.status(204).send()
   } catch (error) {
     return next(error)

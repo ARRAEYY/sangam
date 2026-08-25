@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import SkillTagInput from '../components/SkillTagInput.jsx'
+import GoogleSignInButton from '../components/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
 import { api } from '../api'
@@ -59,6 +60,9 @@ export default function Auth() {
     if (searchParams.get('verified') === 'true') {
       setInfoMsg('Your email has been verified successfully! You can now sign in.')
     }
+    if (searchParams.get('reset') === 'true') {
+      setInfoMsg('Your password has been reset successfully! Please sign in with your new password.')
+    }
   }, [searchParams])
 
   const handleLogin = async (e) => {
@@ -87,7 +91,7 @@ export default function Auth() {
     setForgotSubmitting(true)
     try {
       const res = await api.forgotPassword(forgotEmail)
-      setForgotMsg(res.message || 'If an account with that email exists, a temporary password has been sent to your email.')
+      setForgotMsg(res.message || 'If an account with that email exists, password reset instructions have been sent to your email.')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -183,6 +187,19 @@ export default function Auth() {
 
         {mode === 'login' ? (
           <>
+            <div className="mb-5">
+              <GoogleSignInButton
+                onSuccess={() => navigate('/explore')}
+                onError={(err) => setError(err)}
+              />
+              <div className="relative my-4 flex items-center justify-center">
+                <div className="w-full border-t border-slate-200" />
+                <span className="absolute bg-white px-2 text-xs uppercase tracking-wider text-slate-400">
+                  or with email
+                </span>
+              </div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-4">
               <Field label="Campus email">
                 <input
@@ -217,7 +234,7 @@ export default function Auth() {
             {forgotMode && (
               <form onSubmit={handleForgotPassword} className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs text-slate-600">
-                  Enter your campus email and we'll send you a temporary password.
+                  Enter your campus email and we'll send you a link to reset your password.
                 </p>
                 {forgotMsg && (
                   <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{forgotMsg}</div>
