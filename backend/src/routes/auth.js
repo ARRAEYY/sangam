@@ -288,22 +288,35 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
 
     const user = await User.findOne({ where: { email } })
     if (!user) {
-      // Don't reveal whether the account exists
+      // Generic message to prevent account enumeration
       return res.json({
-        message: 'If an account with that email exists, a temporary password has been sent.',
+        message: 'If an account with that email exists, password reset instructions have been sent.',
       })
     }
 
     // Generate a random 16-char temporary password
     const tempPassword = crypto.randomBytes(8).toString('hex') + 'A1!'
+
+    // Attempt email delivery first BEFORE mutating database state to prevent locking out user on mail delivery failure
+    const mailResult = await sendForgotPasswordEmail(email, tempPassword)
+
+    if (mailResult && !mailResult.sent && !mailResult.simulated) {
+      console.error(`[AUTH FORGOT PASSWORD ERROR] Email delivery failed for ${email}: ${mailResult.error}`)
+      return res.status(500).json({
+        detail: 'Email delivery service is currently unavailable. Please try again later or contact support.',
+      })
+    }
+
+    // Hash and persist temporary password only after mail sending succeeded (or simulated in dev)
     const tempHash = await bcrypt.hash(tempPassword, 10)
     await user.update({ password_hash: tempHash })
 
-    // Send email (via Nodemailer if SMTP configured, else logs to console)
-    await sendForgotPasswordEmail(email, tempPassword)
+    const isDevSimulated = mailResult && mailResult.simulated
 
     return res.json({
-      message: 'If an account with that email exists, a temporary password has been sent to your email.',
+      message: isDevSimulated && process.env.NODE_ENV !== 'production'
+        ? 'Password reset initiated. (Note: Local backend has no RESEND_API_KEY in .env — temporary password printed to terminal console).'
+        : 'If an account with that email exists, password reset instructions have been sent to your email.',
     })
   } catch (error) {
     return next(error)

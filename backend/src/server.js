@@ -96,6 +96,15 @@ async function start() {
       console.warn('Column check warning:', err.message)
     }
 
+    const { verifyTransporter } = require('./utils/mailer')
+    verifyTransporter().then((smtpStatus) => {
+      if (smtpStatus.configured) {
+        console.log(`[SMTP SETUP] ${smtpStatus.status}`)
+      } else {
+        console.warn(`[SMTP WARN] ${smtpStatus.status}`)
+      }
+    })
+
     app.listen(port, '0.0.0.0', () => {
       console.log(`Campus Platform API running on port ${port}`)
     })
