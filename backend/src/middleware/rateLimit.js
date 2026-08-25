@@ -81,18 +81,8 @@ function createLimiter({
   }
 }
 
-// Pre-configured limiters ────────────────────────────────────
-
-/** Auth endpoints: 5 attempts per 15 minutes per IP+email */
-const authLimiter = createLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  keyGenerator: (req) => {
-    const email = String(req.body?.email || '').trim().toLowerCase()
-    return `auth:${req.ip}:${email}`
-  },
-  message: 'Too many login attempts. Please try again in 15 minutes.',
-})
+/** Disabled auth rate limiter so users are never locked out after failed attempts */
+const authLimiter = (req, res, next) => next()
 
 /** General API: 100 requests per minute per IP */
 const generalLimiter = createLimiter({
