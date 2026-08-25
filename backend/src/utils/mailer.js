@@ -1,5 +1,15 @@
 const nodemailer = require('nodemailer')
 const { Resend } = require('resend')
+const dns = require('dns')
+
+// Enforce IPv4 result order globally in Node DNS resolver to prevent IPv6 ENETUNREACH on Render
+try {
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first')
+  }
+} catch (e) {
+  // Ignore if unsupported in host Node environment
+}
 
 /**
  * Creates nodemailer transporter if legacy SMTP environment variables are configured.
@@ -21,7 +31,10 @@ function createTransporter() {
       port: 587,
       secure: false, // TLS via STARTTLS
       auth: { user, pass },
-      family: 4, // Force IPv4 resolution to prevent ENETUNREACH IPv6 errors on cloud environments
+      family: 4, // Force IPv4 socket family
+      dnsLookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { family: 4 }, callback)
+      },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 10000,
