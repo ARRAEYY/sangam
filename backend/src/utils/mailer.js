@@ -17,8 +17,11 @@ function createTransporter() {
   if (process.env.GMAIL_USER || (host && host.includes('gmail'))) {
     pass = pass.replace(/\s+/g, '')
     return nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // TLS via STARTTLS
       auth: { user, pass },
+      family: 4, // Force IPv4 resolution to prevent ENETUNREACH IPv6 errors on cloud environments
       connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 10000,
