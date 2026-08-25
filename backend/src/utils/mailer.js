@@ -105,7 +105,36 @@ async function sendForgotPasswordEmail(toEmail, tempPassword) {
     </div>
   `
 
-  // 1. Primary path: Resend HTTPS API (Bypasses Render SMTP/port 465 IPv6 block)
+  // 1. Brevo HTTPS API (300 free emails/day to ANY address over Port 443, no domain verification required)
+  const brevoApiKey = (process.env.BREVO_API_KEY || '').trim()
+  if (brevoApiKey) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: 'Sangam Platform', email: process.env.GMAIL_USER || 'noreplysangam.team@gmail.com' },
+          to: [{ email: toEmail }],
+          subject,
+          htmlContent: html,
+        }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        console.log(`[BREVO SUCCESS] Password reset email sent to ${toEmail}. Message ID: ${data?.messageId || data?.messageId}`)
+        return { sent: true, simulated: false, provider: 'Brevo', messageId: data?.messageId }
+      }
+      console.error(`[BREVO WARN] Brevo API error for ${toEmail}: ${data?.message || JSON.stringify(data)}. Attempting next provider...`)
+    } catch (err) {
+      console.error(`[BREVO EXCEPTION] Failed to send email to ${toEmail}: ${err.message}. Attempting next provider...`)
+    }
+  }
+
+  // 2. Primary path: Resend HTTPS API (Bypasses Render SMTP/port 465 IPv6 block)
   if (resendApiKey) {
     try {
       const resend = new Resend(resendApiKey)
