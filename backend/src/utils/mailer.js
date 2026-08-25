@@ -103,16 +103,14 @@ async function sendForgotPasswordEmail(toEmail, tempPassword) {
         html,
       })
 
-      if (error) {
-        console.error(`[RESEND ERROR] Failed to send email to ${toEmail}:`, error.message || error)
-        return { sent: false, simulated: false, provider: 'Resend', error: error.message || String(error) }
+      if (!error) {
+        console.log(`[RESEND SUCCESS] Password reset email sent to ${toEmail}. Message ID: ${data?.id}`)
+        return { sent: true, simulated: false, provider: 'Resend', messageId: data?.id }
       }
 
-      console.log(`[RESEND SUCCESS] Password reset email sent to ${toEmail}. Message ID: ${data?.id}`)
-      return { sent: true, simulated: false, provider: 'Resend', messageId: data?.id }
+      console.error(`[RESEND WARN] Resend API error for ${toEmail}: ${error.message || error}. Attempting fallback to SMTP...`)
     } catch (err) {
-      console.error(`[RESEND EXCEPTION] Failed to send email to ${toEmail}:`, err.message)
-      return { sent: false, simulated: false, provider: 'Resend', error: err.message }
+      console.error(`[RESEND EXCEPTION] Failed to send email to ${toEmail}: ${err.message}. Attempting fallback to SMTP...`)
     }
   }
 
