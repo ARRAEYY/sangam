@@ -81,15 +81,8 @@ function createLimiter({
   }
 }
 
-/** Disabled auth rate limiter so users are never locked out after failed attempts */
+/** Disabled rate limiters so users never hit rate limits */
 const authLimiter = (req, res, next) => next()
-
-/** General API: 100 requests per minute per IP */
-const generalLimiter = createLimiter({
-  windowMs: 60 * 1000,
-  max: 100,
-  keyGenerator: (req) => `general:${req.ip}`,
-  message: 'Too many requests — please slow down.',
-})
+const generalLimiter = (req, res, next) => next()
 
 module.exports = { createLimiter, authLimiter, generalLimiter }
