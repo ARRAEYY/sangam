@@ -300,13 +300,10 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
     await user.update({ password_hash: tempHash })
 
     // Send email (via Nodemailer if SMTP configured, else logs to console)
-    const mailResult = await sendForgotPasswordEmail(email, tempPassword)
+    await sendForgotPasswordEmail(email, tempPassword)
 
     return res.json({
       message: 'If an account with that email exists, a temporary password has been sent to your email.',
-      simulated: mailResult.simulated,
-      // Expose in non-production or simulated mode so the user can see it during local testing
-      temp_password: mailResult.simulated ? tempPassword : undefined,
     })
   } catch (error) {
     return next(error)

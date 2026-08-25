@@ -87,10 +87,7 @@ export default function Auth() {
     setForgotSubmitting(true)
     try {
       const res = await api.forgotPassword(forgotEmail)
-      setForgotMsg(res.message || 'A temporary password has been sent to your email.')
-      if (res.temp_password) {
-        setForgotMsg(`Temporary password: ${res.temp_password} — use it to log in, then change your password from the dashboard.`)
-      }
+      setForgotMsg(res.message || 'If an account with that email exists, a temporary password has been sent to your email.')
     } catch (err) {
       setError(err.message)
     } finally {
