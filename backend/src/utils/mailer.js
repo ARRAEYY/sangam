@@ -9,8 +9,19 @@ function createTransporter() {
   const user = process.env.SMTP_USER || process.env.GMAIL_USER
   const pass = process.env.SMTP_PASS || process.env.GMAIL_PASS
 
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     return null
+  }
+
+  // Use Gmail service if GMAIL_USER is present
+  if (process.env.GMAIL_USER || (host && host.includes('gmail'))) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+    })
   }
 
   return nodemailer.createTransport({
@@ -18,6 +29,7 @@ function createTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    connectionTimeout: 10000,
   })
 }
 
@@ -30,7 +42,7 @@ async function sendForgotPasswordEmail(toEmail, tempPassword) {
 
   const subject = 'Your Sangam Temporary Password'
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
       <h2 style="color: #800023; margin-bottom: 10px;">Sangam Password Reset</h2>
       <p style="color: #334155; font-size: 15px;">You requested a password reset for your Sangam campus account.</p>
       <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
@@ -48,19 +60,23 @@ async function sendForgotPasswordEmail(toEmail, tempPassword) {
     console.log(`[MAILER] SMTP credentials not set. Simulated Email for ${toEmail}:`)
     console.log(`Subject: ${subject}`)
     console.log(`Temporary Password: ${tempPassword}`)
-    console.log(`To enable actual email delivery, add SMTP_USER & SMTP_PASS (or GMAIL_USER & GMAIL_PASS) to environment variables.`)
     console.log(`------------------------------------------------------------\n`)
     return { sent: false, simulated: true }
   }
 
-  await transporter.sendMail({
-    from,
-    to: toEmail,
-    subject,
-    html,
-  })
-
-  return { sent: true, simulated: false }
+  try {
+    await transporter.sendMail({
+      from,
+      to: toEmail,
+      subject,
+      html,
+    })
+    console.log(`[MAILER] Email successfully sent to ${toEmail}`)
+    return { sent: true, simulated: false }
+  } catch (err) {
+    console.error(`[MAILER ERROR] Failed to send email to ${toEmail}:`, err.message)
+    return { sent: false, simulated: true, error: err.message }
+  }
 }
 
 module.exports = {

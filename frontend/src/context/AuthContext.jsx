@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
     api
       .getProfile(token)
       .then(setUser)
