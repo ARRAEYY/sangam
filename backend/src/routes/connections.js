@@ -1,6 +1,6 @@
 const express = require('express')
 const { Op } = require('sequelize')
-const { ConnectionRequest, Connection, User } = require('../models')
+const { sequelize, ConnectionRequest, Connection, User } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { notifyConnectionRequest, notifyConnectionDecision } = require('../services/notificationService')
 const { serializeUser, serializeConnectionRequest } = require('../utils/serializers')
@@ -122,12 +122,14 @@ router.patch('/requests/:id', requireAuth, async (req, res, next) => {
       return res.status(409).json({ detail: 'This request has already been resolved.' })
     }
 
-    await connectionRequest.update({ status: action })
+    await sequelize.transaction(async (t) => {
+      await connectionRequest.update({ status: action }, { transaction: t })
 
-    if (action === 'ACCEPTED') {
-      const [user_a_id, user_b_id] = orderedPair(connectionRequest.requester_id, connectionRequest.recipient_id)
-      await Connection.findOrCreate({ where: { user_a_id, user_b_id } })
-    }
+      if (action === 'ACCEPTED') {
+        const [user_a_id, user_b_id] = orderedPair(connectionRequest.requester_id, connectionRequest.recipient_id)
+        await Connection.findOrCreate({ where: { user_a_id, user_b_id }, transaction: t })
+      }
+    })
 
     await notifyConnectionDecision({
       connectionRequest,

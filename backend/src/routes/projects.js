@@ -1,22 +1,22 @@
 const express = require('express')
 const { Op } = require('sequelize')
-const { Project, User, Skill, Application } = require('../models')
+const { sequelize, Project, User, Skill, Application } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { serializeProject, serializeApplication } = require('../utils/serializers')
 const { notifyProjectApplication } = require('../services/notificationService')
 
 const router = express.Router()
 
-async function assignSkills(project, skills = []) {
+async function assignSkills(project, skills = [], options = {}) {
   const uniqueSkills = [...new Set((skills || []).map((skill) => String(skill).trim()).filter(Boolean))]
   const skillRecords = await Promise.all(
     uniqueSkills.map(async (name) => {
-      const record = await Skill.findOne({ where: { name } })
+      const record = await Skill.findOne({ where: { name }, ...options })
       if (record) return record
-      return Skill.create({ name })
+      return Skill.create({ name }, options)
     })
   )
-  await project.setRequired_skills(skillRecords)
+  await project.setRequired_skills(skillRecords, options)
 }
 
 router.get('/', async (req, res, next) => {
@@ -89,15 +89,21 @@ router.post('/', requireAuth, async (req, res, next) => {
       return res.status(400).json({ detail: 'Team size needed must be a positive integer.' })
     }
 
-    const project = await Project.create({
-      title,
-      description,
-      team_size_needed: teamSizeNeeded,
-      owner_id: req.user.id,
-      status: 'OPEN',
-    })
+    let project
+    await sequelize.transaction(async (t) => {
+      project = await Project.create(
+        {
+          title,
+          description,
+          team_size_needed: teamSizeNeeded,
+          owner_id: req.user.id,
+          status: 'OPEN',
+        },
+        { transaction: t }
+      )
 
-    await assignSkills(project, skills)
+      await assignSkills(project, skills, { transaction: t })
+    })
 
     const created = await Project.findByPk(project.id, {
       include: [
@@ -141,12 +147,14 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       project.team_size_needed = teamSizeNeeded
     }
 
-    await project.save()
+    await sequelize.transaction(async (t) => {
+      await project.save({ transaction: t })
 
-    if (payload.skills !== undefined) {
-      const skills = Array.isArray(payload.skills) ? payload.skills : []
-      await assignSkills(project, skills)
-    }
+      if (payload.skills !== undefined) {
+        const skills = Array.isArray(payload.skills) ? payload.skills : []
+        await assignSkills(project, skills, { transaction: t })
+      }
+    })
 
     const updated = await Project.findByPk(project.id, {
       include: [

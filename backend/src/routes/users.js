@@ -1,28 +1,29 @@
 const express = require('express')
 const { Op } = require('sequelize')
-const { User, Skill, Experience, Application, Project } = require('../models')
+const { sequelize, User, Skill, Experience, Application, Project } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { serializeUser, serializeExperience, serializeProject } = require('../utils/serializers')
 
 const router = express.Router()
 
-async function loadUserWithSkills(userId) {
+async function loadUserWithSkills(userId, options = {}) {
   return User.findByPk(userId, {
     include: [{ model: Skill, as: 'skills' }],
     attributes: { exclude: ['password_hash'] },
+    ...options,
   })
 }
 
-async function assignSkills(user, skills = []) {
+async function assignSkills(user, skills = [], options = {}) {
   const uniqueSkills = [...new Set((skills || []).map((skill) => String(skill).trim()).filter(Boolean))]
   const skillRecords = await Promise.all(
     uniqueSkills.map(async (name) => {
-      const record = await Skill.findOne({ where: { name } })
+      const record = await Skill.findOne({ where: { name }, ...options })
       if (record) return record
-      return Skill.create({ name })
+      return Skill.create({ name }, options)
     })
   )
-  await user.setSkills(skillRecords)
+  await user.setSkills(skillRecords, options)
 }
 
 router.get('/profile', requireAuth, async (req, res, next) => {
@@ -77,14 +78,16 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
       updates.portfolio_url = value || null
     }
 
-    if (Object.keys(updates).length > 0) {
-      await User.update(updates, { where: { id: req.user.id } })
-    }
+    await sequelize.transaction(async (t) => {
+      if (Object.keys(updates).length > 0) {
+        await User.update(updates, { where: { id: req.user.id }, transaction: t })
+      }
 
-    const user = await loadUserWithSkills(req.user.id)
-    if (payload.skills !== undefined) {
-      await assignSkills(user, payload.skills)
-    }
+      if (payload.skills !== undefined) {
+        const user = await loadUserWithSkills(req.user.id, { transaction: t })
+        await assignSkills(user, payload.skills, { transaction: t })
+      }
+    })
 
     const refreshed = await loadUserWithSkills(req.user.id)
     return res.json(serializeUser(refreshed))

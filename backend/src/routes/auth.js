@@ -1,7 +1,7 @@
 const express = require('express')
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
-const { User, Skill } = require('../models')
+const { sequelize, User, Skill } = require('../models')
 const { signToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
@@ -33,18 +33,18 @@ function isCampusEmail(email) {
   )
 }
 
-async function assignSkills(user, skills = []) {
+async function assignSkills(user, skills = [], options = {}) {
   const names = [...new Set((skills || []).map(normalizeSkillName).filter(Boolean))]
 
   const skillRecords = await Promise.all(
     names.map(async (name) => {
-      const record = await Skill.findOne({ where: { name } })
+      const record = await Skill.findOne({ where: { name }, ...options })
       if (record) return record
-      return Skill.create({ name })
+      return Skill.create({ name }, options)
     })
   )
 
-  await user.setSkills(skillRecords)
+  await user.setSkills(skillRecords, options)
 }
 
 /** Helper: set the auth cookie on the response */
@@ -105,21 +105,27 @@ router.post('/register', authLimiter, async (req, res, next) => {
     const verificationToken = crypto.randomBytes(32).toString('hex')
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = await User.create({
-      email,
-      password_hash: passwordHash,
-      full_name: fullName,
-      branch,
-      graduation_year: graduationYear,
-      github_url: githubUrl || null,
-      bio: payload.bio || null,
-      linkedin_url: payload.linkedin_url || null,
-      portfolio_url: payload.portfolio_url || null,
-      email_verified: !requireVerification,
-      email_verification_token: requireVerification ? verificationToken : null,
-    })
+    let user
+    await sequelize.transaction(async (t) => {
+      user = await User.create(
+        {
+          email,
+          password_hash: passwordHash,
+          full_name: fullName,
+          branch,
+          graduation_year: graduationYear,
+          github_url: githubUrl || null,
+          bio: payload.bio || null,
+          linkedin_url: payload.linkedin_url || null,
+          portfolio_url: payload.portfolio_url || null,
+          email_verified: !requireVerification,
+          email_verification_token: requireVerification ? verificationToken : null,
+        },
+        { transaction: t }
+      )
 
-    await assignSkills(user, skills)
+      await assignSkills(user, skills, { transaction: t })
+    })
 
     if (requireVerification) {
       const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`

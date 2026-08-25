@@ -81,8 +81,25 @@ function createLimiter({
   }
 }
 
-/** Disabled rate limiters so users never hit rate limits */
-const authLimiter = (req, res, next) => next()
-const generalLimiter = (req, res, next) => next()
+// Pre-configured limiters with balanced, user-friendly thresholds ───
+
+/** Auth endpoints: 30 attempts per 15 minutes per IP+email */
+const authLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => {
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    return `auth:${req.ip}:${email}`
+  },
+  message: 'Too many auth attempts. Please try again in a few minutes.',
+})
+
+/** General API: 300 requests per minute per IP */
+const generalLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 300,
+  keyGenerator: (req) => `general:${req.ip}`,
+  message: 'Too many API requests — please slow down.',
+})
 
 module.exports = { createLimiter, authLimiter, generalLimiter }
