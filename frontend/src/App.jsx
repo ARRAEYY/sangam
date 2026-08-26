@@ -24,12 +24,12 @@ export default function App() {
   const inAppShell = !NO_SHELL_PATHS.includes(location.pathname)
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-cream-100 text-slate-900 antialiased">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-cream-100 text-slate-900 antialiased">
       <Navbar />
       <main
         className={`flex-1 ${
           inAppShell
-            ? 'mx-auto w-full max-w-6xl px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 md:flex md:gap-6'
+            ? 'mx-auto max-w-6xl px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 md:flex md:gap-6'
             : 'w-full'
         }`}
       >
