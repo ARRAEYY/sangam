@@ -25,7 +25,10 @@ import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
+import FormattedText from '../components/FormattedText.jsx'
 import { VALID_COURSES } from '../utils/courses'
+import { formatMonthYear } from '../utils/date'
+import { WORK_TYPES, EMPLOYMENT_TYPES } from '../utils/experienceTypes'
 
 const STATUS_COLORS = {
   PENDING: 'bg-amber-50 text-amber-700',
@@ -52,6 +55,9 @@ export default function Dashboard() {
     organization: '',
     role: '',
     description: '',
+    location: '',
+    work_type: 'On-site',
+    employment_type: 'Full-time',
     start_date: '',
     end_date: '',
   })
@@ -215,7 +221,7 @@ export default function Dashboard() {
       const added = await api.addExperience(experienceForm, token)
       setExperiences([added, ...experiences])
       setShowAddExperience(false)
-      setExperienceForm({ organization: '', role: '', description: '', start_date: '', end_date: '' })
+      setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' })
     } catch (err) {
       setError(err.message)
     }
@@ -331,46 +337,7 @@ export default function Dashboard() {
       {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       <section className="card mb-10 p-5 sm:p-7">
-        {/* Profile Completion Bar */}
-        {user.profile_completion && (
-          <div className="mb-6 rounded-2xl bg-gradient-to-r from-brand-50/70 via-cream-50 to-emerald-50/50 p-4 border border-brand-100/80">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-brand-600 text-xs font-bold text-white shadow-sm">
-                  {user.profile_completion.percentage}%
-                </span>
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Profile Completion</h3>
-                </div>
-              </div>
-              <span className="text-xs font-semibold text-brand-700">
-                {user.profile_completion.percentage === 100 ? 'All Set! 🎉' : `${user.profile_completion.percentage}% Complete`}
-              </span>
-            </div>
-            
-            <div className="h-2 w-full rounded-full bg-slate-200/80 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-500"
-                style={{ width: `${user.profile_completion.percentage}%` }}
-              />
-            </div>
-            
-            {user.profile_completion.percentage < 100 && (
-              <div className="mt-2.5 flex items-center justify-between gap-2 text-xs text-slate-600">
-                <p className="flex items-center gap-1.5 truncate">
-                  <span className="text-brand-600 font-semibold">Recommended:</span> {user.profile_completion.next_step}
-                </p>
-                <button
-                  type="button"
-                  onClick={startEditing}
-                  className="shrink-0 font-semibold text-brand-700 hover:text-brand-800 underline"
-                >
-                  Update →
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+
 
         {!editingProfile ? (
           <>
@@ -569,6 +536,52 @@ export default function Dashboard() {
         )}
       </section>
 
+      {/* Profile Completion Bar */}
+      {user.profile_completion && (
+        <section className="mb-10">
+          <div className="rounded-2xl bg-gradient-to-r from-brand-50/70 via-cream-50 to-emerald-50/50 p-4 border border-brand-100/80 shadow-sm">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-brand-600 text-xs font-bold text-white shadow-sm">
+                  {user.profile_completion.percentage}%
+                </span>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Profile Completion</h3>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-brand-700">
+                {user.profile_completion.percentage === 100 ? 'All Set! 🎉' : `${user.profile_completion.percentage}% Complete`}
+              </span>
+            </div>
+            
+            <div className="h-2 w-full rounded-full bg-slate-200/80 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-500"
+                style={{ width: `${user.profile_completion.percentage}%` }}
+              />
+            </div>
+            
+            {user.profile_completion.percentage < 100 && (
+              <div className="mt-2.5 flex items-center justify-between gap-2 text-xs text-slate-600">
+                <p className="flex items-center gap-1.5 truncate">
+                  <span className="text-brand-600 font-semibold">Recommended:</span> {user.profile_completion.next_step}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingProfile(true)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
+                  className="shrink-0 font-semibold text-brand-700 hover:text-brand-800 underline"
+                >
+                  Update →
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Change password */}
       <section className="mb-10">
         <button
@@ -633,16 +646,31 @@ export default function Dashboard() {
                 <input required className="input bg-white" value={experienceForm.role} onChange={(e) => setExperienceForm({...experienceForm, role: e.target.value})} />
               </Field>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Start Date *">
-                <input required type="date" className="input bg-white" value={experienceForm.start_date} onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value})} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Location">
+                <input className="input bg-white" value={experienceForm.location} onChange={(e) => setExperienceForm({...experienceForm, location: e.target.value})} />
               </Field>
-              <Field label="End Date">
-                <input type="date" className="input bg-white" value={experienceForm.end_date} onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value})} />
+              <Field label="Work Type">
+                <select className="input bg-white" value={experienceForm.work_type} onChange={(e) => setExperienceForm({...experienceForm, work_type: e.target.value})}>
+                  {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+              </Field>
+              <Field label="Employment Type">
+                <select className="input bg-white" value={experienceForm.employment_type} onChange={(e) => setExperienceForm({...experienceForm, employment_type: e.target.value})}>
+                  {EMPLOYMENT_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
               </Field>
             </div>
-            <Field label="Description">
-              <textarea rows={2} className="input bg-white" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Start Date (Month Year) *">
+                <input required type="month" className="input bg-white" value={experienceForm.start_date.substring(0, 7)} onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value + '-01'})} />
+              </Field>
+              <Field label="End Date (Month Year)">
+                <input type="month" className="input bg-white" value={experienceForm.end_date ? experienceForm.end_date.substring(0, 7) : ''} onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value ? e.target.value + '-01' : ''})} />
+              </Field>
+            </div>
+            <Field label="Description & Responsibilities">
+              <textarea rows={4} className="input bg-white" placeholder="- Led a team of 5&#10;- Increased revenue by 20%" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
             </Field>
             <div className="flex gap-2 pt-2">
               <button className="btn-primary !px-5 text-sm">Save</button>
@@ -666,16 +694,25 @@ export default function Dashboard() {
                   <div className="flex justify-between items-start gap-4">
                     <div>
                       <h3 className="font-semibold text-slate-900">{exp.role}</h3>
-                      <p className="text-sm text-slate-600">{exp.organization}</p>
+                      <p className="text-sm text-slate-600">
+                        {exp.organization}
+                        {exp.employment_type && <span className="text-slate-400"> · {exp.employment_type}</span>}
+                      </p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {new Date(exp.start_date).toLocaleDateString(undefined, {month: 'short', year: 'numeric'})} - {exp.end_date ? new Date(exp.end_date).toLocaleDateString(undefined, {month: 'short', year: 'numeric'}) : 'Present'}
+                        {formatMonthYear(exp.start_date)} - {exp.end_date ? formatMonthYear(exp.end_date) : 'Present'}
+                        {exp.location && ` · ${exp.location}`}
+                        {exp.work_type && ` (${exp.work_type})`}
                       </p>
                     </div>
                     <button onClick={() => handleDeleteExperience(exp.id)} className="text-slate-400 hover:text-red-600 p-1">
                       <Trash2 size={15} />
                     </button>
                   </div>
-                  {exp.description && <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{exp.description}</p>}
+                  {exp.description && (
+                    <div className="mt-3">
+                      <FormattedText text={exp.description} />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

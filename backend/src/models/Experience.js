@@ -26,6 +26,20 @@ const Experience = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    work_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'On-site',
+    },
+    employment_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'Full-time',
+    },
     start_date: {
       type: DataTypes.DATEONLY,
       allowNull: false,

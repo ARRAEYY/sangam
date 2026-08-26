@@ -146,6 +146,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     const teamSizeNeeded = Number(payload.team_size_needed)
     const skills = Array.isArray(payload.skills) ? payload.skills : []
 
+    const members = Array.isArray(payload.members) ? payload.members : []
+    const nextMilestone = payload.next_milestone || null
+
     if (!title) {
       return res.status(400).json({ detail: 'Title is required.' })
     }
@@ -157,6 +160,8 @@ router.post('/', requireAuth, async (req, res, next) => {
     }
 
     let project
+    let addedMemberCount = 1 // lead
+    
     await sequelize.transaction(async (t) => {
       project = await Project.create(
         {
@@ -183,6 +188,51 @@ router.post('/', requireAuth, async (req, res, next) => {
         },
         { transaction: t }
       )
+
+      // Add optional team members
+      for (const m of members) {
+        if (!m.user_id || !m.role || m.user_id === req.user.id) continue
+        
+        await ProjectMember.create(
+          {
+            project_id: project.id,
+            user_id: m.user_id,
+            role: m.role,
+            role_category: m.role_category || 'OTHER',
+            is_lead: false,
+            status: 'ACTIVE',
+          },
+          { transaction: t }
+        )
+        addedMemberCount++
+        
+        // Notify the added member
+        await Notification.create(
+          {
+            recipient_id: m.user_id,
+            actor_id: req.user.id,
+            type: 'MEMBER_ROLE_ASSIGNED',
+            message: `You were added to "${project.title}" as ${m.role}!`,
+            project_id: project.id,
+          },
+          { transaction: t }
+        )
+      }
+
+      // Add optional next milestone
+      if (nextMilestone && nextMilestone.title) {
+        await Milestone.create(
+          {
+            project_id: project.id,
+            title: nextMilestone.title,
+            due_date: nextMilestone.due_date || null,
+            status: 'NOT_STARTED',
+            created_by: req.user.id,
+            order_index: 0,
+          },
+          { transaction: t }
+        )
+      }
     })
 
     const created = await Project.findByPk(project.id, {
@@ -193,7 +243,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     })
 
     const serialized = serializeProject(created)
-    serialized.member_count = 1 // just the lead
+    serialized.member_count = addedMemberCount
 
     return res.status(201).json(serialized)
   } catch (error) {

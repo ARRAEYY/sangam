@@ -33,10 +33,16 @@ export default function Explore() {
 
   return (
     <div className="pb-16 pt-2">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
-          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+          <div>
+            <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
+          </div>
+          <div className="hidden sm:block h-8 w-px bg-slate-200"></div>
+          <Link to="/create" className="btn-secondary w-fit text-xs px-3 py-1.5 h-fit mt-2 sm:mt-0">
+            + Post a project
+          </Link>
         </div>
         <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center gap-2">
           <div className="relative min-w-0 flex-1">

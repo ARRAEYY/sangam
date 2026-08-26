@@ -79,7 +79,6 @@ export default function Navbar() {
   const navLinks = [
     { to: '/explore', label: 'Explore projects', icon: LayoutGrid },
     { to: '/talent', label: 'Find talent', icon: Users2 },
-    { to: '/create', label: 'Post a project', icon: PlusCircle, requiresAuth: true, highlight: true },
     {
       to: '/notifications',
       label: 'Notifications',
@@ -89,6 +88,17 @@ export default function Navbar() {
     },
     { to: '/dashboard', label: 'Your dashboard', icon: User, requiresAuth: true },
   ]
+
+  const renderAvatar = (sizeClasses = 'h-8 w-8 text-xs') => {
+    if (user?.avatar_url) {
+      return <img src={user.avatar_url} alt="" className={`rounded-full object-cover shrink-0 ${sizeClasses}`} />
+    }
+    return (
+      <span className={`flex items-center justify-center rounded-full bg-brand-50 font-bold text-brand-600 shrink-0 ${sizeClasses}`}>
+        {initials}
+      </span>
+    )
+  }
 
   return (
     <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
@@ -103,12 +113,6 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2.5 md:flex">
-          {user && (
-            <Link to="/create" className="btn-secondary">
-              <PlusCircle size={15} /> Post a project
-            </Link>
-          )}
-
           {!user && (
             <Link to="/auth" className="btn-primary">
               <LogIn size={15} /> Sign in
@@ -123,9 +127,7 @@ export default function Navbar() {
                 onClick={() => setProfileMenuOpen((o) => !o)}
                 className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-2.5 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-600">
-                  {initials}
-                </span>
+                {renderAvatar('h-8 w-8 text-xs')}
                 <ChevronDown size={14} className="text-slate-400" />
               </button>
 
@@ -180,9 +182,7 @@ export default function Navbar() {
           {user ? (
             <div className="mb-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white shadow-sm">
-                  {initials}
-                </span>
+                {renderAvatar('h-10 w-10 text-sm shadow-sm')}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-900">{user.full_name}</p>
                   <p className="truncate text-xs text-slate-500">{user.email}</p>

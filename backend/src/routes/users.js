@@ -321,7 +321,7 @@ router.get('/:id/public', requireAuth, async (req, res, next) => {
 
 router.post('/experience', requireAuth, async (req, res, next) => {
   try {
-    const { organization, role, description, start_date, end_date } = req.body
+    const { organization, role, description, start_date, end_date, location, work_type, employment_type } = req.body
     if (!organization || !role || !start_date) {
       return res.status(400).json({ detail: 'Organization, role, and start_date are required.' })
     }
@@ -331,6 +331,9 @@ router.post('/experience', requireAuth, async (req, res, next) => {
       organization,
       role,
       description: description || null,
+      location: location || null,
+      work_type: work_type || 'On-site',
+      employment_type: employment_type || 'Full-time',
       start_date,
       end_date: end_date || null,
     })
@@ -351,10 +354,13 @@ router.put('/experience/:id', requireAuth, async (req, res, next) => {
       return res.status(403).json({ detail: 'You can only edit your own experience.' })
     }
 
-    const { organization, role, description, start_date, end_date } = req.body
+    const { organization, role, description, start_date, end_date, location, work_type, employment_type } = req.body
     if (organization) experience.organization = organization
     if (role) experience.role = role
     if (description !== undefined) experience.description = description || null
+    if (location !== undefined) experience.location = location || null
+    if (work_type) experience.work_type = work_type
+    if (employment_type) experience.employment_type = employment_type
     if (start_date) experience.start_date = start_date
     if (end_date !== undefined) experience.end_date = end_date || null
 

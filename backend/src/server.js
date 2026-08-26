@@ -108,7 +108,33 @@ async function start() {
         })
       }
     } catch (err) {
-      console.warn('Column check warning:', err.message)
+      console.warn('Users column check warning:', err.message)
+    }
+
+    try {
+      const expTableInfo = await queryInterface.describeTable('experiences')
+      if (!expTableInfo.location) {
+        await queryInterface.addColumn('experiences', 'location', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+      if (!expTableInfo.work_type) {
+        await queryInterface.addColumn('experiences', 'work_type', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+          defaultValue: 'On-site',
+        })
+      }
+      if (!expTableInfo.employment_type) {
+        await queryInterface.addColumn('experiences', 'employment_type', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+          defaultValue: 'Full-time',
+        })
+      }
+    } catch (err) {
+      console.warn('Experiences column check warning:', err.message)
     }
 
     // ─── Safe Postgres ENUM extensions for new notification types ─────

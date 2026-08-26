@@ -79,6 +79,9 @@ function serializeExperience(experience) {
     organization: plain.organization,
     role: plain.role,
     description: plain.description,
+    location: plain.location || null,
+    work_type: plain.work_type || 'On-site',
+    employment_type: plain.employment_type || 'Full-time',
     start_date: plain.start_date,
     end_date: plain.end_date,
   }

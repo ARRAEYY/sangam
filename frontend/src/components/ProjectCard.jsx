@@ -43,7 +43,14 @@ export default function ProjectCard({ project }) {
       className="card flex flex-col gap-3 p-5 transition hover:-translate-y-0.5 hover:shadow-card"
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-display font-semibold text-slate-900">{project.title}</h3>
+        <div className="flex items-center gap-3 min-w-0">
+          <h3 className="font-display font-semibold text-slate-900 truncate">{project.title}</h3>
+          {memberCount > 0 && (
+            <span className="flex items-center gap-1.5 shrink-0 text-xs text-slate-500 font-medium bg-slate-50 px-2 py-0.5 rounded-full">
+              <Users size={12} className="text-slate-400" /> {memberCount}
+            </span>
+          )}
+        </div>
         <span className={`pill shrink-0 ${STATUS_STYLES[project.status] || 'bg-slate-100 text-slate-600'}`}>
           {(project.status || 'OPEN').replace('_', ' ')}
         </span>
@@ -60,14 +67,7 @@ export default function ProjectCard({ project }) {
       </div>
 
       <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-        <div className="flex items-center gap-3 min-w-0">
-          <OwnerAvatar owner={project.owner} />
-          {memberCount > 0 && (
-            <span className="flex items-center gap-1 shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-brand-700 font-medium">
-              <Users size={11} /> {memberCount}
-            </span>
-          )}
-        </div>
+        <OwnerAvatar owner={project.owner} />
         <span className="flex items-center gap-1 shrink-0">
           <Clock size={13} /> {formatDate(project.created_at)}
         </span>
