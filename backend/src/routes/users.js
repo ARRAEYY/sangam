@@ -107,6 +107,14 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
       const value = String(payload.portfolio_url || '').trim()
       updates.portfolio_url = value || null
     }
+    if (payload.leetcode_url !== undefined) {
+      const value = String(payload.leetcode_url || '').trim()
+      updates.leetcode_url = value || null
+    }
+    if (payload.codeforces_url !== undefined) {
+      const value = String(payload.codeforces_url || '').trim()
+      updates.codeforces_url = value || null
+    }
 
     await sequelize.transaction(async (t) => {
       if (Object.keys(updates).length > 0) {

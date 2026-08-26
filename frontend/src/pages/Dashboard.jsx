@@ -217,8 +217,13 @@ export default function Dashboard() {
     e.preventDefault()
     setError('')
     try {
-      const added = await api.addExperience(experienceForm)
-      setExperiences([added, ...experiences])
+      if (experienceForm.id) {
+        const updated = await api.editExperience(experienceForm.id, experienceForm)
+        setExperiences(experiences.map(e => e.id === experienceForm.id ? updated : e))
+      } else {
+        const added = await api.addExperience(experienceForm)
+        setExperiences([added, ...experiences])
+      }
       setShowAddExperience(false)
       setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' })
     } catch (err) {
@@ -241,14 +246,26 @@ export default function Dashboard() {
     e.preventDefault()
     setError('')
     try {
-      const added = await api.addEducation(
-        {
-          ...educationForm,
-          start_year: Number(educationForm.start_year),
-          graduation_year: educationForm.graduation_year ? Number(educationForm.graduation_year) : null,
-        }
-      )
-      setEducations([added, ...educations])
+      if (educationForm.id) {
+        const updated = await api.editEducation(
+          educationForm.id,
+          {
+            ...educationForm,
+            start_year: Number(educationForm.start_year),
+            graduation_year: educationForm.graduation_year ? Number(educationForm.graduation_year) : null,
+          }
+        )
+        setEducations(educations.map(e => e.id === educationForm.id ? updated : e))
+      } else {
+        const added = await api.addEducation(
+          {
+            ...educationForm,
+            start_year: Number(educationForm.start_year),
+            graduation_year: educationForm.graduation_year ? Number(educationForm.graduation_year) : null,
+          }
+        )
+        setEducations([added, ...educations])
+      }
       setShowAddEducation(false)
       setEducationForm({
         institution: '',
@@ -625,11 +642,13 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Work Experience */}
+      {/* Experience */}
       <section className="mb-10">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-semibold text-slate-900">Work experience</h2>
-          <button onClick={() => setShowAddExperience(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-display text-lg font-semibold text-slate-900">
+            {experienceForm.id ? 'Edit Experience' : 'Add Experience'}
+          </h3>
+          <button onClick={() => { setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' }); setShowAddExperience(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
             <Plus size={13} /> Add
           </button>
         </div>
@@ -671,7 +690,7 @@ export default function Dashboard() {
               <textarea rows={4} className="input bg-white" placeholder="- Led a team of 5&#10;- Increased revenue by 20%" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
             </Field>
             <div className="flex gap-2 pt-2">
-              <button className="btn-primary !px-5 text-sm">Save</button>
+              <button className="btn-primary !px-5 text-sm">{experienceForm.id ? 'Save Changes' : 'Save'}</button>
               <button type="button" onClick={() => setShowAddExperience(false)} className="btn-secondary !px-4 text-sm">Cancel</button>
             </div>
           </form>
@@ -702,9 +721,25 @@ export default function Dashboard() {
                         {exp.work_type && ` (${exp.work_type})`}
                       </p>
                     </div>
-                    <button onClick={() => handleDeleteExperience(exp.id)} className="text-slate-400 hover:text-red-600 p-1">
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setExperienceForm(exp)
+                          setShowAddExperience(true)
+                        }}
+                        className="text-slate-400 hover:text-brand-600"
+                        title="Edit"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExperience(exp.id)}
+                        className="text-slate-400 hover:text-red-600"
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                   {exp.description && (
                     <div className="mt-3">
@@ -721,8 +756,10 @@ export default function Dashboard() {
       {/* Education */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-semibold text-slate-900">Education</h2>
-          <button onClick={() => setShowAddEducation(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+          <h3 className="font-display text-lg font-semibold text-slate-900">
+            {educationForm.id ? 'Edit Education' : 'Add Education'}
+          </h3>
+          <button onClick={() => { setEducationForm({ institution: '', degree: '', department: '', start_year: new Date().getFullYear() - 2, graduation_year: new Date().getFullYear() + 2 }); setShowAddEducation(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
             <Plus size={13} /> Add
           </button>
         </div>
@@ -777,7 +814,7 @@ export default function Dashboard() {
               </Field>
             </div>
             <div className="flex gap-2 pt-2">
-              <button className="btn-primary !px-5 text-sm">Save</button>
+              <button className="btn-primary !px-5 text-sm">{educationForm.id ? 'Save Changes' : 'Save'}</button>
               <button type="button" onClick={() => setShowAddEducation(false)} className="btn-secondary !px-4 text-sm">
                 Cancel
               </button>
@@ -805,9 +842,25 @@ export default function Dashboard() {
                         {edu.start_year} - {edu.graduation_year || 'Present'}
                       </p>
                     </div>
-                    <button onClick={() => handleDeleteEducation(edu.id)} className="text-slate-400 hover:text-red-600 p-1">
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEducationForm(edu)
+                          setShowAddEducation(true)
+                        }}
+                        className="text-slate-400 hover:text-brand-600"
+                        title="Edit"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEducation(edu.id)}
+                        className="text-slate-400 hover:text-red-600"
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -941,9 +994,9 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Project Experience & Teams (LinkedIn-style history) */}
+      {/* Projects (LinkedIn-style history) */}
       <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Project experience & teams</h2>
+        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
         {projectRoles.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
             No project team memberships yet. Apply to projects or create your own to build your team history!
@@ -964,11 +1017,6 @@ export default function Dashboard() {
                   </div>
                   <p className="mt-1 text-xs text-brand-700 font-medium">
                     {pr.role}
-                    {pr.role_category && pr.role_category !== 'OTHER' && (
-                      <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] text-brand-600">
-                        {pr.role_category}
-                      </span>
-                    )}
                   </p>
                 </div>
                 {pr.since && (
