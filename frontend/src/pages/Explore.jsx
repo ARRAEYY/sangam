@@ -45,8 +45,8 @@ export default function Explore() {
         </Link>
       </div>
 
-      {/* Search bar — full width on mobile */}
-      <form onSubmit={handleSearch} className="mb-5 flex w-full items-center gap-2 sm:max-w-sm">
+      {/* Search bar — stacks on mobile, inline on sm+ */}
+      <form onSubmit={handleSearch} className="mb-5 flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
@@ -56,7 +56,7 @@ export default function Explore() {
             className="input !pl-10 text-sm"
           />
         </div>
-        <button type="submit" className="btn-primary shrink-0 !px-4 !py-2.5 text-sm">
+        <button type="submit" className="btn-primary w-full sm:w-auto shrink-0 !px-4 !py-2.5 text-sm">
           Search
         </button>
       </form>
