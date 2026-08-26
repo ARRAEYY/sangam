@@ -53,7 +53,7 @@ export default function ProjectCard({ project }) {
   return (
     <Link
       to={`/projects/${project.id}`}
-      className="card flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card"
+      className="card min-w-0 flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card"
     >
       {/* Header row: title + badge */}
       <div className="flex items-start justify-between gap-2">

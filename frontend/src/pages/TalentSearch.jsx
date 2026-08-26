@@ -99,8 +99,8 @@ export default function TalentSearch() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {talent.map((person) => (
-          <div key={person.id} className="card flex flex-col p-5 hover:border-brand-300 transition-colors cursor-pointer" onClick={() => openProfile(person)}>
-            <div className="flex items-center gap-3">
+          <div key={person.id} className="card min-w-0 flex flex-col p-5 hover:border-brand-300 transition-colors cursor-pointer" onClick={() => openProfile(person)}>
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
                 {person.full_name
                   .split(' ')
