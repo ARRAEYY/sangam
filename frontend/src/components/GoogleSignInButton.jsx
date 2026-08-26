@@ -23,17 +23,20 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
       if (cancelled || !containerRef.current || !window.google?.accounts?.id) return
 
       try {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: async (response) => {
-            try {
-              const profile = await loginWithGoogle(response.credential)
-              onSuccess?.(profile)
-            } catch (err) {
-              onError?.(err.message || 'Google sign-in failed.')
-            }
-          },
-        })
+        if (!window._googleInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: async (response) => {
+              try {
+                const profile = await loginWithGoogle(response.credential)
+                onSuccess?.(profile)
+              } catch (err) {
+                onError?.(err.message || 'Google sign-in failed.')
+              }
+            },
+          })
+          window._googleInitialized = true
+        }
 
         // Clear container before rendering button
         if (containerRef.current) {

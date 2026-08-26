@@ -49,10 +49,11 @@ async function assignSkills(user, skills = [], options = {}) {
 
 /** Helper: set the auth cookie on the response */
 function setTokenCookie(res, jwt) {
+  const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
   res.cookie('token', jwt, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
     maxAge: TOKEN_EXPIRE_MINUTES * 60 * 1000,
     path: '/',
   })
@@ -233,10 +234,11 @@ router.post('/login', authLimiter, async (req, res, next) => {
 // ─── Logout ──────────────────────────────────────────────────
 
 router.post('/logout', (req, res) => {
+  const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
     path: '/',
   })
   return res.json({ message: 'Logged out.' })
