@@ -160,7 +160,7 @@ async function start() {
     // ─── Safe Branch/Course Normalization Migration ──────────────────
     try {
       const { normalizeCourse } = require('./utils/courses')
-      const { User } = require('./models')
+      const { User, Project, ProjectMember } = require('./models')
       const users = await User.findAll({ attributes: ['id', 'branch'] })
       for (const u of users) {
         if (u.branch) {
@@ -170,8 +170,28 @@ async function start() {
           }
         }
       }
-    } catch (courseErr) {
-      console.warn('Course normalization warning:', courseErr.message)
+
+      // ─── Backfill Project Owners to ProjectMembers ──────────────────
+      const projects = await Project.findAll({ attributes: ['id', 'owner_id'] })
+      for (const p of projects) {
+        if (!p.owner_id) continue
+        const exists = await ProjectMember.findOne({
+          where: { project_id: p.id, user_id: p.owner_id },
+        })
+        if (!exists) {
+          await ProjectMember.create({
+            project_id: p.id,
+            user_id: p.owner_id,
+            role: 'Project Lead',
+            role_category: 'LEAD',
+            is_lead: true,
+            status: 'ACTIVE',
+          })
+          console.log(`[Migration] Auto-assigned owner ${p.owner_id} as lead for project ${p.id}`)
+        }
+      }
+    } catch (migErr) {
+      console.warn('Migration warning:', migErr.message)
     }
 
     const { verifyTransporter } = require('./utils/mailer')
