@@ -584,8 +584,20 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingProfile(true)
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                    const action = user.profile_completion.next_action_key;
+                    if (action === 'education') {
+                      setShowAddEducation(true);
+                      document.getElementById('section-education')?.scrollIntoView({ behavior: 'smooth' });
+                    } else if (action === 'experience') {
+                      setShowAddExperience(true);
+                      document.getElementById('section-experience')?.scrollIntoView({ behavior: 'smooth' });
+                    } else if (action === 'achievements') {
+                      setShowAddAchievement(true);
+                      document.getElementById('section-achievements')?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      startEditing();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                   }}
                   className="shrink-0 font-semibold text-brand-700 hover:text-brand-800 underline"
                 >
@@ -679,7 +691,7 @@ export default function Dashboard() {
       </section>
 
       {/* Education */}
-      <section className="mb-10">
+      <section id="section-education" className="mb-10">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display text-lg font-semibold text-slate-900">
             {educationForm.id ? 'Edit Education' : 'Add Education'}
@@ -795,7 +807,7 @@ export default function Dashboard() {
       </section>
 
       {/* Experience */}
-      <section className="mb-10">
+      <section id="section-experience" className="mb-10">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="font-display text-lg font-semibold text-slate-900">
             {experienceForm.id ? 'Edit Experience' : 'Add Experience'}
@@ -906,7 +918,7 @@ export default function Dashboard() {
       </section>
 
       {/* Achievements & Awards */}
-      <section className="mb-10">
+      <section id="section-achievements" className="mb-10">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-semibold text-slate-900">Achievements & Certifications</h2>
           <button onClick={() => setShowAddAchievement(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
