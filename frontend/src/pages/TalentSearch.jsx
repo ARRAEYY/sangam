@@ -76,21 +76,22 @@ export default function TalentSearch() {
           <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Find talent</h1>
           <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Students on campus ready to join your team.</p>
         </div>
-        <form onSubmit={handleSearch} className="flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              value={skill}
-              onChange={(e) => setSkill(e.target.value)}
-              placeholder="Filter by skill, e.g. React"
-              className="input !pl-10 text-sm"
-            />
-          </div>
-          <button type="submit" className="btn-primary w-full sm:w-auto shrink-0 !px-4 !py-2.5 text-sm">
-            Search
-          </button>
-        </form>
       </div>
+
+      <form onSubmit={handleSearch} className="mb-5 flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            value={skill}
+            onChange={(e) => setSkill(e.target.value)}
+            placeholder="Filter by skill, e.g. React"
+            className="input !pl-10 text-sm"
+          />
+        </div>
+        <button type="submit" className="btn-primary w-full sm:w-auto shrink-0 !px-4 !py-2.5 text-sm">
+          Search
+        </button>
+      </form>
 
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
