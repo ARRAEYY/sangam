@@ -4,7 +4,7 @@ import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function TalentSearch() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const [talent, setTalent] = useState([])
   const [skill, setSkill] = useState('')
   const [loading, setLoading] = useState(true)
@@ -44,7 +44,7 @@ export default function TalentSearch() {
     if (!connectingUserId) return
     const personId = connectingUserId
     try {
-      await api.sendConnectionRequest(personId, connectionMessage, token)
+      await api.sendConnectionRequest(personId, connectionMessage)
       setConnectState((prev) => ({ ...prev, [personId]: 'sent' }))
       setConnectingUserId(null)
       setConnectionMessage('')
@@ -59,7 +59,7 @@ export default function TalentSearch() {
     setSelectedUser(person)
     setProfileLoading(true)
     try {
-      const fullProfile = await api.getUserPublicProfile(person.id, token)
+      const fullProfile = await api.getUserPublicProfile(person.id)
       setSelectedUser(fullProfile)
     } catch (err) {
       console.error(err)

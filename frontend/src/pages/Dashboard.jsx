@@ -104,7 +104,7 @@ export default function Dashboard() {
     setPasswordMsg('')
     setChangingPassword(true)
     try {
-      const res = await api.changePassword(passwordForm.current_password, passwordForm.new_password, token)
+      const res = await api.changePassword(passwordForm.current_password, passwordForm.new_password)
       setPasswordMsg(res.message || 'Password changed successfully.')
       setPasswordForm({ current_password: '', new_password: '' })
     } catch (err) {
@@ -119,13 +119,13 @@ export default function Dashboard() {
     api.listConnectionRequests('received').then((all) =>
       setPendingRequests(all.filter((r) => r.status === 'PENDING'))
     ).catch((err) => setError(err.message))
-    api.listConnections(token).then(setConnections).catch((err) => setError(err.message))
+    api.listConnections().then(setConnections).catch((err) => setError(err.message))
   }
 
   const loadPortfolio = () => {
     if (!user) return
     api
-      .getUserPublicProfile(user.id, token)
+      .getUserPublicProfile(user.id)
       .then((data) => {
         setExperiences(data.experiences || [])
         setEducations(data.educations || [])
@@ -138,21 +138,21 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     api
-      .listProjects({ mine: 'true' }, token)
+      .listProjects({ mine: 'true' })
       .then((my) => setMyProjects(my))
       .catch((err) => setError(err.message))
     api
-      .myApplications(token)
+      .myApplications()
       .then(setMyApplications)
       .catch((err) => setError(err.message))
     loadPortfolio()
     loadConnections()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token])
+  }, [user])
 
   const respondToRequest = async (id, status) => {
     try {
-      await api.respondToConnectionRequest(id, status, token)
+      await api.respondToConnectionRequest(id, status)
       loadConnections()
     } catch (err) {
       setError(err.message)
@@ -162,7 +162,7 @@ export default function Dashboard() {
   const handleRemoveConnection = async (connectionId) => {
     if (!window.confirm('Are you sure you want to remove this connection?')) return
     try {
-      await api.removeConnection(connectionId, token)
+      await api.removeConnection(connectionId)
       loadConnections()
     } catch (err) {
       setError(err.message)
@@ -171,8 +171,8 @@ export default function Dashboard() {
 
   const withdrawApplication = async (id) => {
     try {
-      await api.updateApplicationStatus(id, 'WITHDRAWN', token)
-      const refreshed = await api.myApplications(token)
+      await api.updateApplicationStatus(id, 'WITHDRAWN')
+      const refreshed = await api.myApplications()
       setMyApplications(refreshed)
     } catch (err) {
       setError(err.message)
@@ -203,8 +203,7 @@ export default function Dashboard() {
     setError('')
     try {
       await api.updateProfile(
-        { ...profileDraft, graduation_year: Number(profileDraft.graduation_year) },
-        token
+        { ...profileDraft, graduation_year: Number(profileDraft.graduation_year) }
       )
       await refreshProfile()
       setEditingProfile(false)
@@ -218,7 +217,7 @@ export default function Dashboard() {
     e.preventDefault()
     setError('')
     try {
-      const added = await api.addExperience(experienceForm, token)
+      const added = await api.addExperience(experienceForm)
       setExperiences([added, ...experiences])
       setShowAddExperience(false)
       setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' })
@@ -230,7 +229,7 @@ export default function Dashboard() {
   const handleDeleteExperience = async (id) => {
     if (!window.confirm('Delete this experience?')) return
     try {
-      await api.deleteExperience(id, token)
+      await api.deleteExperience(id)
       setExperiences(experiences.filter((exp) => exp.id !== id))
     } catch (err) {
       setError(err.message)
@@ -247,8 +246,7 @@ export default function Dashboard() {
           ...educationForm,
           start_year: Number(educationForm.start_year),
           graduation_year: educationForm.graduation_year ? Number(educationForm.graduation_year) : null,
-        },
-        token
+        }
       )
       setEducations([added, ...educations])
       setShowAddEducation(false)
@@ -267,7 +265,7 @@ export default function Dashboard() {
   const handleDeleteEducation = async (id) => {
     if (!window.confirm('Delete this education record?')) return
     try {
-      await api.deleteEducation(id, token)
+      await api.deleteEducation(id)
       setEducations(educations.filter((edu) => edu.id !== id))
     } catch (err) {
       setError(err.message)
@@ -279,7 +277,7 @@ export default function Dashboard() {
     e.preventDefault()
     setError('')
     try {
-      const added = await api.addAchievement(achievementForm, token)
+      const added = await api.addAchievement(achievementForm)
       setAchievements([added, ...achievements])
       setShowAddAchievement(false)
       setAchievementForm({
@@ -298,7 +296,7 @@ export default function Dashboard() {
   const handleDeleteAchievement = async (id) => {
     if (!window.confirm('Delete this achievement?')) return
     try {
-      await api.deleteAchievement(id, token)
+      await api.deleteAchievement(id)
       setAchievements(achievements.filter((ach) => ach.id !== id))
     } catch (err) {
       setError(err.message)
@@ -314,7 +312,7 @@ export default function Dashboard() {
 
     setDeletingAccount(true)
     try {
-      await api.deleteAccount(token)
+      await api.deleteAccount()
       await logout()
       navigate('/')
     } catch (err) {

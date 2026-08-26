@@ -11,7 +11,7 @@ const ROLE_CATEGORIES = [
 ]
 
 export default function CreateProject() {
-  const { token, user } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   
   // Core Project Form
@@ -47,7 +47,7 @@ export default function CreateProject() {
     const timer = setTimeout(async () => {
       setSearchingUsers(true)
       try {
-        const results = await api.searchUsers(searchQuery.trim(), token)
+        const results = await api.searchUsers(searchQuery.trim())
         // filter out current user and already staged members
         const filtered = results.filter(
           (u) => u.id !== user.id && !form.members.some((m) => m.user_id === u.id)
@@ -60,7 +60,7 @@ export default function CreateProject() {
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [searchQuery, token, user.id, form.members])
+  }, [searchQuery, user.id, form.members])
 
   const handleStageMember = () => {
     if (!selectedUserToAdd || !addMemberRole.trim()) return
@@ -117,7 +117,7 @@ export default function CreateProject() {
     }
 
     try {
-      const project = await api.createProject(payload, token)
+      const project = await api.createProject(payload)
       navigate(`/projects/${project.id}`)
     } catch (err) {
       setError(err.message)

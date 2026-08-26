@@ -51,7 +51,7 @@ const MILESTONE_STATUS_PILLS = {
 
 export default function ProjectDetail() {
   const { id } = useParams()
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   const [project, setProject] = useState(null)
@@ -110,7 +110,7 @@ export default function ProjectDetail() {
     const timer = setTimeout(() => {
       setSearchingUsers(true)
       setAddMemberError('')
-      api.searchUsers(searchQuery.trim(), token)
+      api.searchUsers(searchQuery.trim())
         .then((res) => {
           const existingIds = new Set(members.map((m) => m.user_id))
           setSearchResults(res.filter((u) => !existingIds.has(u.id)))
@@ -119,13 +119,13 @@ export default function ProjectDetail() {
         .finally(() => setSearchingUsers(false))
     }, 250)
     return () => clearTimeout(timer)
-  }, [searchQuery, showAddMemberModal, selectedUserToAdd, token, members])
+  }, [searchQuery, showAddMemberModal, selectedUserToAdd, members])
 
   useEffect(() => {
     if (isOwner) {
-      api.getApplicants(id, token).then(setApplicants).catch((err) => setError(err.message))
+      api.getApplicants(id).then(setApplicants).catch((err) => setError(err.message))
     }
-  }, [isOwner, id, token])
+  }, [isOwner, id])
 
   const refreshMembers = () => api.getMembers(id).then(setMembers).catch(() => {})
   const refreshMilestones = () => api.getMilestones(id).then(setMilestoneData).catch(() => {})
@@ -134,7 +134,7 @@ export default function ProjectDetail() {
     e.preventDefault()
     setError('')
     try {
-      await api.applyToProject(id, { pitch_message: pitch }, token)
+      await api.applyToProject(id, { pitch_message: pitch })
       setStatus('Application sent!')
       setShowApplyForm(false)
     } catch (err) {
@@ -151,11 +151,11 @@ export default function ProjectDetail() {
   const confirmAccept = async () => {
     if (!acceptModal) return
     try {
-      await api.updateApplicationStatus(acceptModal.appId, 'ACCEPTED', token, {
+      await api.updateApplicationStatus(acceptModal.appId, 'ACCEPTED', {
         role: acceptRole,
         role_category: acceptCategory,
       })
-      const refreshed = await api.getApplicants(id, token)
+      const refreshed = await api.getApplicants(id)
       setApplicants(refreshed)
       await refreshMembers()
       setAcceptModal(null)
@@ -167,8 +167,8 @@ export default function ProjectDetail() {
   const decide = async (appId, newStatus) => {
     if (newStatus === 'ACCEPTED') return // handled by modal
     try {
-      await api.updateApplicationStatus(appId, newStatus, token)
-      const refreshed = await api.getApplicants(id, token)
+      await api.updateApplicationStatus(appId, newStatus)
+      const refreshed = await api.getApplicants(id)
       setApplicants(refreshed)
     } catch (err) {
       setError(err.message)
@@ -189,7 +189,7 @@ export default function ProjectDetail() {
     e.preventDefault()
     setError('')
     try {
-      const updated = await api.editProject(id, projectForm, token)
+      const updated = await api.editProject(id, projectForm)
       setProject(updated)
       setIsEditingProject(false)
     } catch (err) {
@@ -200,7 +200,7 @@ export default function ProjectDetail() {
   const handleDeleteProject = async () => {
     if (!window.confirm('Are you sure you want to permanently delete this project? This cannot be undone.')) return
     try {
-      await api.deleteProject(id, token)
+      await api.deleteProject(id)
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
@@ -211,7 +211,7 @@ export default function ProjectDetail() {
   const handleRemoveMember = async (userId, name) => {
     if (!window.confirm(`Remove ${name} from this project?`)) return
     try {
-      await api.removeMember(id, userId, token)
+      await api.removeMember(id, userId)
       await refreshMembers()
     } catch (err) {
       setError(err.message)
@@ -221,7 +221,7 @@ export default function ProjectDetail() {
   const handleLeave = async () => {
     if (!window.confirm('Are you sure you want to leave this project?')) return
     try {
-      await api.leaveProject(id, user.id, token)
+      await api.leaveProject(id, user.id)
       await refreshMembers()
     } catch (err) {
       setError(err.message)
@@ -236,7 +236,7 @@ export default function ProjectDetail() {
   const confirmEditRole = async () => {
     if (!editRoleModal) return
     try {
-      await api.updateMemberRole(id, editRoleModal.user_id, editRoleForm, token)
+      await api.updateMemberRole(id, editRoleModal.user_id, editRoleForm)
       await refreshMembers()
       setEditRoleModal(null)
     } catch (err) {
@@ -261,7 +261,7 @@ export default function ProjectDetail() {
         user_id: selectedUserToAdd.id,
         role: addMemberRole.trim(),
         role_category: addMemberCategory,
-      }, token)
+      })
       await refreshMembers()
       setShowAddMemberModal(false)
       setSelectedUserToAdd(null)
@@ -282,7 +282,7 @@ export default function ProjectDetail() {
         title: milestoneForm.title,
         description: milestoneForm.description || undefined,
         due_date: milestoneForm.due_date || undefined,
-      }, token)
+      })
       await refreshMilestones()
       setShowMilestoneForm(false)
       setMilestoneForm({ title: '', description: '', due_date: '' })
@@ -294,7 +294,7 @@ export default function ProjectDetail() {
   const handleToggleMilestone = async (milestone) => {
     const nextStatus = milestone.status === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED'
     try {
-      await api.updateMilestone(id, milestone.id, { status: nextStatus }, token)
+      await api.updateMilestone(id, milestone.id, { status: nextStatus })
       await refreshMilestones()
     } catch (err) {
       setError(err.message)
@@ -303,7 +303,7 @@ export default function ProjectDetail() {
 
   const handleUpdateMilestoneStatus = async (milestone, newStatus) => {
     try {
-      await api.updateMilestone(id, milestone.id, { status: newStatus }, token)
+      await api.updateMilestone(id, milestone.id, { status: newStatus })
       await refreshMilestones()
     } catch (err) {
       setError(err.message)
@@ -313,7 +313,7 @@ export default function ProjectDetail() {
   const handleDeleteMilestone = async (milestoneId) => {
     if (!window.confirm('Delete this milestone?')) return
     try {
-      await api.deleteMilestone(id, milestoneId, token)
+      await api.deleteMilestone(id, milestoneId)
       await refreshMilestones()
     } catch (err) {
       setError(err.message)

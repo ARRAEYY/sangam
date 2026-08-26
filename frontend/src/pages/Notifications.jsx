@@ -26,14 +26,14 @@ function destinationFor(notification) {
 }
 
 export default function Notifications() {
-  const { token } = useAuth()
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState(null)
   const [filter, setFilter] = useState('all')
   const [error, setError] = useState('')
 
   const load = async () => {
     try {
-      const data = await api.listNotifications(token)
+      const data = await api.listNotifications()
       setNotifications(data)
     } catch (err) {
       setError(err.message)
@@ -43,11 +43,11 @@ export default function Notifications() {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [])
 
   const markRead = async (id) => {
     try {
-      await api.markNotificationRead(id, token)
+      await api.markNotificationRead(id)
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
     } catch (err) {
       setError(err.message)
@@ -56,7 +56,7 @@ export default function Notifications() {
 
   const markAllRead = async () => {
     try {
-      await api.markAllNotificationsRead(token)
+      await api.markAllNotificationsRead()
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
     } catch (err) {
       setError(err.message)
@@ -65,7 +65,7 @@ export default function Notifications() {
 
   const remove = async (id) => {
     try {
-      await api.deleteNotification(id, token)
+      await api.deleteNotification(id)
       setNotifications((prev) => prev.filter((n) => n.id !== id))
     } catch (err) {
       setError(err.message)
