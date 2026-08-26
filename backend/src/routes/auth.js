@@ -8,7 +8,7 @@ const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
 const { requireAuth } = require('../middleware/auth')
-const { sendPasswordResetEmail } = require('../utils/mailer')
+const { sendPasswordResetEmail, sendVerificationEmail } = require('../utils/mailer')
 const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../utils/courses')
 
 const router = express.Router()
@@ -136,9 +136,16 @@ router.post('/register', authLimiter, async (req, res, next) => {
 
     const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
     console.log(`\n📧 Email verification link for ${email}:\n   ${verifyUrl}\n`)
-    
+
+    // Send verification email via Brevo (with fallback chain)
+    const mailResult = await sendVerificationEmail(email, verifyUrl)
+    if (mailResult && !mailResult.sent && !mailResult.simulated) {
+      console.error(`[AUTH REGISTER] Verification email delivery failed for ${email}: ${mailResult.error}`)
+      // Don't block registration — user can request resend
+    }
+
     return res.status(201).json({
-      message: 'Account created! Please check your email to verify your account before logging in.',
+      message: 'Account created! Please check your campus email to verify your account before logging in.',
       requires_verification: true,
       user: serializeUser(user),
     })
@@ -269,9 +276,11 @@ router.post('/resend-verification', authLimiter, async (req, res, next) => {
     const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
     console.log(`\n📧 Resent verification link for ${email}:\n   ${verifyUrl}\n`)
 
+    // Send via Brevo (with fallback chain)
+    await sendVerificationEmail(email, verifyUrl)
+
     return res.json({
       message: 'If an account with that email exists, a verification link has been sent.',
-      verify_url: process.env.NODE_ENV !== 'production' ? verifyUrl : undefined,
     })
   } catch (error) {
     return next(error)
