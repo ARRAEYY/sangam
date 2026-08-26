@@ -4,51 +4,37 @@ import { api } from '../api'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('campus_token'))
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!token) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
+    // Attempt to fetch profile on mount using HttpOnly cookie
     api
-      .getProfile(token)
+      .getProfile()
       .then(setUser)
       .catch(() => {
-        setToken(null)
-        localStorage.removeItem('campus_token')
         setUser(null)
       })
       .finally(() => setLoading(false))
-  }, [token])
+  }, [])
 
   const login = async (email, password) => {
     const data = await api.login({ email, password })
-    if (data.access_token) {
-      localStorage.setItem('campus_token', data.access_token)
-      setToken(data.access_token)
-    }
-    const profile = data.user || (await api.getProfile(data.access_token))
+    const profile = data.user || (await api.getProfile())
     setUser(profile)
     return profile
   }
 
   const loginWithGoogle = async (credential) => {
     const data = await api.loginWithGoogle(credential)
-    if (data.access_token) {
-      localStorage.setItem('campus_token', data.access_token)
-      setToken(data.access_token)
-    }
-    const profile = data.user || (await api.getProfile(data.access_token))
+    const profile = data.user || (await api.getProfile())
     setUser(profile)
     return profile
   }
 
   const register = async (payload) => {
     const result = await api.register(payload)
+    // Register might return a user if email verification is bypassed, but we made it mandatory
     return result
   }
 
@@ -58,14 +44,12 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore
     }
-    localStorage.removeItem('campus_token')
-    setToken(null)
     setUser(null)
   }
 
   const refreshProfile = async () => {
     try {
-      const profile = await api.getProfile(token)
+      const profile = await api.getProfile()
       setUser(profile)
     } catch {
       setUser(null)
@@ -74,7 +58,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, user, loading, login, loginWithGoogle, register, logout, refreshProfile }}
+      value={{ user, loading, login, loginWithGoogle, register, logout, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

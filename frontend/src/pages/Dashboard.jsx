@@ -38,7 +38,7 @@ const STATUS_COLORS = {
 }
 
 export default function Dashboard() {
-  const { user, token, refreshProfile, logout } = useAuth()
+  const { user, refreshProfile, logout } = useAuth()
   const navigate = useNavigate()
   const [myProjects, setMyProjects] = useState([])
   const [myApplications, setMyApplications] = useState([])
@@ -115,15 +115,15 @@ export default function Dashboard() {
   }
 
   const loadConnections = () => {
-    if (!token) return
-    api.listConnectionRequests('received', token).then((all) =>
+    if (!user) return
+    api.listConnectionRequests('received').then((all) =>
       setPendingRequests(all.filter((r) => r.status === 'PENDING'))
     ).catch((err) => setError(err.message))
     api.listConnections(token).then(setConnections).catch((err) => setError(err.message))
   }
 
   const loadPortfolio = () => {
-    if (!user || !token) return
+    if (!user) return
     api
       .getUserPublicProfile(user.id, token)
       .then((data) => {

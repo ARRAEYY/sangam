@@ -83,10 +83,10 @@ function createLimiter({
 
 // Pre-configured limiters with balanced, user-friendly thresholds ───
 
-/** Auth endpoints: 30 attempts per 15 minutes per IP+email */
+/** Auth endpoints: 5 attempts per 15 minutes per IP+email */
 const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 5,
   keyGenerator: (req) => {
     const email = String(req.body?.email || '').trim().toLowerCase()
     return `auth:${req.ip}:${email}`

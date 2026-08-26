@@ -41,7 +41,7 @@ export default function TalentSearch() {
 
   const handleConnectSubmit = async (e) => {
     e.preventDefault()
-    if (!token || !connectingUserId) return
+    if (!connectingUserId) return
     const personId = connectingUserId
     try {
       await api.sendConnectionRequest(personId, connectionMessage, token)

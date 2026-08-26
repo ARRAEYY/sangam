@@ -9,11 +9,8 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
     if (query) url += `?${query}`
   }
 
-  const authToken = token || localStorage.getItem('campus_token')
   const headers = { 'Content-Type': 'application/json' }
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`
-  }
+  // We rely entirely on the HttpOnly cookie for auth, so no Authorization header is sent.
 
   let res
   try {
