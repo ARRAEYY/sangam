@@ -9,6 +9,13 @@ import { VALID_COURSES } from '../utils/courses'
 
 const currentYear = new Date().getFullYear()
 
+/** UX-only client-side domain check — backend is the authoritative security boundary */
+function isCampusEmail(email) {
+  const domain = String(email || '').trim().toLowerCase().split('@')[1]
+  if (!domain) return null // not typed yet
+  return domain === 'rishihood.edu.in' || domain.endsWith('.rishihood.edu.in')
+}
+
 function getPasswordStrength(password) {
   if (!password) return { score: 0, label: '', color: '' }
   let score = 0
@@ -74,6 +81,9 @@ export default function Auth() {
     github_url: '',
     skills: [],
   })
+
+  const regEmailDomainValid = isCampusEmail(regForm.email)
+  const loginEmailDomainValid = isCampusEmail(loginForm.email)
 
   useEffect(() => {
     if (searchParams.get('verified') === 'true') {
@@ -156,7 +166,9 @@ export default function Auth() {
           {mode === 'login' ? 'Welcome back to Sangam' : 'Join Sangam'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          {mode === 'login' ? 'Sign in with your campus email.' : 'Only campus email addresses are accepted.'}
+          {mode === 'login'
+            ? 'Sign in with your Rishihood campus email or Google account.'
+            : 'Use your Rishihood campus email (e.g. you@nst.rishihood.edu.in).'}
         </p>
       </div>
 
@@ -225,11 +237,14 @@ export default function Auth() {
                 <input
                   type="email"
                   required
-                  placeholder="you@depart.rishihood.edu.in"
+                  placeholder="you@nst.rishihood.edu.in"
                   value={loginForm.email}
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   className="input"
                 />
+                {loginEmailDomainValid === false && (
+                  <p className="mt-1 text-xs text-amber-600">Please use your Rishihood campus email address.</p>
+                )}
               </Field>
               <Field label="Password">
                 <input
@@ -287,11 +302,16 @@ export default function Auth() {
               <input
                 type="email"
                 required
-                placeholder="you@depart.rishihood.edu.in"
+                placeholder="you@nst.rishihood.edu.in"
                 value={regForm.email}
                 onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
                 className="input"
               />
+              {regEmailDomainValid === false && (
+                <p className="mt-1 text-xs text-amber-600">
+                  Please use your Rishihood campus email address (e.g. you@nst.rishihood.edu.in).
+                </p>
+              )}
             </Field>
             <Field label="Password">
               <input

@@ -438,13 +438,37 @@ router.post('/google', authLimiter, async (req, res, next) => {
     const payload = await response.json()
 
     if (!response.ok || !payload.email) {
-      return res.status(401).json({ detail: payload.error_description || 'Invalid Google credential token.' })
+      return res.status(401).json({ detail: 'Invalid or expired Google credential. Please try again.' })
+    }
+
+    // --- Security: Validate audience (aud) claim against our own Client ID ---
+    // This prevents tokens issued to other apps from being accepted.
+    const configuredClientId = (process.env.GOOGLE_CLIENT_ID || '').trim()
+    if (configuredClientId) {
+      const tokenAud = payload.aud
+      const validAudiences = Array.isArray(tokenAud) ? tokenAud : [tokenAud]
+      if (!validAudiences.includes(configuredClientId)) {
+        console.warn('[GOOGLE AUTH] Token audience mismatch. aud:', tokenAud, 'expected:', configuredClientId)
+        return res.status(401).json({ detail: 'Invalid Google credential token audience.' })
+      }
+    } else {
+      // In production, GOOGLE_CLIENT_ID MUST be set. Warn loudly if missing.
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[GOOGLE AUTH] CRITICAL: GOOGLE_CLIENT_ID env var is not set in production. Audience validation SKIPPED — this is a security risk!')
+      } else {
+        console.warn('[GOOGLE AUTH] GOOGLE_CLIENT_ID not set — skipping audience validation (dev only).')
+      }
+    }
+
+    // --- Security: Google must attest the email is verified ---
+    if (payload.email_verified !== true && payload.email_verified !== 'true') {
+      return res.status(403).json({ detail: 'Your Google account email is not verified. Please verify it with Google first.' })
     }
 
     const email = normalizeEmail(payload.email)
     if (!isCampusEmail(email)) {
-      return res.status(400).json({
-        detail: 'Only Rishihood email addresses (e.g. you@depart.rishihood.edu.in) are permitted to sign in.',
+      return res.status(403).json({
+        detail: 'Please sign in with your Rishihood campus Google account (e.g. you@nst.rishihood.edu.in). Personal Gmail accounts are not permitted.',
       })
     }
 
