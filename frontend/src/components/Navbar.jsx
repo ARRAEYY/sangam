@@ -61,6 +61,25 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
+  // Handle drawer scroll lock and escape key
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+      
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') setMobileMenuOpen(false)
+      }
+      document.addEventListener('keydown', handleEsc)
+      
+      return () => {
+        document.body.style.overflow = ''
+        document.removeEventListener('keydown', handleEsc)
+      }
+    } else {
+      document.body.style.overflow = ''
+    }
+  }, [mobileMenuOpen])
+
   // Auto-close mobile menu on route changes
   useEffect(() => {
     setMobileMenuOpen(false)
