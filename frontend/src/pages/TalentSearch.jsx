@@ -301,17 +301,19 @@ export default function TalentSearch() {
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                         <GraduationCap size={16} className="text-slate-400" /> Education
                       </h3>
-                      <div className="space-y-3">
+                      <div className="flex flex-col gap-4 divide-y divide-slate-100">
                         {selectedUser.educations.map((edu) => (
-                          <div key={edu.id} className="border-l-2 border-brand-200 pl-4">
-                            <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
-                            <p className="text-sm text-slate-600">
-                              {edu.institution}
-                              {edu.department ? ` (${edu.department})` : ''}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {edu.start_year} - {edu.graduation_year || 'Present'}
-                            </p>
+                          <div key={edu.id} className="pt-4 first:pt-0">
+                            <div className="border-l-2 border-brand-200 pl-4">
+                              <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
+                              <p className="text-sm text-slate-600">
+                                {edu.institution}
+                                {edu.department ? ` (${edu.department})` : ''}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {edu.start_year} - {edu.graduation_year || 'Present'}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -324,16 +326,18 @@ export default function TalentSearch() {
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                         <Briefcase size={16} className="text-slate-400" /> Experience
                       </h3>
-                      <div className="space-y-4">
+                      <div className="flex flex-col gap-4 divide-y divide-slate-100">
                         {selectedUser.experiences.map((exp) => (
-                          <div key={exp.id} className="border-l-2 border-brand-200 pl-4">
-                            <h4 className="font-semibold text-slate-800">{exp.role}</h4>
-                            <p className="text-sm text-brand-600">{exp.organization}</p>
-                            <p className="text-xs text-slate-500 mb-1">
-                              {new Date(exp.start_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} -{' '}
-                              {exp.end_date ? new Date(exp.end_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Present'}
-                            </p>
-                            {exp.description && <p className="text-sm text-slate-600 whitespace-pre-wrap">{exp.description}</p>}
+                          <div key={exp.id} className="pt-4 first:pt-0">
+                            <div className="border-l-2 border-brand-200 pl-4">
+                              <h4 className="font-semibold text-slate-800">{exp.role}</h4>
+                              <p className="text-sm text-brand-600">{exp.organization}</p>
+                              <p className="text-xs text-slate-500 mb-1">
+                                {new Date(exp.start_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} -{' '}
+                                {exp.end_date ? new Date(exp.end_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Present'}
+                              </p>
+                              {exp.description && <p className="text-sm text-slate-600 whitespace-pre-wrap">{exp.description}</p>}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -346,25 +350,27 @@ export default function TalentSearch() {
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                         <Award size={16} className="text-slate-400" /> Achievements
                       </h3>
-                      <div className="space-y-3">
+                      <div className="flex flex-col gap-4 divide-y divide-slate-100">
                         {selectedUser.achievements.map((ach) => (
-                          <div key={ach.id} className="border-l-2 border-brand-200 pl-4">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-slate-800">{ach.title}</h4>
-                              <span className="pill bg-brand-50 text-brand-700 text-[10px] py-0.5">{ach.type}</span>
+                          <div key={ach.id} className="pt-4 first:pt-0">
+                            <div className="border-l-2 border-brand-200 pl-4">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-slate-800">{ach.title}</h4>
+                                <span className="pill bg-brand-50 text-brand-700 text-[10px] py-0.5">{ach.type}</span>
+                              </div>
+                              {ach.issuer && <p className="text-sm text-slate-600">{ach.issuer}</p>}
+                              {ach.description && <p className="text-sm text-slate-600 mt-1">{ach.description}</p>}
+                              {ach.url && (
+                                <a
+                                  href={ach.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                                >
+                                  View Credential →
+                                </a>
+                              )}
                             </div>
-                            {ach.issuer && <p className="text-sm text-slate-600">{ach.issuer}</p>}
-                            {ach.description && <p className="text-sm text-slate-600 mt-1">{ach.description}</p>}
-                            {ach.url && (
-                              <a
-                                href={ach.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-1 inline-block text-xs font-semibold text-brand-600 hover:underline"
-                              >
-                                View Credential →
-                              </a>
-                            )}
                           </div>
                         ))}
                       </div>
