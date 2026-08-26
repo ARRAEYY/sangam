@@ -9,6 +9,7 @@ const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
 const { requireAuth } = require('../middleware/auth')
 const { sendPasswordResetEmail } = require('../utils/mailer')
+const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../utils/courses')
 
 const router = express.Router()
 
@@ -86,7 +87,13 @@ router.post('/register', authLimiter, async (req, res, next) => {
     }
 
     if (!branch) {
-      return res.status(400).json({ detail: 'Branch is required.' })
+      return res.status(400).json({ detail: 'Course / branch is required.' })
+    }
+    const normalizedBranch = normalizeCourse(branch)
+    if (!normalizedBranch) {
+      return res.status(400).json({
+        detail: `Invalid course. Must be one of: ${VALID_COURSES.join(', ')}.`,
+      })
     }
     if (!Number.isInteger(graduationYear) || graduationYear < 2000) {
       return res.status(400).json({ detail: 'Graduation year is required.' })
@@ -111,7 +118,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
           email,
           password_hash: passwordHash,
           full_name: fullName,
-          branch,
+          branch: normalizedBranch,
           graduation_year: graduationYear,
           github_url: githubUrl || null,
           bio: payload.bio || null,

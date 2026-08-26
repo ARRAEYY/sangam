@@ -25,6 +25,7 @@ import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
+import { VALID_COURSES } from '../utils/courses'
 
 const STATUS_COLORS = {
   PENDING: 'bg-amber-50 text-amber-700',
@@ -131,8 +132,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     api
-      .listProjects({})
-      .then((all) => setMyProjects(all.filter((p) => p.owner && p.owner.id === user.id)))
+      .listProjects({ mine: 'true' }, token)
+      .then((my) => setMyProjects(my))
       .catch((err) => setError(err.message))
     api
       .myApplications(token)
@@ -330,6 +331,47 @@ export default function Dashboard() {
       {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       <section className="card mb-10 p-5 sm:p-7">
+        {/* Profile Completion Bar */}
+        {user.profile_completion && (
+          <div className="mb-6 rounded-2xl bg-gradient-to-r from-brand-50/70 via-cream-50 to-emerald-50/50 p-4 border border-brand-100/80">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-brand-600 text-xs font-bold text-white shadow-sm">
+                  {user.profile_completion.percentage}%
+                </span>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Profile Completion</h3>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-brand-700">
+                {user.profile_completion.percentage === 100 ? 'All Set! 🎉' : `${user.profile_completion.percentage}% Complete`}
+              </span>
+            </div>
+            
+            <div className="h-2 w-full rounded-full bg-slate-200/80 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-500"
+                style={{ width: `${user.profile_completion.percentage}%` }}
+              />
+            </div>
+            
+            {user.profile_completion.percentage < 100 && (
+              <div className="mt-2.5 flex items-center justify-between gap-2 text-xs text-slate-600">
+                <p className="flex items-center gap-1.5 truncate">
+                  <span className="text-brand-600 font-semibold">Recommended:</span> {user.profile_completion.next_step}
+                </p>
+                <button
+                  type="button"
+                  onClick={startEditing}
+                  className="shrink-0 font-semibold text-brand-700 hover:text-brand-800 underline"
+                >
+                  Update →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {!editingProfile ? (
           <>
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -410,12 +452,18 @@ export default function Dashboard() {
                   onChange={(e) => setProfileDraft({ ...profileDraft, full_name: e.target.value })}
                 />
               </Field>
-              <Field label="Branch / major">
-                <input
+              <Field label="Course / Branch">
+                <select
+                  required
                   className="input"
                   value={profileDraft.branch}
                   onChange={(e) => setProfileDraft({ ...profileDraft, branch: e.target.value })}
-                />
+                >
+                  <option value="" disabled>Select your course</option>
+                  {VALID_COURSES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </Field>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

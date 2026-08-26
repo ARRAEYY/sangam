@@ -18,6 +18,8 @@ import {
   AlertCircle,
   Loader2,
   Calendar,
+  UserPlus,
+  Search,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -78,6 +80,17 @@ export default function ProjectDetail() {
   const [editRoleModal, setEditRoleModal] = useState(null)
   const [editRoleForm, setEditRoleForm] = useState({ role: '', role_category: '' })
 
+  // Add member modal state (direct add by lead)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchingUsers, setSearchingUsers] = useState(false)
+  const [selectedUserToAdd, setSelectedUserToAdd] = useState(null)
+  const [addMemberRole, setAddMemberRole] = useState('')
+  const [addMemberCategory, setAddMemberCategory] = useState('OTHER')
+  const [addMemberError, setAddMemberError] = useState('')
+  const [addMemberSubmitting, setAddMemberSubmitting] = useState(false)
+
   useEffect(() => {
     api.getProject(id).then(setProject).catch((err) => setError(err.message))
     api.getMembers(id).then(setMembers).catch(() => {})
@@ -87,6 +100,26 @@ export default function ProjectDetail() {
   const isOwner = user && project && project.owner?.id === user.id
   const isMember = members.some((m) => m.user_id === user?.id)
   const myMembership = members.find((m) => m.user_id === user?.id)
+
+  // Search autocomplete for adding members
+  useEffect(() => {
+    if (!searchQuery.trim() || !showAddMemberModal || selectedUserToAdd) {
+      setSearchResults([])
+      return
+    }
+    const timer = setTimeout(() => {
+      setSearchingUsers(true)
+      setAddMemberError('')
+      api.searchUsers(searchQuery.trim(), token)
+        .then((res) => {
+          const existingIds = new Set(members.map((m) => m.user_id))
+          setSearchResults(res.filter((u) => !existingIds.has(u.id)))
+        })
+        .catch((err) => setAddMemberError(err.message))
+        .finally(() => setSearchingUsers(false))
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [searchQuery, showAddMemberModal, selectedUserToAdd, token, members])
 
   useEffect(() => {
     if (isOwner) {
@@ -208,6 +241,36 @@ export default function ProjectDetail() {
       setEditRoleModal(null)
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  const handleAddMemberSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedUserToAdd) {
+      setAddMemberError('Please search and select a user to add.')
+      return
+    }
+    if (!addMemberRole.trim()) {
+      setAddMemberError('Role title is required.')
+      return
+    }
+    setAddMemberSubmitting(true)
+    setAddMemberError('')
+    try {
+      await api.addProjectMember(id, {
+        user_id: selectedUserToAdd.id,
+        role: addMemberRole.trim(),
+        role_category: addMemberCategory,
+      }, token)
+      await refreshMembers()
+      setShowAddMemberModal(false)
+      setSelectedUserToAdd(null)
+      setSearchQuery('')
+      setAddMemberRole('')
+    } catch (err) {
+      setAddMemberError(err.message)
+    } finally {
+      setAddMemberSubmitting(false)
     }
   }
 
@@ -400,9 +463,27 @@ export default function ProjectDetail() {
 
       {/* ─── Team Roster ─────────────────────────────────────── */}
       <div className="mt-8">
-        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-slate-900">
-          <Users size={17} className="text-brand-600" /> Team ({members.length})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-slate-900">
+            <Users size={17} className="text-brand-600" /> Team ({members.length})
+          </h2>
+          {isOwner && (
+            <button
+              onClick={() => {
+                setShowAddMemberModal(true)
+                setSearchQuery('')
+                setSearchResults([])
+                setSelectedUserToAdd(null)
+                setAddMemberRole('')
+                setAddMemberCategory('OTHER')
+                setAddMemberError('')
+              }}
+              className="flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition shadow-sm"
+            >
+              <UserPlus size={13} /> Add Member
+            </button>
+          )}
+        </div>
         {members.length === 0 ? (
           <p className="text-sm text-slate-500">No team members yet.</p>
         ) : (
@@ -690,11 +771,157 @@ export default function ProjectDetail() {
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setEditRoleModal(null)} className="btn-secondary !px-4">Cancel</button>
-              <button onClick={confirmEditRole} className="btn-primary !px-5">
+              <button onClick={() => setEditRoleModal(null)} className="btn-secondary !px-4 text-xs">Cancel</button>
+              <button onClick={confirmEditRole} className="btn-primary !px-5 text-xs">
                 <Check size={15} /> Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Add Member Modal (Direct add by lead) ──────────── */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowAddMemberModal(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-display text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <UserPlus size={18} className="text-brand-600" /> Add Team Member
+              </h3>
+              <button onClick={() => setShowAddMemberModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <XIcon size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">Directly add an existing Sangam student to your project team.</p>
+
+            {addMemberError && (
+              <div className="mb-4 rounded-xl bg-red-50 px-3.5 py-2 text-xs text-red-700">{addMemberError}</div>
+            )}
+
+            <form onSubmit={handleAddMemberSubmit} className="space-y-4">
+              {/* Step 1: User Search / Selected User */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Student *</label>
+                {!selectedUserToAdd ? (
+                  <div className="relative">
+                    <div className="relative">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        className="input !pl-9"
+                        placeholder="Search by name or email…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+
+                    {searchingUsers && (
+                      <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+                        <Loader2 size={12} className="animate-spin" /> Searching students…
+                      </p>
+                    )}
+
+                    {searchResults.length > 0 && (
+                      <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg space-y-1">
+                        {searchResults.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedUserToAdd(u)
+                              setSearchQuery('')
+                              setSearchResults([])
+                            }}
+                            className="w-full flex items-center gap-2.5 rounded-lg p-2 text-left hover:bg-slate-50 transition"
+                          >
+                            {u.avatar_url ? (
+                              <img src={u.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            ) : (
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 shrink-0">
+                                {(u.full_name || '?')[0].toUpperCase()}
+                              </span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-slate-900 truncate">{u.full_name}</p>
+                              <p className="text-[11px] text-slate-500 truncate">{u.branch} · {u.email}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchingUsers && (
+                      <p className="text-xs text-slate-400 mt-1.5">No matching students found.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/50 p-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {selectedUserToAdd.avatar_url ? (
+                        <img src={selectedUserToAdd.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800 shrink-0">
+                          {(selectedUserToAdd.full_name || '?')[0].toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">{selectedUserToAdd.full_name}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{selectedUserToAdd.branch} · {selectedUserToAdd.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUserToAdd(null)}
+                      className="text-xs font-semibold text-brand-700 hover:text-brand-800 underline shrink-0 px-2"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2: Role Details */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Role Title *</label>
+                <input
+                  required
+                  className="input"
+                  placeholder="e.g. Frontend Developer, UI Designer"
+                  value={addMemberRole}
+                  onChange={(e) => setAddMemberRole(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+                <select
+                  className="input"
+                  value={addMemberCategory}
+                  onChange={(e) => setAddMemberCategory(e.target.value)}
+                >
+                  {ROLE_CATEGORIES.filter((c) => c !== 'LEAD').map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="btn-secondary !px-4 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedUserToAdd || !addMemberRole.trim() || addMemberSubmitting}
+                  className="btn-primary !px-5 text-xs disabled:opacity-50"
+                >
+                  {addMemberSubmitting ? 'Adding…' : 'Add to Project'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,3 +1,5 @@
+const { calculateProfileCompletion } = require('./profileCompletion')
+
 function normalizeSkill(skill) {
   if (!skill) return null
   if (typeof skill === 'string') {
@@ -10,15 +12,15 @@ function serializeSkills(skills = []) {
   return skills.map(normalizeSkill).filter(Boolean)
 }
 
-function serializeUser(user) {
+function serializeUser(user, extra = {}) {
   if (!user) return null
 
   const plain = user.toJSON ? user.toJSON() : user
   const createdAt = plain.created_at || plain.createdAt || null
   const updatedAt = plain.updated_at || plain.updatedAt || null
-  const { password_hash, google_id, createdAt: _c, updatedAt: _u, ...safeUser } = plain
+  const { password_hash, google_id, email_verification_token, password_reset_token, createdAt: _c, updatedAt: _u, ...safeUser } = plain
 
-  return {
+  const userObj = {
     ...safeUser,
     id: safeUser.id,
     email: safeUser.email,
@@ -39,6 +41,15 @@ function serializeUser(user) {
     created_at: createdAt,
     updated_at: updatedAt,
   }
+
+  userObj.profile_completion = calculateProfileCompletion(userObj, {
+    experiences: extra.experiences || userObj.experiences || [],
+    educations: extra.educations || userObj.educations || [],
+    achievements: extra.achievements || userObj.achievements || [],
+    memberships: extra.memberships || userObj.project_roles || [],
+  })
+
+  return userObj
 }
 
 function serializeNotification(notification) {

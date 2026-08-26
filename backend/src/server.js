@@ -131,6 +131,23 @@ async function start() {
       console.warn('Notification ENUM migration warning:', err.message)
     }
 
+    // ─── Safe Branch/Course Normalization Migration ──────────────────
+    try {
+      const { normalizeCourse } = require('./utils/courses')
+      const { User } = require('./models')
+      const users = await User.findAll({ attributes: ['id', 'branch'] })
+      for (const u of users) {
+        if (u.branch) {
+          const normalized = normalizeCourse(u.branch)
+          if (normalized && normalized !== u.branch) {
+            await u.update({ branch: normalized })
+          }
+        }
+      }
+    } catch (courseErr) {
+      console.warn('Course normalization warning:', courseErr.message)
+    }
+
     const { verifyTransporter } = require('./utils/mailer')
     verifyTransporter().then((smtpStatus) => {
       if (smtpStatus.configured) {

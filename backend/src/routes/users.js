@@ -22,6 +22,7 @@ const {
   serializeAchievement,
   serializeProject,
 } = require('../utils/serializers')
+const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../utils/courses')
 
 const router = express.Router()
 
@@ -75,9 +76,15 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
     if (payload.branch !== undefined) {
       const value = String(payload.branch || '').trim()
       if (!value) {
-        return res.status(400).json({ detail: 'Branch is required.' })
+        return res.status(400).json({ detail: 'Course / branch is required.' })
       }
-      updates.branch = value
+      const normalized = normalizeCourse(value)
+      if (!normalized) {
+        return res.status(400).json({
+          detail: `Invalid course. Must be one of: ${VALID_COURSES.join(', ')}.`,
+        })
+      }
+      updates.branch = normalized
     }
     if (payload.graduation_year !== undefined) {
       const value = Number(payload.graduation_year)
@@ -208,45 +215,89 @@ router.get('/talent', requireAuth, async (req, res, next) => {
   }
 })
 
-router.get('/:id/public', requireAuth, async (req, res, next) => {
+router.get('/search', requireAuth, async (req, res, next) => {
   try {
-    const user = await loadUserWithSkills(req.params.id)
-    if (!user) {
-      return res.status(404).json({ detail: 'User not found.' })
+    const q = String(req.query.q || '').trim()
+    if (!q) {
+      return res.json([])
     }
 
-    const experiences = await Experience.findAll({
+    const users = await User.findAll({
+      where: {
+        [Op.or]: [
+          { full_name: { [Op.like]: `%${q}%` } },
+          { email: { [Op.like]: `%${q}%` } },
+        ],
+      },
+      attributes: ['id', 'full_name', 'email', 'avatar_url', 'headline', 'branch', 'graduation_year'],
+      limit: 10,
+      order: [['full_name', 'ASC']],
+    })
+
+    return res.json(
+      users.map((u) => ({
+        id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+        avatar_url: u.avatar_url || null,
+        headline: u.headline || null,
+        branch: u.branch,
+        graduation_year: u.graduation_year,
+      }))
+    )
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.get('/:id/public', requireAuth, async (req, res, next) => {
+  try {
+    const userPromise = loadUserWithSkills(req.params.id)
+    const experiencesPromise = Experience.findAll({
       where: { user_id: req.params.id },
       order: [['start_date', 'DESC']],
     })
-
-    const educations = await Education.findAll({
+    const educationsPromise = Education.findAll({
       where: { user_id: req.params.id },
       order: [['start_year', 'DESC']],
     })
-
-    const achievements = await Achievement.findAll({
+    const achievementsPromise = Achievement.findAll({
       where: { user_id: req.params.id },
       order: [['date_awarded', 'DESC'], ['created_at', 'DESC']],
     })
-
-    const applications = await Application.findAll({
+    const applicationsPromise = Application.findAll({
       where: { user_id: req.params.id, status: 'ACCEPTED' },
       include: [{ model: Project, as: 'project' }],
     })
-
-    // Project memberships (LinkedIn-style project roles)
-    const memberships = await ProjectMember.findAll({
+    const membershipsPromise = ProjectMember.findAll({
       where: { user_id: req.params.id },
       include: [{ model: Project, as: 'project', attributes: ['id', 'title', 'status'] }],
       order: [['joined_at', 'DESC']],
     })
 
-    const serializedUser = serializeUser(user)
+    const [user, experiences, educations, achievements, applications, memberships] = await Promise.all([
+      userPromise,
+      experiencesPromise,
+      educationsPromise,
+      achievementsPromise,
+      applicationsPromise,
+      membershipsPromise,
+    ])
+
+    if (!user) {
+      return res.status(404).json({ detail: 'User not found.' })
+    }
+
+    const serializedUser = serializeUser(user, {
+      experiences,
+      educations,
+      achievements,
+      memberships,
+    })
     serializedUser.experiences = experiences.map(serializeExperience)
     serializedUser.educations = educations.map(serializeEducation)
     serializedUser.achievements = achievements.map(serializeAchievement)
-    serializedUser.accepted_projects = applications.map(app => serializeProject(app.project))
+    serializedUser.accepted_projects = applications.filter(app => app.project).map(app => serializeProject(app.project))
     serializedUser.project_roles = memberships
       .filter((m) => m.project) // skip orphans
       .map((m) => ({

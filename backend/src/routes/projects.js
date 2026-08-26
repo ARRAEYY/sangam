@@ -69,6 +69,10 @@ router.get('/', requireAuth, async (req, res, next) => {
       order: [['created_at', 'DESC']],
     }
 
+    if (req.query.mine === 'true') {
+      query.where.owner_id = req.user.id
+    }
+
     if (skillFilter) {
       query.include[0].where = {
         name: {
@@ -400,6 +404,98 @@ router.get('/:id/members', requireAuth, async (req, res, next) => {
           : null,
       }))
     )
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// POST /api/projects/:id/members — lead-only direct add member
+router.post('/:id/members', requireAuth, async (req, res, next) => {
+  try {
+    const project = await Project.findByPk(req.params.id)
+    if (!project) {
+      return res.status(404).json({ detail: 'Project not found.' })
+    }
+    if (project.owner_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Only the project lead can add members.' })
+    }
+
+    const { user_id, role, role_category } = req.body || {}
+    if (!user_id) {
+      return res.status(400).json({ detail: 'User ID is required.' })
+    }
+
+    const roleTitle = String(role || '').trim()
+    if (!roleTitle) {
+      return res.status(400).json({ detail: 'Role title is required.' })
+    }
+
+    const validCategory = role_category && ProjectMember.ROLE_CATEGORIES.includes(role_category)
+      ? role_category
+      : 'OTHER'
+
+    const targetUser = await User.findByPk(user_id, {
+      attributes: ['id', 'full_name', 'email', 'avatar_url', 'headline'],
+    })
+    if (!targetUser) {
+      return res.status(404).json({ detail: 'User not found.' })
+    }
+
+    // Check existing membership record
+    const existingMember = await ProjectMember.findOne({
+      where: { project_id: project.id, user_id: targetUser.id },
+    })
+
+    let member
+    if (existingMember) {
+      if (existingMember.status === 'ACTIVE') {
+        return res.status(409).json({ detail: 'User is already an active member of this project.' })
+      }
+      // Reactivate previously left or removed member
+      existingMember.status = 'ACTIVE'
+      existingMember.role = roleTitle
+      existingMember.role_category = validCategory
+      existingMember.is_lead = false
+      existingMember.joined_at = new Date()
+      await existingMember.save()
+      member = existingMember
+    } else {
+      member = await ProjectMember.create({
+        project_id: project.id,
+        user_id: targetUser.id,
+        role: roleTitle,
+        role_category: validCategory,
+        is_lead: false,
+        status: 'ACTIVE',
+        joined_at: new Date(),
+      })
+    }
+
+    // Send notification to added member
+    const { createNotification } = require('../services/notificationService')
+    await createNotification({
+      recipientId: targetUser.id,
+      actorId: req.user.id,
+      type: 'MEMBER_ROLE_ASSIGNED',
+      message: `You were added to "${project.title}" as ${roleTitle}!`,
+      projectId: project.id,
+    }).catch(() => {})
+
+    return res.status(201).json({
+      id: member.id,
+      user_id: member.user_id,
+      role: member.role,
+      role_category: member.role_category,
+      is_lead: member.is_lead,
+      joined_at: member.joined_at,
+      status: member.status,
+      user: {
+        id: targetUser.id,
+        full_name: targetUser.full_name,
+        avatar_url: targetUser.avatar_url || null,
+        headline: targetUser.headline || null,
+      },
+    })
   } catch (error) {
     return next(error)
   }

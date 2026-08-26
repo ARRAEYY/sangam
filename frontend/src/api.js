@@ -73,6 +73,7 @@ export const api = {
   deleteAccount: (token) =>
     request('/api/users/profile', { method: 'DELETE', token }),
   searchTalent: (params) => request('/api/users/talent', { params }),
+  searchUsers: (q, token) => request('/api/users/search', { params: { q }, token }),
 
   // Experience
   addExperience: (payload, token) => request('/api/users/experience', { method: 'POST', body: payload, token }),
@@ -117,6 +118,8 @@ export const api = {
 
   // Team Roster
   getMembers: (projectId, token) => request(`/api/projects/${projectId}/members`, { token }),
+  addProjectMember: (projectId, payload, token) =>
+    request(`/api/projects/${projectId}/members`, { method: 'POST', body: payload, token }),
   updateMemberRole: (projectId, userId, payload, token) =>
     request(`/api/projects/${projectId}/members/${userId}`, { method: 'PATCH', body: payload, token }),
   removeMember: (projectId, userId, token) =>

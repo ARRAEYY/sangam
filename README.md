@@ -1,172 +1,212 @@
-# Campus Log
+# Sangam — Campus Project & Collaboration Platform
 
-A campus project/collaboration platform. React + Vite frontend, Express + Sequelize backend.
-
-- `frontend/` — React (Vite, Tailwind)
-- `backend/` — Express, Sequelize ORM, JWT auth, Google Identity Services sign-in
-
-Locally the backend runs on SQLite with zero setup. In production it runs on Postgres.
+Sangam is a private student collaboration and project execution platform built exclusively for **Rishihood University**. It bridges the gap between campus builders across Computer Science, AI, Design, and Business — allowing students to discover peers, assemble project squads with structured roles, manage milestone progress, and build a verified portfolio of shipped work.
 
 ---
 
-## Requirements
+## 📌 Problem
 
-- Node.js 20+ (tested on Node 22)
-- No local database install needed for development (SQLite file, auto-created)
-- A Google Cloud project with an OAuth 2.0 Client ID, if you want "Continue with Google" to work
+In college campuses, students frequently face friction when building projects, preparing for hackathons, or launching startups:
+- **Fragmented Discovery**: Finding someone with complementary skills (e.g. an AI engineer needing a Figma designer) requires word-of-mouth or crowded WhatsApp groups.
+- **Lack of Structure**: Projects often fail due to unclear ownership, lack of defined roles, and zero stage visibility.
+- **Unverified Experience**: Resumes rely on unverified claims rather than verifiable campus project track records.
 
 ---
 
-## Local setup
+## 🎯 What is Sangam?
 
-**Backend**
+Sangam is a lightweight project management and peer collaboration layer:
+1. **Verified Student Network**: Restricted exclusively to `@rishihood.edu.in` accounts.
+2. **Project Teams & Rosters**: Move beyond simple bulletin boards to structured teams with explicit roles (`Frontend`, `Backend`, `AI`, `Design`, `Product`, etc.).
+3. **Stage & Milestone Tracking**: Measure project progress with deliverables and real-time completion bars.
+4. **Verified Builder Portfolios**: Every completed role and project automatically builds your public campus profile.
 
-```bash
-cd backend
-cp .env.example .env
-npm install
-npm run dev        # http://localhost:8000
-npm run seed        # optional: demo data
+---
+
+## ⚡ Current Features (Fully Implemented & Working)
+
+### 1. Authentication & Security
+- **Campus Email Gating**: Locked to `@rishihood.edu.in` and subdomains (`@*.rishihood.edu.in`).
+- **Google OAuth / GIS**: "Continue with Google" token verification with domain validation.
+- **Password Strength & Reset**: 12+ character enforcement with SHA-256 expiring reset links.
+- **Access Gating**: All core pages (`/explore`, `/talent`, `/projects/:id`, `/dashboard`, `/create`, `/notifications`) protected with server and client auth guards.
+- **Safe Open-Redirect Defense**: Validates and sanitizes post-login redirect paths against an allowlisted set of routes.
+
+### 2. Student Profiles & Portfolio
+- **Canonical Course Selection**: Controlled dropdown for verified university courses (`B-Tech CS & AI`, `B-Tech CS & DS`, `B.Design`, `Bsc Phy`, `BBA`).
+- **Dynamic Profile Completion**: Weighted 0–100% completion bar with smart next-step recommendation prompts.
+- **Extended Portfolio**: Work experience, education history, hackathon & certification achievements, avatar photos, and social/code links (GitHub, LinkedIn, Portfolio, LeetCode, Codeforces).
+- **Verified Project History (LinkedIn-Style)**: Displays active and past project roles with badges and lead crowns.
+
+### 3. Projects & Team Collaboration
+- **Project Workspaces**: Post projects with required skill tags, description, and team size needed.
+- **Auto-Lead Assignment**: Project creator is automatically registered as Project Lead.
+- **Direct Member Addition**: Project leads can search existing Sangam students by name or email and add them directly with specific roles and categories.
+- **Pitch Applications**: Students can pitch to open projects; leads can accept with role assignment or reject.
+- **Team Roster Management**: Leads can edit roles and remove members; non-lead members can self-leave.
+- **Duplicate Protection**: Guards prevent duplicate active memberships and handle reactivations cleanly.
+
+### 4. Milestones & Progress Tracking
+- **Milestone Management**: Project leads can create, edit, reorder, and delete deliverable milestones with optional due dates.
+- **Status Lifecycle**: `NOT_STARTED` → `IN_PROGRESS` → `COMPLETED` / `BLOCKED`.
+- **Dynamic Progress Bar**: Live calculation of completion percentage and deliverables count.
+- **Milestone Notifications**: Broadcasting milestone completions to all active project teammates.
+
+### 5. Talent Directory & Networking
+- **Student Directory**: Search and filter peers by specific tech stack (React, Python, Figma, etc.).
+- **Campus Connections**: Send personalized connection requests, accept/decline, and manage mutual connections.
+- **Public Profile Modal**: View peer portfolios, project experience, skills, and achievements.
+
+### 6. Notification Center
+- Real-time in-app notifications for applications, decisions, connection requests, role assignments, member removals, and milestone completions.
+
+---
+
+## 🗺️ Core User Flow
+
+```
+1. Landing Page
+   │  (Explains value proposition, showcases live public project teasers)
+   ▼
+2. Sign Up / Sign In
+   │  (Campus email verification or Google OAuth + Canonical Course selection)
+   ▼
+3. Complete Profile
+   │  (Follow dynamic completion bar: bio, skills, socials, education, achievements)
+   ▼
+4. Discover & Connect
+   │  (Explore open projects by skill or search student talent directory)
+   ▼
+5. Form Teams & Assign Roles
+   │  (Post a project, accept applicant pitches, or directly invite peers with roles)
+   ▼
+6. Track Milestones & Ship
+   │  (Check off project deliverables, progress bar updates in real-time)
+   ▼
+7. Build Verified Portfolio
+   │  (Shipped projects automatically populate your public profile)
 ```
 
-**Frontend**
+---
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev        # http://localhost:5173
+## 👥 Benefits
+
+- **For Students**: Find cross-disciplinary peers, gain team project experience, and build a verified builder profile.
+- **For Project Leads**: Assemble squads quickly with direct invites or pitch applications, define clear roles, and track deliverable milestones.
+- **For Team Members**: Transparent project roadmap, defined responsibilities, and documented project experience.
+- **For the Campus Community**: Bridges silos between engineering, design, and business departments, fostering an active shipping culture.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 18 with Vite 5
+- **Styling**: Tailwind CSS with customized typography & design system
+- **Routing**: React Router v6 (with ProtectedRoute wrappers)
+- **Icons**: Lucide React
+- **Auth**: Google Identity Services (GIS) Web SDK + JWT Cookies
+
+### Backend
+- **Runtime**: Node.js (v20+)
+- **Server**: Express.js
+- **ORM**: Sequelize v6
+- **Databases**:
+  - **Development**: SQLite (`campus.db`, zero-config local setup)
+  - **Production**: PostgreSQL (Neon Serverless Postgres)
+- **Security**: Rate Limiting (`express-rate-limit`), Cookie-Parser, Bcryptjs, SHA-256 Tokens
+
+---
+
+## 🏗️ Architecture
+
+```
+Campus-log/
+├── backend/
+│   ├── src/
+│   │   ├── config/          # Sequelize DB config (Postgres in prod, SQLite in dev)
+│   │   ├── middleware/      # Auth (JWT cookie/header), RateLimit, ErrorHandler
+│   │   ├── models/          # User, Project, ProjectMember, Milestone, Application,
+│   │   │                    # Skill, Notification, Connection, Experience, Education, Achievement
+│   │   ├── routes/          # auth, users, projects, applications, notifications, connections
+│   │   ├── scripts/         # Safe backfill scripts (backfillProjectMembers.js)
+│   │   ├── services/        # Centralized notification service
+│   │   ├── utils/           # Password policy, courses, profile completion, serializers, mailer
+│   │   └── server.js        # Server bootstrap & safe startup schema migrations
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Navbar, Sidebar, ProjectCard, ProtectedRoute, GoogleSignIn, etc.
+│   │   ├── context/         # AuthContext
+│   │   ├── pages/           # Landing, Auth, Explore, ProjectDetail, CreateProject,
+│   │   │                    # Dashboard, TalentSearch, Notifications, ResetPassword
+│   │   ├── utils/           # Canonical courses list
+│   │   ├── api.js           # Centralized API request client
+│   │   └── App.jsx          # Route declarations & shell layout
 ```
 
 ---
 
-## Environment variables
+## ⚙️ Environment Setup
 
-### backend/.env
+### `backend/.env`
+```env
+PORT=8000
+NODE_ENV=development
+JWT_SECRET=your_long_random_jwt_secret_key
+JWT_EXPIRE_MINUTES=10080
+CORS_ORIGINS=http://localhost:5173
 
-| Variable | Required | Notes |
-|---|---|---|
-| `PORT` | no | defaults to 8000 |
-| `NODE_ENV` | prod | set to `production` in production |
-| `JWT_SECRET` | yes | random long string; never reuse the example value |
-| `JWT_EXPIRE_MINUTES` | no | defaults to 10080 (7 days) |
-| `DATABASE_URL` | prod | Postgres connection string. Unset locally → SQLite is used instead |
-| `DATABASE_STORAGE` | no | SQLite file path, dev only |
-| `DATABASE_SSL` | no | defaults to true; set `false` only if your Postgres host doesn't use SSL |
-| `CORS_ORIGINS` | yes | comma-separated list of allowed frontend origins |
-| `GOOGLE_CLIENT_ID` | for Google sign-in | OAuth 2.0 Web Client ID from Google Cloud Console |
+# Production Database (Leave unset for local SQLite)
+# DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+# DATABASE_SSL=true
 
-### frontend/.env
+# Google OAuth (Optional for local dev)
+# GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
 
-| Variable | Required | Notes |
-|---|---|---|
-| `VITE_API_URL` | yes | backend's public URL — must be `https://…` in production, never `localhost` |
-| `VITE_GOOGLE_CLIENT_ID` | for Google sign-in | same Client ID as backend's `GOOGLE_CLIENT_ID` |
-
----
-
-## Database setup
-
-Schema is managed with Sequelize migrations (`backend/src/migrations`), not manual table creation.
-
-```bash
-cd backend
-npm run migrate          # apply all pending migrations
-npm run migrate:status   # see what's applied
-npm run migrate:undo     # roll back the last migration
+# SMTP Email Configuration (Optional for password resets)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=584
+# SMTP_USER=your_email@domain.com
+# SMTP_PASS=your_app_password
+# SMTP_FROM="Sangam <noreply@sangam.edu>"
 ```
 
-Locally (no `DATABASE_URL` set), the server auto-syncs the SQLite schema on boot, so `npm run migrate` isn't required for local dev — it exists for Postgres/production, where the schema is only ever changed through migrations, never auto-synced.
-
----
-
-## Production deployment (Neon + Render + Vercel)
-
-I picked this combination because it fits the existing stack directly: Neon is serverless Postgres with no server to manage, Render runs the Express API as a persistent Node service (matches `PORT`/`app.listen` already in `server.js`), and Vercel is the standard host for a Vite/React SPA with the rewrite in `frontend/vercel.json` already in place for client-side routing.
-
-**I don't have access to your Neon, Render, Vercel, or Google Cloud accounts, so I can't actually click through and provision these — the code, migrations, and config files are ready, but the steps below are yours to run.**
-
-### STEP 1 — Create the production database (Neon)
-1. Go to https://neon.tech → sign up/log in → **New Project**.
-2. Name it (e.g. `campus-log`), pick a region close to your users, create it.
-3. On the project dashboard, copy the **connection string** (starts `postgresql://`). Use the "pooled connection" string if offered.
-
-### STEP 2 — Configure the database URL
-1. You'll paste this as `DATABASE_URL` into Render's environment variables in Step 5 — no need to put it in a committed file.
-
-### STEP 3 — Run migrations
-This happens automatically as part of Render's build (`render.yaml` sets `buildCommand: npm install && npm run migrate`). You can also run it manually from your machine against the Neon URL:
-```bash
-cd backend
-DATABASE_URL="<your neon connection string>" npm run migrate
+### `frontend/.env`
+```env
+VITE_API_URL=http://localhost:8000
+# VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
 ```
 
-### STEP 4 — Deploy the backend (Render)
-1. Push this repo to GitHub if it isn't already.
-2. Go to https://render.com → **New** → **Blueprint** → connect the repo. Render will read `render.yaml` at the repo root and detect the `campus-log-api` service (root directory `Campus-log/backend`).
-   - If you'd rather not use the blueprint: **New → Web Service**, root directory `Campus-log/backend`, build command `npm install && npm run migrate`, start command `npm start`.
+---
 
-### STEP 5 — Configure backend environment variables
-In the Render service → **Environment**, set:
-- `NODE_ENV=production`
-- `JWT_SECRET=<generate a long random string>`
-- `DATABASE_URL=<your Neon connection string from Step 1>`
-- `CORS_ORIGINS=<your Vercel frontend URL, added after Step 8>`
-- `GOOGLE_CLIENT_ID=<from Step 9>`
+## 🚀 Running Locally
 
-### STEP 6 — Get the backend production URL
-After the first deploy succeeds, Render shows a URL like `https://campus-log-api.onrender.com`. Copy it.
+1. **Clone & Install Backend**:
+   ```bash
+   cd backend
+   npm install
+   npm run dev        # Runs Express on http://localhost:8000
+   ```
 
-### STEP 7 — Configure the frontend API URL
-In Vercel (next step) set the environment variable `VITE_API_URL=https://campus-log-api.onrender.com` (your real Render URL from Step 6).
-
-### STEP 8 — Deploy the frontend (Vercel)
-1. Go to https://vercel.com → **New Project** → import the same repo.
-2. Set **Root Directory** to `Campus-log/frontend`.
-3. Framework preset: Vite (auto-detected).
-4. Add environment variables: `VITE_API_URL` (Step 7) and `VITE_GOOGLE_CLIENT_ID` (Step 9).
-5. Deploy. Copy the resulting URL, e.g. `https://campus-log.vercel.app`.
-6. Go back to Render (Step 5) and set `CORS_ORIGINS` to this exact URL, then redeploy the backend.
-
-### STEP 9 — Configure Google OAuth
-This app uses **Google Identity Services** (a client-side sign-in button returning a signed ID token that the backend verifies) — not a server redirect flow — so you only need an **authorized JavaScript origin**, not a callback/redirect URI.
-1. https://console.cloud.google.com/apis/credentials → select/create a project.
-2. **Create Credentials → OAuth client ID → Web application.**
-3. Under **Authorized JavaScript origins**, add both:
-   - `http://localhost:5173` (dev)
-   - `https://campus-log.vercel.app` (your real Vercel URL from Step 8)
-4. Save, copy the **Client ID**.
-5. Set it as `GOOGLE_CLIENT_ID` in Render (Step 5) and `VITE_GOOGLE_CLIENT_ID` in Vercel (Step 8), then redeploy both.
-
-### STEP 10 — Configure CORS
-Already done in Step 5/8 — `CORS_ORIGINS` on the backend must exactly match the Vercel frontend origin (no trailing slash).
-
-### STEP 11 — Test authentication
-Visit your Vercel URL → sign up with a campus email → log out → log back in → try "Continue with Google".
-
-### STEP 12 — Test projects
-Create a project, confirm it appears in Explore/search.
-
-### STEP 13 — Test applications
-Apply to a project from a second account, confirm the owner sees the application.
-
-### STEP 14 — Test connections
-Send a connection request between two accounts, accept it.
-
-### STEP 15 — Test notifications
-Confirm the notification bell updates after an application/connection event without a full page reload.
-
-### STEP 16 — Final verification
-Hit `https://campus-log-api.onrender.com/api/health` — expect `{"status":"ok","database":"connected"}`.
+2. **Install & Run Frontend**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev        # Runs Vite on http://localhost:5173
+   ```
 
 ---
 
-## Notes on what's already handled in code
+## 🚢 Production Deployment
 
-- **CORS** — configured from `CORS_ORIGINS`, credentials-aware, no wildcard origin (`backend/src/server.js`).
-- **Port binding** — reads `process.env.PORT`, never hardcoded.
-- **Error responses** — 5xx errors return a generic message to the client; full detail is logged server-side only (`backend/src/middleware/errorHandler.js`).
-- **Health check** — `GET /api/health` reports DB connectivity.
-- **One email = one account** — `users.email` has a unique constraint at the database level, enforced in both migrations and the Sequelize model; Google sign-in links to an existing email/password account instead of creating a duplicate.
-- **Passwords** — hashed with bcrypt, never stored or returned in plaintext.
-- **Authorization** — routes that mutate a resource (projects, applications, connections) check `req.user.id` against ownership before allowing changes — review `backend/src/routes/` if you add new mutating endpoints, since this is the most common source of IDOR bugs (e.g. changing `projectId` in a request to touch someone else's data).
+- **Frontend**: Hosted on [Vercel](https://vercel.com) (SPA routing with `vercel.json` rewrite rules).
+- **Backend**: Hosted on [Render](https://render.com) as a persistent Web Service.
+- **Database**: Managed PostgreSQL on [Neon](https://neon.tech).
+
+---
+
+## 📋 Current Intentional Limitations
+
+- **Email Domain**: Registration is strictly limited to `@rishihood.edu.in` and university subdomains.
+- **Leadership Transfer**: Project ownership transfer is currently handled directly by project leads; multiple leads per project is intentionally disallowed.
+- **Team Scope**: Teams are scoped to student builders on campus; public internet visitors can only view sanitized teasers without sensitive student data.

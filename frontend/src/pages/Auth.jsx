@@ -5,6 +5,7 @@ import GoogleSignInButton from '../components/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
 import { api } from '../api'
+import { VALID_COURSES } from '../utils/courses'
 
 const currentYear = new Date().getFullYear()
 
@@ -318,13 +319,20 @@ export default function Auth() {
               )}
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Branch / major">
-                <input
+              <Field label="Course / Branch">
+                <select
                   required
                   value={regForm.branch}
                   onChange={(e) => setRegForm({ ...regForm, branch: e.target.value })}
                   className="input"
-                />
+                >
+                  <option value="" disabled>Select course</option>
+                  {VALID_COURSES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="Graduation year">
                 <input
