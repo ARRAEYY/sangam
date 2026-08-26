@@ -173,86 +173,116 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu Drawer */}
-      {mobileMenuOpen && (
+      {/* Mobile Dropdown Menu Drawer (Slide-in) */}
+      <div
+        className={`fixed inset-0 z-50 flex justify-end transition-opacity duration-300 md:hidden ${
+          mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className={`absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity duration-300 ${
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+        
+        {/* Drawer */}
         <div
           ref={mobileMenuRef}
-          className="border-t border-slate-100 bg-white px-4 pb-5 pt-3 shadow-lg md:hidden"
+          className={`relative flex h-full w-[85%] max-w-sm flex-col bg-white px-4 pb-5 pt-4 shadow-2xl transition-transform duration-300 ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
         >
-          {user ? (
-            <div className="mb-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
-              <div className="flex items-center gap-3">
-                {renderAvatar('h-10 w-10 text-sm shadow-sm')}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900">{user.full_name}</p>
-                  <p className="truncate text-xs text-slate-500">{user.email}</p>
-                </div>
-              </div>
-              <Link
-                to="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm"
-              >
-                Profile
-              </Link>
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <SangamEmblem className="h-7 w-7 text-brand-600" />
+              <span className="font-display text-lg font-bold text-slate-900 tracking-tight">Sangam</span>
             </div>
-          ) : (
-            <div className="mb-3">
-              <Link
-                to="/auth"
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-center text-sm"
-              >
-                <LogIn size={16} /> Sign in / Join Sangam
-              </Link>
-            </div>
-          )}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-full border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 transition"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-          <div className="space-y-1">
-            {navLinks
-              .filter((item) => !item.requiresAuth || user)
-              .map(({ to, label, icon: Icon, highlight, badge }) => {
-                const active = location.pathname === to
-                return (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
-                      highlight && !active
-                        ? 'bg-brand-50 text-brand-700 font-semibold'
-                        : active
-                        ? 'bg-brand-600 text-white font-semibold shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={18} />
-                      <span>{label}</span>
-                    </div>
-                    {Boolean(badge && badge > 0) && (
-                      <span
-                        className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                          active ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
-                        }`}
-                      >
-                        {badge}
-                      </span>
-                    )}
-                  </Link>
-                )
-              })}
+          <div className="flex-1 overflow-y-auto">
+            {user ? (
+              <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 p-3">
+                <div className="flex items-center gap-3">
+                  {renderAvatar('h-10 w-10 text-sm shadow-sm')}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">{user.full_name}</p>
+                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                  </div>
+                </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Profile
+                </Link>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <Link
+                  to="/auth"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-center text-sm"
+                >
+                  <LogIn size={16} /> Sign in / Join Sangam
+                </Link>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              {navLinks
+                .filter((item) => !item.requiresAuth || user)
+                .map(({ to, label, icon: Icon, highlight, badge }) => {
+                  const active = location.pathname === to
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between rounded-xl px-3.5 py-3 text-sm font-medium transition ${
+                        highlight && !active
+                          ? 'bg-brand-600 text-white font-semibold shadow-sm'
+                          : active
+                          ? 'bg-brand-50 text-brand-700 font-semibold'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon size={18} />
+                        <span>{label}</span>
+                      </div>
+                      {Boolean(badge && badge > 0) && (
+                        <span
+                          className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                            active ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
+                          }`}
+                        >
+                          {badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+            </div>
           </div>
 
           {user && (
-            <div className="mt-3 border-t border-slate-100 pt-2">
+            <div className="mt-4 border-t border-slate-100 pt-4">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false)
                   logout()
                   navigate('/')
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
               >
                 <LogOut size={18} />
                 <span>Log out</span>
@@ -260,7 +290,7 @@ export default function Navbar() {
             </div>
           )}
         </div>
-      )}
+      </div>
     </nav>
   )
 }
