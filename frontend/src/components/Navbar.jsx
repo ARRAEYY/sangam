@@ -102,7 +102,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-3.5 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6">
         {/* Brand / Logo - Sangam */}
         <Link to="/" className="flex items-center gap-2.5">
           <SangamEmblem size={28} className="text-slate-900" />
