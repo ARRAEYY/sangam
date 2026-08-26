@@ -249,34 +249,11 @@ export default function TalentSearch() {
                 <p className="text-sm text-slate-500">Loading details...</p>
               ) : (
                 <>
-                  {/* Education First */}
-                  {selectedUser.educations && selectedUser.educations.length > 0 && (
-                    <div className="mb-8">
-                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <GraduationCap size={16} className="text-slate-400" /> Education
-                      </h3>
-                      <div className="space-y-3">
-                        {selectedUser.educations.map((edu) => (
-                          <div key={edu.id} className="border-l-2 border-brand-200 pl-4">
-                            <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
-                            <p className="text-sm text-slate-600">
-                              {edu.institution}
-                              {edu.department ? ` (${edu.department})` : ''}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {edu.start_year} - {edu.graduation_year || 'Present'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Projects Second */}
+                  {/* Projects First */}
                   {selectedUser.project_roles && selectedUser.project_roles.length > 0 ? (
                     <div className="mb-8">
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <FolderGit2 size={16} className="text-slate-400" /> Project Experience
+                        <FolderGit2 size={16} className="text-slate-400" /> Projects
                       </h3>
                       <div className="space-y-3">
                         {selectedUser.project_roles.map((pr, idx) => (
@@ -288,11 +265,6 @@ export default function TalentSearch() {
                               </h4>
                               <p className="text-xs text-brand-700 font-medium mt-0.5">
                                 {pr.role}
-                                {pr.role_category && pr.role_category !== 'OTHER' && (
-                                  <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] text-brand-600">
-                                    {pr.role_category}
-                                  </span>
-                                )}
                               </p>
                               {pr.since && (
                                 <p className="text-[11px] text-slate-400 mt-1">
@@ -323,11 +295,34 @@ export default function TalentSearch() {
                     </div>
                   ) : null}
 
-                  {/* Work Experience Third */}
+                  {/* Education Second */}
+                  {selectedUser.educations && selectedUser.educations.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <GraduationCap size={16} className="text-slate-400" /> Education
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedUser.educations.map((edu) => (
+                          <div key={edu.id} className="border-l-2 border-brand-200 pl-4">
+                            <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
+                            <p className="text-sm text-slate-600">
+                              {edu.institution}
+                              {edu.department ? ` (${edu.department})` : ''}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {edu.start_year} - {edu.graduation_year || 'Present'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Experience Third */}
                   {selectedUser.experiences && selectedUser.experiences.length > 0 && (
                     <div className="mb-8">
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <Briefcase size={16} className="text-slate-400" /> Work Experience
+                        <Briefcase size={16} className="text-slate-400" /> Experience
                       </h3>
                       <div className="space-y-4">
                         {selectedUser.experiences.map((exp) => (

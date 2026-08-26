@@ -642,111 +642,36 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Experience */}
+      {/* Projects (LinkedIn-style history) */}
       <section className="mb-10">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-lg font-semibold text-slate-900">
-            {experienceForm.id ? 'Edit Experience' : 'Add Experience'}
-          </h3>
-          <button onClick={() => { setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' }); setShowAddExperience(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
-            <Plus size={13} /> Add
-          </button>
-        </div>
-
-        {showAddExperience && (
-          <form onSubmit={handleAddExperience} className="card p-4 sm:p-5 mb-4 space-y-3 bg-slate-50 border-slate-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Organization *">
-                <input required className="input bg-white" value={experienceForm.organization} onChange={(e) => setExperienceForm({...experienceForm, organization: e.target.value})} />
-              </Field>
-              <Field label="Role *">
-                <input required className="input bg-white" value={experienceForm.role} onChange={(e) => setExperienceForm({...experienceForm, role: e.target.value})} />
-              </Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Field label="Location">
-                <input className="input bg-white" value={experienceForm.location} onChange={(e) => setExperienceForm({...experienceForm, location: e.target.value})} />
-              </Field>
-              <Field label="Work Type">
-                <select className="input bg-white" value={experienceForm.work_type} onChange={(e) => setExperienceForm({...experienceForm, work_type: e.target.value})}>
-                  {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-              </Field>
-              <Field label="Employment Type">
-                <select className="input bg-white" value={experienceForm.employment_type} onChange={(e) => setExperienceForm({...experienceForm, employment_type: e.target.value})}>
-                  {EMPLOYMENT_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-              </Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Start Date (Month Year) *">
-                <input required type="month" className="input bg-white" value={experienceForm.start_date.substring(0, 7)} onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value + '-01'})} />
-              </Field>
-              <Field label="End Date (Month Year)">
-                <input type="month" className="input bg-white" value={experienceForm.end_date ? experienceForm.end_date.substring(0, 7) : ''} onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value ? e.target.value + '-01' : ''})} />
-              </Field>
-            </div>
-            <Field label="Description & Responsibilities">
-              <textarea rows={4} className="input bg-white" placeholder="- Led a team of 5&#10;- Increased revenue by 20%" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
-            </Field>
-            <div className="flex gap-2 pt-2">
-              <button className="btn-primary !px-5 text-sm">{experienceForm.id ? 'Save Changes' : 'Save'}</button>
-              <button type="button" onClick={() => setShowAddExperience(false)} className="btn-secondary !px-4 text-sm">Cancel</button>
-            </div>
-          </form>
-        )}
-
-        {experiences.length === 0 && !showAddExperience ? (
+        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
+        {projectRoles.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            No work experience added yet.
+            No project team memberships yet. Apply to projects or create your own to build your team history!
           </p>
         ) : (
-          <div className="space-y-3">
-            {experiences.map((exp) => (
-              <div key={exp.id} className="card p-4 flex gap-3">
-                <div className="mt-1">
-                  <Briefcase className="text-slate-400" size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">{exp.role}</h3>
-                      <p className="text-sm text-slate-600">
-                        {exp.organization}
-                        {exp.employment_type && <span className="text-slate-400"> · {exp.employment_type}</span>}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {formatMonthYear(exp.start_date)} - {exp.end_date ? formatMonthYear(exp.end_date) : 'Present'}
-                        {exp.location && ` · ${exp.location}`}
-                        {exp.work_type && ` (${exp.work_type})`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setExperienceForm(exp)
-                          setShowAddExperience(true)
-                        }}
-                        className="text-slate-400 hover:text-brand-600"
-                        title="Edit"
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteExperience(exp.id)}
-                        className="text-slate-400 hover:text-red-600"
-                        title="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {projectRoles.map((pr, idx) => (
+              <div key={idx} className="card p-4 flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/projects/${pr.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600 flex items-center gap-1.5">
+                      {pr.project_title}
+                      {pr.is_lead && <Crown size={13} className="text-amber-500" title="Project Lead" />}
+                    </Link>
+                    <span className="pill text-[10px] bg-slate-100 text-slate-600">
+                      {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
+                    </span>
                   </div>
-                  {exp.description && (
-                    <div className="mt-3">
-                      <FormattedText text={exp.description} />
-                    </div>
-                  )}
+                  <p className="mt-1 text-xs text-brand-700 font-medium">
+                    {pr.role}
+                  </p>
                 </div>
+                {pr.since && (
+                  <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
+                    Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -862,6 +787,117 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Experience */}
+      <section className="mb-10">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-display text-lg font-semibold text-slate-900">
+            {experienceForm.id ? 'Edit Experience' : 'Add Experience'}
+          </h3>
+          <button onClick={() => { setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' }); setShowAddExperience(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
+            <Plus size={13} /> Add
+          </button>
+        </div>
+
+        {showAddExperience && (
+          <form onSubmit={handleAddExperience} className="card p-4 sm:p-5 mb-4 space-y-3 bg-slate-50 border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Organization *">
+                <input required className="input bg-white" value={experienceForm.organization} onChange={(e) => setExperienceForm({...experienceForm, organization: e.target.value})} />
+              </Field>
+              <Field label="Role *">
+                <input required className="input bg-white" value={experienceForm.role} onChange={(e) => setExperienceForm({...experienceForm, role: e.target.value})} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Location">
+                <input className="input bg-white" value={experienceForm.location} onChange={(e) => setExperienceForm({...experienceForm, location: e.target.value})} />
+              </Field>
+              <Field label="Work Type">
+                <select className="input bg-white" value={experienceForm.work_type} onChange={(e) => setExperienceForm({...experienceForm, work_type: e.target.value})}>
+                  {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+              </Field>
+              <Field label="Employment Type">
+                <select className="input bg-white" value={experienceForm.employment_type} onChange={(e) => setExperienceForm({...experienceForm, employment_type: e.target.value})}>
+                  {EMPLOYMENT_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Start Date (Month Year) *">
+                <input required type="month" className="input bg-white" value={experienceForm.start_date.substring(0, 7)} onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value + '-01'})} />
+              </Field>
+              <Field label="End Date (Month Year)">
+                <input type="month" className="input bg-white" value={experienceForm.end_date ? experienceForm.end_date.substring(0, 7) : ''} onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value ? e.target.value + '-01' : ''})} />
+              </Field>
+            </div>
+            <Field label="Description & Responsibilities">
+              <textarea rows={4} className="input bg-white" placeholder="- Led a team of 5&#10;- Increased revenue by 20%" value={experienceForm.description} onChange={(e) => setExperienceForm({...experienceForm, description: e.target.value})} />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary !px-5 text-sm">{experienceForm.id ? 'Save Changes' : 'Save'}</button>
+              <button type="button" onClick={() => setShowAddExperience(false)} className="btn-secondary !px-4 text-sm">Cancel</button>
+            </div>
+          </form>
+        )}
+
+        {experiences.length === 0 && !showAddExperience ? (
+          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
+            No work experience added yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {experiences.map((exp) => (
+              <div key={exp.id} className="card p-4 flex gap-3">
+                <div className="mt-1">
+                  <Briefcase className="text-slate-400" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{exp.role}</h3>
+                      <p className="text-sm text-slate-600">
+                        {exp.organization}
+                        {exp.employment_type && <span className="text-slate-400"> · {exp.employment_type}</span>}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {formatMonthYear(exp.start_date)} - {exp.end_date ? formatMonthYear(exp.end_date) : 'Present'}
+                        {exp.location && ` · ${exp.location}`}
+                        {exp.work_type && ` (${exp.work_type})`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setExperienceForm(exp)
+                          setShowAddExperience(true)
+                        }}
+                        className="text-slate-400 hover:text-brand-600"
+                        title="Edit"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExperience(exp.id)}
+                        className="text-slate-400 hover:text-red-600"
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                  {exp.description && (
+                    <div className="mt-3">
+                      <FormattedText text={exp.description} />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -988,42 +1024,6 @@ export default function Dashboard() {
                     </a>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Projects (LinkedIn-style history) */}
-      <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
-        {projectRoles.length === 0 ? (
-          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            No project team memberships yet. Apply to projects or create your own to build your team history!
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {projectRoles.map((pr, idx) => (
-              <div key={idx} className="card p-4 flex flex-col justify-between gap-3">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <Link to={`/projects/${pr.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600 flex items-center gap-1.5">
-                      {pr.project_title}
-                      {pr.is_lead && <Crown size={13} className="text-amber-500" title="Project Lead" />}
-                    </Link>
-                    <span className="pill text-[10px] bg-slate-100 text-slate-600">
-                      {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-brand-700 font-medium">
-                    {pr.role}
-                  </p>
-                </div>
-                {pr.since && (
-                  <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
-                    Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                  </p>
-                )}
               </div>
             ))}
           </div>
