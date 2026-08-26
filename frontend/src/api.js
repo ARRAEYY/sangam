@@ -92,8 +92,9 @@ export const api = {
   deleteAchievement: (id, token) => request(`/api/users/achievements/${id}`, { method: 'DELETE', token }),
 
   // Projects
-  listProjects: (params) => request('/api/projects', { params }),
-  getProject: (id) => request(`/api/projects/${id}`),
+  getTeaserProjects: () => request('/api/projects/teaser'),
+  listProjects: (params, token) => request('/api/projects', { params, token }),
+  getProject: (id, token) => request(`/api/projects/${id}`, { token }),
   createProject: (payload, token) =>
     request('/api/projects', { method: 'POST', body: payload, token }),
   editProject: (id, payload, token) =>
@@ -107,8 +108,30 @@ export const api = {
   getApplicants: (id, token) => request(`/api/projects/${id}/apps`, { token }),
 
   myApplications: (token) => request('/api/applications/mine', { token }),
-  updateApplicationStatus: (id, status, token) =>
-    request(`/api/applications/${id}`, { method: 'PATCH', body: { status }, token }),
+  updateApplicationStatus: (id, status, token, { role, role_category } = {}) =>
+    request(`/api/applications/${id}`, {
+      method: 'PATCH',
+      body: { status, ...(role ? { role } : {}), ...(role_category ? { role_category } : {}) },
+      token,
+    }),
+
+  // Team Roster
+  getMembers: (projectId, token) => request(`/api/projects/${projectId}/members`, { token }),
+  updateMemberRole: (projectId, userId, payload, token) =>
+    request(`/api/projects/${projectId}/members/${userId}`, { method: 'PATCH', body: payload, token }),
+  removeMember: (projectId, userId, token) =>
+    request(`/api/projects/${projectId}/members/${userId}`, { method: 'DELETE', token }),
+  leaveProject: (projectId, userId, token) =>
+    request(`/api/projects/${projectId}/members/${userId}/leave`, { method: 'POST', token }),
+
+  // Milestones
+  getMilestones: (projectId, token) => request(`/api/projects/${projectId}/milestones`, { token }),
+  createMilestone: (projectId, payload, token) =>
+    request(`/api/projects/${projectId}/milestones`, { method: 'POST', body: payload, token }),
+  updateMilestone: (projectId, milestoneId, payload, token) =>
+    request(`/api/projects/${projectId}/milestones/${milestoneId}`, { method: 'PATCH', body: payload, token }),
+  deleteMilestone: (projectId, milestoneId, token) =>
+    request(`/api/projects/${projectId}/milestones/${milestoneId}`, { method: 'DELETE', token }),
 
   // Notifications
   listNotifications: (token) => request('/api/notifications', { token }),

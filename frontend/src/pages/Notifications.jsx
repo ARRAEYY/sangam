@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, Check, CheckCheck, Trash2, UserPlus, FolderKanban, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Bell, Check, CheckCheck, Trash2, UserPlus, FolderKanban, ThumbsUp, ThumbsDown, Crown, UserMinus, Target } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
 
@@ -14,6 +14,9 @@ const TYPE_META = {
   CONNECTION_ACCEPTED: { icon: Check, color: 'text-emerald-600 bg-emerald-50' },
   CONNECTION_REJECTED: { icon: ThumbsDown, color: 'text-slate-500 bg-slate-100' },
   PROJECT_UPDATE: { icon: FolderKanban, color: 'text-slate-500 bg-slate-100' },
+  MEMBER_ROLE_ASSIGNED: { icon: Crown, color: 'text-amber-600 bg-amber-50' },
+  MEMBER_REMOVED: { icon: UserMinus, color: 'text-red-500 bg-red-50' },
+  MILESTONE_COMPLETED: { icon: Target, color: 'text-emerald-600 bg-emerald-50' },
 }
 
 function destinationFor(notification) {

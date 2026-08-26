@@ -1,6 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Users, Mail, Github, Pencil, Trash2, Check, X as XIcon } from 'lucide-react'
+import {
+  Users,
+  Mail,
+  Github,
+  Pencil,
+  Trash2,
+  Check,
+  X as XIcon,
+  Crown,
+  UserMinus,
+  LogOut,
+  Plus,
+  Target,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  Loader2,
+  Calendar,
+} from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -10,31 +28,74 @@ const STATUS_STYLES = {
   COMPLETED: 'bg-slate-100 text-slate-500',
 }
 
+const ROLE_CATEGORIES = [
+  'FRONTEND', 'BACKEND', 'FULLSTACK', 'DESIGN', 'PRODUCT',
+  'DATA', 'DEVOPS', 'CONTENT', 'MARKETING', 'RESEARCH', 'LEAD', 'OTHER',
+]
+
+const MILESTONE_STATUS_ICONS = {
+  NOT_STARTED: <Circle size={14} className="text-slate-400" />,
+  IN_PROGRESS: <Loader2 size={14} className="text-brand-600 animate-spin" />,
+  COMPLETED: <CheckCircle2 size={14} className="text-emerald-600" />,
+  BLOCKED: <AlertCircle size={14} className="text-red-500" />,
+}
+
+const MILESTONE_STATUS_PILLS = {
+  NOT_STARTED: 'bg-slate-100 text-slate-500',
+  IN_PROGRESS: 'bg-brand-50 text-brand-600',
+  COMPLETED: 'bg-emerald-50 text-emerald-700',
+  BLOCKED: 'bg-red-50 text-red-600',
+}
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const { user, token } = useAuth()
+  const navigate = useNavigate()
+
   const [project, setProject] = useState(null)
   const [applicants, setApplicants] = useState(null)
+  const [members, setMembers] = useState([])
+  const [milestoneData, setMilestoneData] = useState({ milestones: [], progress: { total: 0, completed: 0, percentage: 0 } })
   const [pitch, setPitch] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [showApplyForm, setShowApplyForm] = useState(false)
-  
-  const navigate = useNavigate()
+
   const [isEditingProject, setIsEditingProject] = useState(false)
   const [projectForm, setProjectForm] = useState(null)
 
+  // Accept modal state
+  const [acceptModal, setAcceptModal] = useState(null) // { appId, applicantName }
+  const [acceptRole, setAcceptRole] = useState('Team Member')
+  const [acceptCategory, setAcceptCategory] = useState('OTHER')
+
+  // Milestone form state
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false)
+  const [milestoneForm, setMilestoneForm] = useState({ title: '', description: '', due_date: '' })
+  const [editingMilestone, setEditingMilestone] = useState(null)
+
+  // Edit role modal state
+  const [editRoleModal, setEditRoleModal] = useState(null)
+  const [editRoleForm, setEditRoleForm] = useState({ role: '', role_category: '' })
+
   useEffect(() => {
     api.getProject(id).then(setProject).catch((err) => setError(err.message))
+    api.getMembers(id).then(setMembers).catch(() => {})
+    api.getMilestones(id).then(setMilestoneData).catch(() => {})
   }, [id])
 
-  const isOwner = user && project && project.owner.id === user.id
+  const isOwner = user && project && project.owner?.id === user.id
+  const isMember = members.some((m) => m.user_id === user?.id)
+  const myMembership = members.find((m) => m.user_id === user?.id)
 
   useEffect(() => {
     if (isOwner) {
       api.getApplicants(id, token).then(setApplicants).catch((err) => setError(err.message))
     }
   }, [isOwner, id, token])
+
+  const refreshMembers = () => api.getMembers(id).then(setMembers).catch(() => {})
+  const refreshMilestones = () => api.getMilestones(id).then(setMilestoneData).catch(() => {})
 
   const handleApply = async (e) => {
     e.preventDefault()
@@ -48,7 +109,30 @@ export default function ProjectDetail() {
     }
   }
 
+  const openAcceptModal = (appId, applicantName) => {
+    setAcceptModal({ appId, applicantName })
+    setAcceptRole('Team Member')
+    setAcceptCategory('OTHER')
+  }
+
+  const confirmAccept = async () => {
+    if (!acceptModal) return
+    try {
+      await api.updateApplicationStatus(acceptModal.appId, 'ACCEPTED', token, {
+        role: acceptRole,
+        role_category: acceptCategory,
+      })
+      const refreshed = await api.getApplicants(id, token)
+      setApplicants(refreshed)
+      await refreshMembers()
+      setAcceptModal(null)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const decide = async (appId, newStatus) => {
+    if (newStatus === 'ACCEPTED') return // handled by modal
     try {
       await api.updateApplicationStatus(appId, newStatus, token)
       const refreshed = await api.getApplicants(id, token)
@@ -90,11 +174,97 @@ export default function ProjectDetail() {
     }
   }
 
+  // ─── Member Actions ────────────────────────────────────────
+  const handleRemoveMember = async (userId, name) => {
+    if (!window.confirm(`Remove ${name} from this project?`)) return
+    try {
+      await api.removeMember(id, userId, token)
+      await refreshMembers()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleLeave = async () => {
+    if (!window.confirm('Are you sure you want to leave this project?')) return
+    try {
+      await api.leaveProject(id, user.id, token)
+      await refreshMembers()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const openEditRole = (member) => {
+    setEditRoleModal(member)
+    setEditRoleForm({ role: member.role, role_category: member.role_category })
+  }
+
+  const confirmEditRole = async () => {
+    if (!editRoleModal) return
+    try {
+      await api.updateMemberRole(id, editRoleModal.user_id, editRoleForm, token)
+      await refreshMembers()
+      setEditRoleModal(null)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  // ─── Milestone Actions ─────────────────────────────────────
+  const handleCreateMilestone = async (e) => {
+    e.preventDefault()
+    try {
+      await api.createMilestone(id, {
+        title: milestoneForm.title,
+        description: milestoneForm.description || undefined,
+        due_date: milestoneForm.due_date || undefined,
+      }, token)
+      await refreshMilestones()
+      setShowMilestoneForm(false)
+      setMilestoneForm({ title: '', description: '', due_date: '' })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleToggleMilestone = async (milestone) => {
+    const nextStatus = milestone.status === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED'
+    try {
+      await api.updateMilestone(id, milestone.id, { status: nextStatus }, token)
+      await refreshMilestones()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleUpdateMilestoneStatus = async (milestone, newStatus) => {
+    try {
+      await api.updateMilestone(id, milestone.id, { status: newStatus }, token)
+      await refreshMilestones()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    if (!window.confirm('Delete this milestone?')) return
+    try {
+      await api.deleteMilestone(id, milestoneId, token)
+      await refreshMilestones()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   if (error && !project) return <p className="py-10 text-red-600">{error}</p>
   if (!project) return <p className="py-10 text-slate-500">Loading…</p>
 
+  const { milestones, progress } = milestoneData
+
   return (
     <div className="max-w-3xl pb-16 pt-2">
+      {/* ─── Project Header Card ─────────────────────────────── */}
       <div className="card p-6 sm:p-8">
         {!isEditingProject ? (
           <>
@@ -102,8 +272,13 @@ export default function ProjectDetail() {
               <div>
                 <h1 className="font-display text-2xl font-semibold text-slate-900">{project.title}</h1>
                 <p className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
-                  Posted by {project.owner.full_name} · <Users size={13} className="inline" />{' '}
+                  Posted by {project.owner?.full_name || 'Unknown'} · <Users size={13} className="inline" />{' '}
                   {project.team_size_needed} needed
+                  {(project.member_count || 0) > 0 && (
+                    <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                      {project.member_count} on team
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -171,7 +346,7 @@ export default function ProjectDetail() {
           </Link>
         )}
 
-        {user && !isOwner && !status && (
+        {user && !isOwner && !status && !isMember && (
           <div className="mt-6">
             {!showApplyForm ? (
               <button onClick={() => setShowApplyForm(true)} className="btn-primary">
@@ -191,8 +366,212 @@ export default function ProjectDetail() {
             )}
           </div>
         )}
+
+        {/* Self-leave button for non-lead members */}
+        {isMember && myMembership && !myMembership.is_lead && (
+          <div className="mt-4">
+            <button onClick={handleLeave} className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200 transition">
+              <LogOut size={13} /> Leave Team
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* ─── Progress Bar (if milestones exist) ──────────────── */}
+      {progress.total > 0 && (
+        <div className="mt-6 card p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="flex items-center gap-2 font-display text-sm font-semibold text-slate-900">
+              <Target size={15} className="text-brand-600" /> Project Progress
+            </h2>
+            <span className="text-xs font-medium text-slate-500">
+              {progress.completed} of {progress.total} complete
+            </span>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-500"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-right text-xs font-semibold text-brand-600">{progress.percentage}%</p>
+        </div>
+      )}
+
+      {/* ─── Team Roster ─────────────────────────────────────── */}
+      <div className="mt-8">
+        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-slate-900">
+          <Users size={17} className="text-brand-600" /> Team ({members.length})
+        </h2>
+        {members.length === 0 ? (
+          <p className="text-sm text-slate-500">No team members yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {members.map((m) => (
+              <div key={m.id} className="card flex items-center justify-between gap-3 p-3.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  {m.user?.avatar_url ? (
+                    <img src={m.user.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 shrink-0">
+                      {(m.user?.full_name || '?')[0].toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 font-semibold text-slate-900 text-sm truncate">
+                      {m.user?.full_name || 'Unknown'}
+                      {m.is_lead && <Crown size={12} className="text-amber-500" />}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {m.role}
+                      {m.role_category !== 'OTHER' && m.role_category !== 'LEAD' && (
+                        <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                          {m.role_category}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {isOwner && !m.is_lead && (
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => openEditRole(m)}
+                      className="text-slate-400 hover:text-brand-600 p-1"
+                      title="Edit role"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveMember(m.user_id, m.user?.full_name)}
+                      className="text-slate-400 hover:text-red-600 p-1"
+                      title="Remove member"
+                    >
+                      <UserMinus size={13} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Milestones ──────────────────────────────────────── */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-slate-900">
+            <Target size={17} className="text-brand-600" /> Milestones
+          </h2>
+          {isOwner && (
+            <button
+              onClick={() => { setShowMilestoneForm(!showMilestoneForm); setEditingMilestone(null) }}
+              className="flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition"
+            >
+              <Plus size={13} /> Add
+            </button>
+          )}
+        </div>
+
+        {showMilestoneForm && isOwner && (
+          <form onSubmit={handleCreateMilestone} className="card mb-4 space-y-3 p-4">
+            <input
+              required
+              className="input"
+              placeholder="Milestone title"
+              value={milestoneForm.title}
+              onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
+            />
+            <textarea
+              className="input"
+              placeholder="Description (optional)"
+              rows={2}
+              value={milestoneForm.description}
+              onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
+            />
+            <div className="flex gap-3 items-end">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Due date (optional)</label>
+                <input
+                  type="date"
+                  className="input !py-1.5 text-sm"
+                  value={milestoneForm.due_date}
+                  onChange={(e) => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })}
+                />
+              </div>
+              <button className="btn-primary !py-1.5 !text-sm">Create Milestone</button>
+              <button type="button" onClick={() => setShowMilestoneForm(false)} className="btn-secondary !py-1.5 !text-sm">Cancel</button>
+            </div>
+          </form>
+        )}
+
+        {milestones.length === 0 ? (
+          <p className="text-sm text-slate-500">No milestones yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {milestones.map((m) => (
+              <div key={m.id} className="card p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <button
+                      onClick={() => isOwner && handleToggleMilestone(m)}
+                      className={`mt-0.5 shrink-0 ${isOwner ? 'cursor-pointer hover:scale-110 transition' : ''}`}
+                      disabled={!isOwner}
+                    >
+                      {MILESTONE_STATUS_ICONS[m.status]}
+                    </button>
+                    <div className="min-w-0">
+                      <p className={`font-medium text-sm ${m.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                        {m.title}
+                      </p>
+                      {m.description && (
+                        <p className="mt-1 text-xs text-slate-500 line-clamp-2">{m.description}</p>
+                      )}
+                      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-400">
+                        {m.due_date && (
+                          <span className="flex items-center gap-0.5">
+                            <Calendar size={10} /> {m.due_date}
+                          </span>
+                        )}
+                        {m.completed_at && (
+                          <span className="text-emerald-600">✓ Completed {new Date(m.completed_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`pill text-[10px] ${MILESTONE_STATUS_PILLS[m.status]}`}>
+                      {m.status.replace('_', ' ')}
+                    </span>
+                    {isOwner && (
+                      <div className="flex gap-1">
+                        {/* Status cycle buttons */}
+                        {m.status !== 'IN_PROGRESS' && m.status !== 'COMPLETED' && (
+                          <button
+                            onClick={() => handleUpdateMilestoneStatus(m, 'IN_PROGRESS')}
+                            className="text-slate-400 hover:text-brand-600 p-0.5"
+                            title="Start"
+                          >
+                            <Loader2 size={12} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteMilestone(m.id)}
+                          className="text-slate-400 hover:text-red-600 p-0.5"
+                          title="Delete"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Applicants (Owner Only) ─────────────────────────── */}
       {isOwner && applicants && (
         <div className="mt-8">
           <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">
@@ -221,7 +600,7 @@ export default function ProjectDetail() {
                 {app.status === 'PENDING' && (
                   <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => decide(app.id, 'ACCEPTED')}
+                      onClick={() => openAcceptModal(app.id, app.applicant.full_name)}
                       className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                     >
                       Accept
@@ -236,6 +615,86 @@ export default function ProjectDetail() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Accept Modal (role picker) ──────────────────────── */}
+      {acceptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setAcceptModal(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-semibold text-slate-900">
+              Accept {acceptModal.applicantName}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">Assign a role and category for this new team member.</p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Role Title</label>
+                <input
+                  className="input"
+                  placeholder="e.g. Frontend Developer"
+                  value={acceptRole}
+                  onChange={(e) => setAcceptRole(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+                <select
+                  className="input"
+                  value={acceptCategory}
+                  onChange={(e) => setAcceptCategory(e.target.value)}
+                >
+                  {ROLE_CATEGORIES.filter((c) => c !== 'LEAD').map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setAcceptModal(null)} className="btn-secondary !px-4">Cancel</button>
+              <button onClick={confirmAccept} className="btn-primary !px-5">
+                <Check size={15} /> Confirm & Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Edit Role Modal ─────────────────────────────────── */}
+      {editRoleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditRoleModal(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-semibold text-slate-900">
+              Edit Role — {editRoleModal.user?.full_name}
+            </h3>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Role Title</label>
+                <input
+                  className="input"
+                  value={editRoleForm.role}
+                  onChange={(e) => setEditRoleForm({ ...editRoleForm, role: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+                <select
+                  className="input"
+                  value={editRoleForm.role_category}
+                  onChange={(e) => setEditRoleForm({ ...editRoleForm, role_category: e.target.value })}
+                >
+                  {ROLE_CATEGORIES.filter((c) => c !== 'LEAD').map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setEditRoleModal(null)} className="btn-secondary !px-4">Cancel</button>
+              <button onClick={confirmEditRole} className="btn-primary !px-5">
+                <Check size={15} /> Save
+              </button>
+            </div>
           </div>
         </div>
       )}

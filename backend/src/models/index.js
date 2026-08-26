@@ -11,6 +11,8 @@ const Connection = require('./Connection')
 const Experience = require('./Experience')
 const Education = require('./Education')
 const Achievement = require('./Achievement')
+const ProjectMember = require('./ProjectMember')
+const Milestone = require('./Milestone')
 
 User.belongsToMany(Skill, {
   through: UserSkill,
@@ -97,6 +99,20 @@ Education.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
 User.hasMany(Achievement, { foreignKey: 'user_id', as: 'achievements' })
 Achievement.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
 
+// ─── Team Membership ──────────────────────────────────────────
+Project.hasMany(ProjectMember, { foreignKey: 'project_id', as: 'members' })
+ProjectMember.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+User.hasMany(ProjectMember, { foreignKey: 'user_id', as: 'memberships' })
+ProjectMember.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+
+// ─── Milestones ───────────────────────────────────────────────
+Project.hasMany(Milestone, { foreignKey: 'project_id', as: 'milestones' })
+Milestone.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+User.hasMany(Milestone, { foreignKey: 'created_by', as: 'created_milestones' })
+Milestone.belongsTo(User, { foreignKey: 'created_by', as: 'creator' })
+
 module.exports = {
   sequelize,
   User,
@@ -111,4 +127,6 @@ module.exports = {
   Experience,
   Education,
   Achievement,
+  ProjectMember,
+  Milestone,
 }

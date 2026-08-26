@@ -1,8 +1,8 @@
 const express = require('express')
-const { Application, Project, User, Skill } = require('../models')
+const { Application, Project, User, Skill, ProjectMember } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { serializeApplication } = require('../utils/serializers')
-const { notifyApplicationDecision } = require('../services/notificationService')
+const { notifyApplicationDecision, createNotification } = require('../services/notificationService')
 
 const router = express.Router()
 
@@ -73,6 +73,37 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     }
 
     await application.update({ status })
+
+    // On acceptance, create a ProjectMember row
+    if (status === 'ACCEPTED') {
+      const role = String(req.body?.role || 'Team Member').trim()
+      const roleCategory = req.body?.role_category || 'OTHER'
+      const validCategories = ProjectMember.ROLE_CATEGORIES
+
+      // Avoid duplicates
+      const existingMember = await ProjectMember.findOne({
+        where: { project_id: application.project_id, user_id: application.user_id },
+      })
+      if (!existingMember) {
+        await ProjectMember.create({
+          project_id: application.project_id,
+          user_id: application.user_id,
+          role,
+          role_category: validCategories.includes(roleCategory) ? roleCategory : 'OTHER',
+          is_lead: false,
+          status: 'ACTIVE',
+        })
+      }
+
+      // Notify the member about their role assignment
+      await createNotification({
+        recipientId: application.user_id,
+        actorId: req.user.id,
+        type: 'MEMBER_ROLE_ASSIGNED',
+        message: `You've been added to "${application.project.title}" as ${role}!`,
+        projectId: application.project_id,
+      }).catch(() => {}) // non-critical
+    }
 
     if (status === 'ACCEPTED' || status === 'REJECTED') {
       await notifyApplicationDecision({ project: application.project, applicant: application.applicant, status })

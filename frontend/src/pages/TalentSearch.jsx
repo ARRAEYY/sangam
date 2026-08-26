@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Search, Github, Linkedin, Globe, UserPlus, Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award } from 'lucide-react'
+import { Search, Github, Linkedin, Globe, UserPlus, Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award, Crown } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -309,7 +309,41 @@ export default function TalentSearch() {
                     </div>
                   )}
 
-                  {selectedUser.accepted_projects && selectedUser.accepted_projects.length > 0 && (
+                  {selectedUser.project_roles && selectedUser.project_roles.length > 0 ? (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <FolderGit2 size={16} className="text-slate-400" /> Project Experience
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedUser.project_roles.map((pr, idx) => (
+                          <div key={idx} className="card p-3.5 bg-slate-50/75 border border-slate-100 flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h4 className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
+                                {pr.project_title}
+                                {pr.is_lead && <Crown size={12} className="text-amber-500" title="Project Lead" />}
+                              </h4>
+                              <p className="text-xs text-brand-700 font-medium mt-0.5">
+                                {pr.role}
+                                {pr.role_category && pr.role_category !== 'OTHER' && (
+                                  <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] text-brand-600">
+                                    {pr.role_category}
+                                  </span>
+                                )}
+                              </p>
+                              {pr.since && (
+                                <p className="text-[11px] text-slate-400 mt-1">
+                                  Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                </p>
+                              )}
+                            </div>
+                            <span className="pill text-[10px] bg-white border border-slate-200 text-slate-600 shrink-0">
+                              {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : selectedUser.accepted_projects && selectedUser.accepted_projects.length > 0 ? (
                     <div>
                       <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                         <FolderGit2 size={16} className="text-slate-400" /> Projects Working On
@@ -323,7 +357,7 @@ export default function TalentSearch() {
                         ))}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
             </div>

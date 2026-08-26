@@ -111,6 +111,26 @@ async function start() {
       console.warn('Column check warning:', err.message)
     }
 
+    // ─── Safe Postgres ENUM extensions for new notification types ─────
+    try {
+      const dialect = sequelize.getDialect()
+      if (dialect === 'postgres') {
+        const newEnumValues = ['MEMBER_ROLE_ASSIGNED', 'MEMBER_REMOVED', 'MILESTONE_COMPLETED']
+        for (const val of newEnumValues) {
+          try {
+            await sequelize.query(`ALTER TYPE "enum_notifications_type" ADD VALUE IF NOT EXISTS '${val}';`)
+          } catch (enumErr) {
+            // "already exists" is fine; anything else we log and move on
+            if (!enumErr.message.includes('already exists')) {
+              console.warn(`ENUM extension warning for ${val}:`, enumErr.message)
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Notification ENUM migration warning:', err.message)
+    }
+
     const { verifyTransporter } = require('./utils/mailer')
     verifyTransporter().then((smtpStatus) => {
       if (smtpStatus.configured) {

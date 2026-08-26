@@ -39,9 +39,30 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/talent" element={<TalentSearch />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route
+              path="/explore"
+              element={
+                <ProtectedRoute>
+                  <Explore />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/talent"
+              element={
+                <ProtectedRoute>
+                  <TalentSearch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/create"
               element={

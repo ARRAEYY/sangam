@@ -28,6 +28,24 @@ function getPasswordStrength(password) {
   return { score, label: levels[idx].label, color: levels[idx].color }
 }
 
+function getSafeRedirect(rawParam) {
+  if (!rawParam) return '/explore'
+  let decoded
+  try {
+    decoded = decodeURIComponent(rawParam)
+  } catch {
+    return '/explore'
+  }
+  // Must start with a single '/' (relative path), never '//' or an absolute URL with scheme
+  const isRelative = /^\/(?!\/)/.test(decoded)
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(decoded)
+  if (!isRelative || hasScheme) return '/explore'
+  // Whitelist to known app routes only — reject arbitrary open redirects
+  const allowedPrefixes = ['/projects/', '/explore', '/talent', '/dashboard', '/create', '/notifications']
+  const isAllowed = allowedPrefixes.some((p) => decoded.startsWith(p))
+  return isAllowed ? decoded : '/explore'
+}
+
 export default function Auth() {
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState('login')
@@ -73,7 +91,8 @@ export default function Auth() {
     setSubmitting(true)
     try {
       await login(loginForm.email, loginForm.password)
-      navigate('/explore')
+      const target = getSafeRedirect(searchParams.get('redirect'))
+      navigate(target)
     } catch (err) {
       setError(err.message)
       if (err.data?.email_unverified) {

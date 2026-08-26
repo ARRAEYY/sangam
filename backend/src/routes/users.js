@@ -12,6 +12,7 @@ const {
   Notification,
   ConnectionRequest,
   Connection,
+  ProjectMember,
 } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const {
@@ -181,7 +182,7 @@ router.delete('/profile', requireAuth, async (req, res, next) => {
   }
 })
 
-router.get('/talent', async (req, res, next) => {
+router.get('/talent', requireAuth, async (req, res, next) => {
   try {
     const skillFilter = String(req.query.skill || '').trim()
 
@@ -234,11 +235,30 @@ router.get('/:id/public', requireAuth, async (req, res, next) => {
       include: [{ model: Project, as: 'project' }],
     })
 
+    // Project memberships (LinkedIn-style project roles)
+    const memberships = await ProjectMember.findAll({
+      where: { user_id: req.params.id },
+      include: [{ model: Project, as: 'project', attributes: ['id', 'title', 'status'] }],
+      order: [['joined_at', 'DESC']],
+    })
+
     const serializedUser = serializeUser(user)
     serializedUser.experiences = experiences.map(serializeExperience)
     serializedUser.educations = educations.map(serializeEducation)
     serializedUser.achievements = achievements.map(serializeAchievement)
     serializedUser.accepted_projects = applications.map(app => serializeProject(app.project))
+    serializedUser.project_roles = memberships
+      .filter((m) => m.project) // skip orphans
+      .map((m) => ({
+        project_id: m.project.id,
+        project_title: m.project.title,
+        project_status: m.project.status,
+        role: m.role,
+        role_category: m.role_category,
+        is_lead: m.is_lead,
+        status: m.status,
+        since: m.joined_at,
+      }))
 
     return res.json(serializedUser)
   } catch (error) {

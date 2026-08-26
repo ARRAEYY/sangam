@@ -14,7 +14,29 @@ function formatDate(dateString) {
   return isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString()
 }
 
+function OwnerAvatar({ owner }) {
+  if (!owner) return null
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-slate-500 truncate">
+      {owner.avatar_url ? (
+        <img
+          src={owner.avatar_url}
+          alt=""
+          className="h-4 w-4 rounded-full object-cover"
+        />
+      ) : (
+        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-100 text-[9px] font-bold text-brand-700">
+          {(owner.full_name || '?')[0].toUpperCase()}
+        </span>
+      )}
+      <span className="truncate">by {owner.full_name}</span>
+    </span>
+  )
+}
+
 export default function ProjectCard({ project }) {
+  const memberCount = project.member_count || 0
+
   return (
     <Link
       to={`/projects/${project.id}`}
@@ -38,10 +60,15 @@ export default function ProjectCard({ project }) {
       </div>
 
       <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-        <span className="flex items-center gap-1">
-          <Users size={13} /> {project.team_size_needed} needed
-        </span>
-        <span className="flex items-center gap-1">
+        <div className="flex items-center gap-3 min-w-0">
+          <OwnerAvatar owner={project.owner} />
+          {memberCount > 0 && (
+            <span className="flex items-center gap-1 shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-brand-700 font-medium">
+              <Users size={11} /> {memberCount}
+            </span>
+          )}
+        </div>
+        <span className="flex items-center gap-1 shrink-0">
           <Clock size={13} /> {formatDate(project.created_at)}
         </span>
       </div>

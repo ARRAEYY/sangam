@@ -135,10 +135,12 @@ function serializeProject(project) {
       ? {
           id: safeProject.owner.id,
           full_name: safeProject.owner.full_name,
+          avatar_url: safeProject.owner.avatar_url || null,
         }
       : safeProject.owner_id
-        ? { id: safeProject.owner_id, full_name: safeProject.owner_name || null }
+        ? { id: safeProject.owner_id, full_name: safeProject.owner_name || null, avatar_url: null }
         : null,
+    member_count: safeProject.member_count || 0,
     required_skills: serializeSkills(safeProject.required_skills || []),
   }
 }

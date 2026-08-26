@@ -18,6 +18,8 @@ import {
   Trash2,
   Lock,
   AlertTriangle,
+  Crown,
+  FolderGit2,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -76,6 +78,9 @@ export default function Dashboard() {
     url: '',
   })
 
+  // Project Roles (Team Experience)
+  const [projectRoles, setProjectRoles] = useState([])
+
   // Change password
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '' })
@@ -118,6 +123,7 @@ export default function Dashboard() {
         setExperiences(data.experiences || [])
         setEducations(data.educations || [])
         setAchievements(data.achievements || [])
+        setProjectRoles(data.project_roles || [])
       })
       .catch(console.error)
   }
@@ -846,6 +852,47 @@ export default function Dashboard() {
                     </a>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Project Experience & Teams (LinkedIn-style history) */}
+      <section className="mb-10">
+        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Project experience & teams</h2>
+        {projectRoles.length === 0 ? (
+          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
+            No project team memberships yet. Apply to projects or create your own to build your team history!
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {projectRoles.map((pr, idx) => (
+              <div key={idx} className="card p-4 flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/projects/${pr.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600 flex items-center gap-1.5">
+                      {pr.project_title}
+                      {pr.is_lead && <Crown size={13} className="text-amber-500" title="Project Lead" />}
+                    </Link>
+                    <span className="pill text-[10px] bg-slate-100 text-slate-600">
+                      {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-brand-700 font-medium">
+                    {pr.role}
+                    {pr.role_category && pr.role_category !== 'OTHER' && (
+                      <span className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] text-brand-600">
+                        {pr.role_category}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {pr.since && (
+                  <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
+                    Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                  </p>
+                )}
               </div>
             ))}
           </div>
