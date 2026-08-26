@@ -34,32 +34,32 @@ export default function Explore() {
 
   return (
     <div className="pb-16 pt-2">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-          <div>
-            <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
-          </div>
-          <div className="hidden sm:block h-8 w-px bg-slate-200"></div>
-          <Link to="/create" className="btn-secondary w-fit text-xs px-3 py-1.5 h-fit mt-2 sm:mt-0">
-            + Post a project
-          </Link>
+      {/* Page header: stacks on mobile, side-by-side on sm+ */}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
+          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
         </div>
-        <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center gap-2">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              value={skill}
-              onChange={(e) => setSkill(e.target.value)}
-              placeholder="Filter by skill, e.g. React"
-              className="input !pl-10 text-xs sm:text-sm"
-            />
-          </div>
-          <button type="submit" className="btn-primary shrink-0 !px-4 !py-2.5 text-xs sm:text-sm">
-            Search
-          </button>
-        </form>
+        <Link to="/create" className="btn-secondary w-fit text-xs px-3.5 py-2 self-start sm:self-auto sm:shrink-0">
+          + Post a project
+        </Link>
       </div>
+
+      {/* Search bar — full width on mobile */}
+      <form onSubmit={handleSearch} className="mb-5 flex w-full items-center gap-2 sm:max-w-sm">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            value={skill}
+            onChange={(e) => setSkill(e.target.value)}
+            placeholder="Filter by skill, e.g. React"
+            className="input !pl-10 text-sm"
+          />
+        </div>
+        <button type="submit" className="btn-primary shrink-0 !px-4 !py-2.5 text-sm">
+          Search
+        </button>
+      </form>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
       {loading && <p className="text-sm text-slate-500">Loading projects…</p>}
@@ -77,4 +77,5 @@ export default function Explore() {
       </div>
     </div>
   )
+
 }
