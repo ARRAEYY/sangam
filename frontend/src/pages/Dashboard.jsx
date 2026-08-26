@@ -1075,9 +1075,11 @@ export default function Dashboard() {
             {pendingRequests.map((req) => (
               <div key={req.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                 <div>
-                  <p className="font-semibold text-slate-900">{req.requester.full_name}</p>
+                  <p className="font-semibold text-slate-900">
+                    {req.requester ? req.requester.full_name : 'Deleted User'}
+                  </p>
                   <p className="text-xs text-slate-500">
-                    {req.requester.branch} · Class of {req.requester.graduation_year}
+                    {req.requester ? `${req.requester.branch} · Class of ${req.requester.graduation_year}` : 'Account no longer exists'}
                   </p>
                   {req.message && (
                     <p className="mt-2 text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 italic">
@@ -1123,26 +1125,30 @@ export default function Dashboard() {
             {connections.map((c) => (
               <div key={c.connection_id} className="card flex items-center justify-between gap-3 p-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  {c.user.avatar_url ? (
+                  {c.user?.avatar_url ? (
                     <img
                       src={c.user.avatar_url}
-                      alt={c.user.full_name}
+                      alt={c.user.full_name || 'Deleted User'}
                       className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200"
                     />
                   ) : (
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
-                      {c.user.full_name
-                        .split(' ')
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join('')
-                        .toUpperCase()}
+                      {c.user && c.user.full_name
+                        ? c.user.full_name
+                            .split(' ')
+                            .map((p) => p[0])
+                            .slice(0, 2)
+                            .join('')
+                            .toUpperCase()
+                        : '?'}
                     </span>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{c.user.full_name}</p>
+                    <p className="truncate font-semibold text-slate-900">
+                      {c.user ? c.user.full_name : 'Deleted User'}
+                    </p>
                     <p className="truncate text-xs text-slate-500">
-                      {c.user.branch} · Class of {c.user.graduation_year}
+                      {c.user ? `${c.user.branch} · Class of ${c.user.graduation_year}` : 'Account no longer exists'}
                     </p>
                   </div>
                 </div>
