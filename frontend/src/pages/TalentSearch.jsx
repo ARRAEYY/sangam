@@ -130,18 +130,14 @@ export default function TalentSearch() {
             </div>
             {/* Description — conditionally rendered with min-height to maintain alignment if absent */}
             <div className="mt-3 mb-1 min-h-[40px]">
-              {person.bio ? (
+              {person.bio && (
                 <p className="line-clamp-2 text-sm text-slate-600 focus-visible:outline-none">{person.bio}</p>
-              ) : (
-                <p className="text-sm text-slate-400 italic">No bio added yet</p>
               )}
             </div>
             
             {/* Tag Row with +N chip and empty state */}
             <div className="flex flex-wrap gap-1.5 h-[52px] overflow-hidden content-start">
-              {(person.skills || []).length === 0 ? (
-                <span className="text-xs text-slate-400 italic">No skills listed yet</span>
-              ) : (
+              {(person.skills || []).length > 0 && (
                 <>
                   {(person.skills || []).slice(0, 4).map((s) => (
                     <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600 text-[11px] py-0.5 whitespace-nowrap">
