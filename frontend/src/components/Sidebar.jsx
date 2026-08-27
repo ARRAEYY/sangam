@@ -19,7 +19,7 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-5 top-[64px] h-[calc(100vh-64px)] z-50 group hidden md:block">
-      <div className="absolute top-0 left-0 flex h-full w-[72px] flex-col items-center gap-2 py-6 px-3.5 transition-all duration-300 ease-out overflow-hidden bg-cream-100 group-hover:w-[240px] group-hover:items-stretch group-hover:px-4">
+      <div className="absolute top-0 left-0 flex h-full w-[72px] flex-col items-center gap-2 pt-28 pb-6 px-3.5 transition-all duration-300 ease-out overflow-hidden bg-cream-100 group-hover:w-[240px] group-hover:items-stretch group-hover:px-4">
         {items.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to
           return (
