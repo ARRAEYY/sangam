@@ -18,7 +18,7 @@ export default function Sidebar() {
   const items = NAV_ITEMS.filter((item) => !item.requiresAuth || user)
 
   return (
-    <aside className="sticky top-24 hidden h-fit shrink-0 md:block">
+    <aside className="sticky top-24 hidden h-fit w-[72px] shrink-0 md:block">
       <div className="card flex w-[72px] flex-col items-center gap-1 py-4">
         {items.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to

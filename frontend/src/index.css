@@ -5,6 +5,7 @@
 html {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 body {
