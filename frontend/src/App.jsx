@@ -27,71 +27,37 @@ export default function App() {
   return (
     <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-cream-100 text-slate-900 antialiased">
       <Navbar />
-      <main
-        className={`flex-1 ${
-          inAppShell
-            ? 'mx-auto max-w-6xl px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 md:flex md:gap-6'
-            : 'w-full'
-        }`}
-      >
-        {inAppShell && <Sidebar />}
-        <div className="min-w-0 flex-1">
+      
+      <div className="flex flex-1 w-full relative">
+        {/* Sidebar Left Gutter - strictly fixed width */}
+        {inAppShell && (
+          <div className="hidden md:block w-[72px] shrink-0 border-r border-transparent z-40">
+            <Sidebar />
+          </div>
+        )}
+        
+        {/* Main Content Area */}
+        <main
+          className={`flex-1 min-w-0 ${
+            inAppShell
+              ? 'px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 mx-auto max-w-5xl w-full'
+              : 'w-full'
+          }`}
+        >
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/explore"
-              element={
-                <ProtectedRoute>
-                  <Explore />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/talent"
-              element={
-                <ProtectedRoute>
-                  <TalentSearch />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projects/:id"
-              element={
-                <ProtectedRoute>
-                  <ProjectDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/create"
-              element={
-                <ProtectedRoute>
-                  <CreateProject />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <Notifications />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+            <Route path="/talent" element={<ProtectedRoute><TalentSearch /></ProtectedRoute>} />
+            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+            <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           </Routes>
-        </div>
-      </main>
+        </main>
+      </div>
 
       {/* Mobile Bottom Navigation Bar on mobile screens */}
       {inAppShell && <MobileBottomNav />}

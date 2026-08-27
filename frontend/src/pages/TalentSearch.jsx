@@ -105,11 +105,11 @@ export default function TalentSearch() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonTalentCard key={i} />)
           : talent.map((person) => (
-          <div key={person.id} tabIndex={0} className="card min-w-0 flex flex-col p-5 hover:border-brand-300 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition-colors cursor-pointer" onClick={() => openProfile(person)} onKeyDown={(e) => e.key === 'Enter' && openProfile(person)}>
+          <div key={person.id} tabIndex={0} className="card h-full min-w-0 flex flex-col p-5 hover:border-brand-300 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition-colors cursor-pointer" onClick={() => openProfile(person)} onKeyDown={(e) => e.key === 'Enter' && openProfile(person)}>
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
                 {person.full_name
@@ -119,18 +119,26 @@ export default function TalentSearch() {
                   .join('')
                   .toUpperCase()}
               </span>
-              <div className="min-w-0">
-                <h3 className="truncate font-display font-semibold text-slate-900 group-hover:text-brand-600">{person.full_name}</h3>
-                <p className="truncate text-xs text-slate-500">
-                  {person.branch} · Class of {person.graduation_year}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">
+                  {person.full_name}
+                </p>
+                <p className="line-clamp-1 text-xs text-slate-500 mt-0.5">
+                  {person.branch ? `${person.branch}${person.graduation_year ? ` · Class of ${person.graduation_year}` : ''}` : 'Student'}
                 </p>
               </div>
             </div>
-            {/* Description — conditionally rendered */}
-            {person.bio && <p className="mt-3 line-clamp-2 text-sm text-slate-600 focus-visible:outline-none">{person.bio}</p>}
+            {/* Description — conditionally rendered with min-height to maintain alignment if absent */}
+            <div className="mt-3 mb-1 min-h-[40px]">
+              {person.bio ? (
+                <p className="line-clamp-2 text-sm text-slate-600 focus-visible:outline-none">{person.bio}</p>
+              ) : (
+                <p className="text-sm text-slate-400 italic">No bio added yet</p>
+              )}
+            </div>
             
             {/* Tag Row with +N chip and empty state */}
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 h-[52px] overflow-hidden content-start">
               {(person.skills || []).length === 0 ? (
                 <span className="text-xs text-slate-400 italic">No skills listed yet</span>
               ) : (
@@ -172,21 +180,21 @@ export default function TalentSearch() {
               )}
 
               {user && user.id !== person.id && (
-                <div className={`${(person.github_url || person.linkedin_url || person.portfolio_url) ? '' : 'border-t border-slate-100 pt-3'}`}>
+                <div className={`${(person.github_url || person.linkedin_url || person.portfolio_url) ? '' : 'border-t border-slate-100 pt-3'} mt-auto`}>
                   {connectState[person.id] === 'sent' ? (
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                    <button disabled className="flex w-full items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition">
                       <Check size={13} /> Request sent
-                    </span>
+                    </button>
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); setConnectingUserId(person.id); }}
-                      className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition"
                     >
                       <UserPlus size={13} /> Connect
                     </button>
                   )}
                   {connectState[person.id] && connectState[person.id] !== 'sent' && (
-                    <p className="mt-1.5 text-xs text-slate-400">{connectState[person.id]}</p>
+                    <p className="mt-1.5 text-center text-xs text-slate-400">{connectState[person.id]}</p>
                   )}
                 </div>
               )}
