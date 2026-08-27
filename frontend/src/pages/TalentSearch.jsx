@@ -222,13 +222,27 @@ export default function TalentSearch() {
                     {selectedUser.headline && <p className="text-sm text-slate-500 mt-1">{selectedUser.headline}</p>}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="btn-primary shrink-0 w-full sm:w-auto !px-5"
-                  onClick={() => alert('Connect functionality coming soon!')}
-                >
-                  Connect
-                </button>
+                {user && user.id !== selectedUser.id && (
+                  <div className="shrink-0 w-full sm:w-auto">
+                    {connectState[selectedUser.id] === 'sent' ? (
+                      <span className="flex items-center justify-center gap-2 h-10 px-5 text-sm font-semibold text-emerald-600 bg-emerald-50 rounded-lg">
+                        <Check size={16} /> Request sent
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-primary w-full !px-5"
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setConnectingUserId(selectedUser.id);
+                        }}
+                      >
+                        <UserPlus size={16} className="inline-block mr-2 -mt-0.5" />
+                        Connect
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               
               {selectedUser.bio && (
