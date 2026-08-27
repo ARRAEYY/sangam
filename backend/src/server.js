@@ -13,7 +13,7 @@ const connectionRoutes = require('./routes/connections')
 const errorHandler = require('./middleware/errorHandler')
 const { generalLimiter } = require('./middleware/rateLimit')
 const helmet = require('helmet')
-const csrf = require('csurf')
+const crypto = require('crypto')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
@@ -40,31 +40,54 @@ app.use(
 )
 app.use(cookieParser())
 app.use(express.json({ limit: '1mb' }))
-app.use(helmet())
+
+// Configure Helmet to allow cross-origin API access and popups (for Google OAuth)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" }
+}))
+
 app.use(generalLimiter)
 
-// Setup CSRF protection
+// Setup robust custom CSRF protection (Double Submit Cookie)
 const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
-const csrfProtection = csrf({ 
-  cookie: {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-  } 
+const csrfCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? 'None' : 'Lax',
+  path: '/',
+}
+
+app.get('/api/csrf-token', (req, res) => {
+  const token = crypto.randomBytes(32).toString('hex')
+  res.cookie('_csrf', token, csrfCookieOptions)
+  res.json({ csrfToken: token })
 })
 
-// CSRF token generation endpoint
-app.get('/api/csrf-token', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() })
-})
+function customCsrfProtection(req, res, next) {
+  // Ignore safe methods
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next()
+  }
+  
+  const cookieToken = req.cookies && req.cookies._csrf
+  const headerToken = req.headers['csrf-token'] || req.headers['x-csrf-token']
+  
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    console.error(`[CSRF FAILURE] Cookie: ${!!cookieToken}, Header: ${!!headerToken}`)
+    return res.status(403).json({ detail: 'invalid csrf token' })
+  }
+  
+  next()
+}
 
 // Apply CSRF to state-changing routes
-app.use('/api/auth', csrfProtection, authRoutes)
-app.use('/api/users', csrfProtection, userRoutes)
-app.use('/api/projects', csrfProtection, projectRoutes)
-app.use('/api/applications', csrfProtection, applicationRoutes)
-app.use('/api/notifications', csrfProtection, notificationRoutes)
-app.use('/api/connections', csrfProtection, connectionRoutes)
+app.use('/api/auth', customCsrfProtection, authRoutes)
+app.use('/api/users', customCsrfProtection, userRoutes)
+app.use('/api/projects', customCsrfProtection, projectRoutes)
+app.use('/api/applications', customCsrfProtection, applicationRoutes)
+app.use('/api/notifications', customCsrfProtection, notificationRoutes)
+app.use('/api/connections', customCsrfProtection, connectionRoutes)
 
 app.get('/api/health', async (req, res) => {
   try {
