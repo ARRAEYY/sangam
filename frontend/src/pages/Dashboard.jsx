@@ -383,7 +383,16 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {user.bio && <p className="mt-4 text-sm leading-relaxed text-slate-700">{user.bio}</p>}
+            {(!user.bio || user.skills.length === 0) && (
+              <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4">
+                <h3 className="text-sm font-semibold text-brand-800">Profile Strength: Missing information</h3>
+                <p className="mt-1 text-xs text-brand-700">
+                  Your profile in Find Talent appears mostly empty. Please add a {!user.bio && !user.skills.length ? 'bio and some skills' : !user.bio ? 'bio' : 'few skills'} to help others connect with you!
+                </p>
+              </div>
+            )}
+
+            {user.bio && <p className="mt-4 text-sm leading-relaxed text-slate-700 focus-visible:outline-none">{user.bio}</p>}
 
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
               {user.github_url && (

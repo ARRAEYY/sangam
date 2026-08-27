@@ -80,9 +80,11 @@ export default function TalentSearch() {
       </div>
 
       <form onSubmit={handleSearch} className="mb-5 flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
+        <label htmlFor="talent-search" className="sr-only">Search by skill</label>
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
+            id="talent-search"
             value={skill}
             onChange={(e) => setSkill(e.target.value)}
             placeholder="Filter by skill, e.g. React"
@@ -103,11 +105,11 @@ export default function TalentSearch() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonTalentCard key={i} />)
           : talent.map((person) => (
-          <div key={person.id} className="card min-w-0 flex flex-col p-5 hover:border-brand-300 transition-colors cursor-pointer" onClick={() => openProfile(person)}>
+          <div key={person.id} tabIndex={0} className="card min-w-0 flex flex-col p-5 hover:border-brand-300 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition-colors cursor-pointer" onClick={() => openProfile(person)} onKeyDown={(e) => e.key === 'Enter' && openProfile(person)}>
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
                 {person.full_name
@@ -124,35 +126,53 @@ export default function TalentSearch() {
                 </p>
               </div>
             </div>
-            {person.bio && <p className="mt-3 line-clamp-2 text-sm text-slate-600">{person.bio}</p>}
+            {/* Description — conditionally rendered */}
+            {person.bio && <p className="mt-3 line-clamp-2 text-sm text-slate-600 focus-visible:outline-none">{person.bio}</p>}
+            
+            {/* Tag Row with +N chip and empty state */}
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {person.skills.slice(0, 6).map((s) => (
-                <span key={s.id} className="pill bg-slate-100 text-slate-600">
-                  {s.name}
-                </span>
-              ))}
+              {(person.skills || []).length === 0 ? (
+                <span className="text-xs text-slate-400 italic">No skills listed yet</span>
+              ) : (
+                <>
+                  {(person.skills || []).slice(0, 4).map((s) => (
+                    <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600 text-[11px] py-0.5 whitespace-nowrap">
+                      {s.name}
+                    </span>
+                  ))}
+                  {(person.skills || []).length > 4 && (
+                    <span className="pill bg-slate-50 text-slate-400 text-[11px] py-0.5 whitespace-nowrap">
+                      +{(person.skills || []).length - 4}
+                    </span>
+                  )}
+                </>
+              )}
             </div>
-            <div className="mt-auto pt-3">
-              <div className="flex gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                {person.github_url && (
-                  <a href={person.github_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600">
-                    <Github size={13} />
-                  </a>
-                )}
-                {person.linkedin_url && (
-                  <a href={person.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600">
-                    <Linkedin size={13} />
-                  </a>
-                )}
-                {person.portfolio_url && (
-                  <a href={person.portfolio_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600">
-                    <Globe size={13} />
-                  </a>
-                )}
-              </div>
+
+            {/* Footer row */}
+            <div className="mt-auto pt-4 flex flex-col gap-3">
+              {(person.github_url || person.linkedin_url || person.portfolio_url) && (
+                <div className="flex gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                  {person.github_url && (
+                    <a href={person.github_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none rounded-sm">
+                      <Github size={13} />
+                    </a>
+                  )}
+                  {person.linkedin_url && (
+                    <a href={person.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none rounded-sm">
+                      <Linkedin size={13} />
+                    </a>
+                  )}
+                  {person.portfolio_url && (
+                    <a href={person.portfolio_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none rounded-sm">
+                      <Globe size={13} />
+                    </a>
+                  )}
+                </div>
+              )}
 
               {user && user.id !== person.id && (
-                <div className="mt-3 border-t border-slate-100 pt-3">
+                <div className={`${(person.github_url || person.linkedin_url || person.portfolio_url) ? '' : 'border-t border-slate-100 pt-3'}`}>
                   {connectState[person.id] === 'sent' ? (
                     <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
                       <Check size={13} /> Request sent
@@ -160,7 +180,7 @@ export default function TalentSearch() {
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); setConnectingUserId(person.id); }}
-                      className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100"
+                      className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition"
                     >
                       <UserPlus size={13} /> Connect
                     </button>

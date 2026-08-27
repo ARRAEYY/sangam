@@ -48,9 +48,11 @@ export default function Explore() {
 
       {/* Search bar — stacks on mobile, inline on sm+ */}
       <form onSubmit={handleSearch} className="mb-5 flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
+        <label htmlFor="explore-search" className="sr-only">Search projects by skill</label>
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
+            id="explore-search"
             value={skill}
             onChange={(e) => setSkill(e.target.value)}
             placeholder="Filter by skill, e.g. React"

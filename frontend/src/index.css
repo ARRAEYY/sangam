@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #a5002c;
+  --color-primary-foreground: #FFFFFF;
+  --color-background: #f7f6f3;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0f172a;
+  --color-muted: #f8fafc;
+  --color-muted-foreground: #64748b;
+  --color-border: #f1f5f9;
+  --radius-card: 16px;
+  --radius-chip: 9999px;
+}
+
 html {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
