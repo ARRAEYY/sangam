@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET
@@ -10,7 +11,8 @@ function getJwtSecret() {
 
 function signToken(user) {
   const secret = getJwtSecret()
-  const expiresInMinutes = Number(process.env.JWT_EXPIRE_MINUTES || 10080)
+  // Default to 15 minutes for access tokens
+  const expiresInMinutes = Number(process.env.JWT_EXPIRE_MINUTES || 15)
 
   return jwt.sign(
     {
@@ -22,6 +24,10 @@ function signToken(user) {
   )
 }
 
+function generateRefreshToken() {
+  return crypto.randomBytes(40).toString('hex')
+}
+
 function verifyToken(token) {
   const secret = getJwtSecret()
   return jwt.verify(token, secret)
@@ -30,4 +36,5 @@ function verifyToken(token) {
 module.exports = {
   signToken,
   verifyToken,
+  generateRefreshToken,
 }

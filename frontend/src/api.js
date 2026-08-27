@@ -17,7 +17,7 @@ async function getCsrfToken() {
   return null
 }
 
-async function request(path, { method = 'GET', body, token, params } = {}) {
+async function request(path, { method = 'GET', body, token, params, _retry = false } = {}) {
   let url = `${API_BASE}${path}`
   if (params) {
     const query = new URLSearchParams(
@@ -52,6 +52,32 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
   }
 
   if (!res.ok) {
+    // Attempt silent refresh on 401 if we haven't retried yet and it's not an auth route
+    if (
+      res.status === 401 && 
+      !_retry && 
+      !path.startsWith('/api/auth/login') && 
+      !path.startsWith('/api/auth/refresh') &&
+      !path.startsWith('/api/auth/google')
+    ) {
+      try {
+        // Fetch new CSRF token first just in case
+        const csrfToken = await getCsrfToken()
+        const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, { 
+          method: 'POST', 
+          headers: csrfToken ? { 'CSRF-Token': csrfToken } : {},
+          credentials: 'include' 
+        })
+        
+        if (refreshRes.ok) {
+          // Token refreshed successfully, retry original request
+          return request(path, { method, body, token, params, _retry: true })
+        }
+      } catch (err) {
+        // Refresh attempt failed, fall through to throw original error
+      }
+    }
+
     let detail = `Request failed (${res.status})`
     let extra = {}
     try {

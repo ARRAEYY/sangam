@@ -2,8 +2,8 @@ const express = require('express')
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
 const { Sequelize, Op } = require('sequelize')
-const { sequelize, User, Skill } = require('../models')
-const { signToken } = require('../utils/auth')
+const { sequelize, User, Skill, RefreshToken } = require('../models')
+const { signToken, generateRefreshToken } = require('../utils/auth')
 const { serializeUser } = require('../utils/serializers')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { authLimiter } = require('../middleware/rateLimit')
@@ -47,16 +47,29 @@ async function assignSkills(user, skills = [], options = {}) {
   await user.setSkills(skillRecords, options)
 }
 
-/** Helper: set the auth cookie on the response */
-function setTokenCookie(res, jwt) {
+/** Helper: set the auth cookies on the response */
+function setAuthCookies(res, accessToken, refreshToken) {
   const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
-  res.cookie('token', jwt, {
+  const cookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'None' : 'Lax',
-    maxAge: TOKEN_EXPIRE_MINUTES * 60 * 1000,
     path: '/',
+  }
+  
+  // Access token cookie (short lived)
+  res.cookie('token', accessToken, {
+    ...cookieOptions,
+    maxAge: TOKEN_EXPIRE_MINUTES * 60 * 1000,
   })
+
+  // Refresh token cookie (long lived - 7 days)
+  if (refreshToken) {
+    res.cookie('refresh_token', refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+  }
 }
 
 // ─── Register ────────────────────────────────────────────────
@@ -230,7 +243,16 @@ router.post('/login', authLimiter, async (req, res, next) => {
     }
 
     const jwt = signToken(user)
-    setTokenCookie(res, jwt)
+    const refreshStr = generateRefreshToken()
+    
+    // Save to DB
+    await RefreshToken.create({
+      user_id: user.id,
+      token: refreshStr, // Storing in plain for simplicity in this version
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    })
+
+    setAuthCookies(res, jwt, refreshStr)
 
     return res.json({ user: serializeUser(user) })
   } catch (error) {
@@ -240,15 +262,72 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
 // ─── Logout ──────────────────────────────────────────────────
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+  const refreshToken = req.cookies?.refresh_token
+  if (refreshToken) {
+    await RefreshToken.update(
+      { is_revoked: true },
+      { where: { token: refreshToken } }
+    )
+  }
+
   const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
-  res.clearCookie('token', {
+  const cookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'None' : 'Lax',
     path: '/',
-  })
+  }
+  res.clearCookie('token', cookieOptions)
+  res.clearCookie('refresh_token', cookieOptions)
   return res.json({ message: 'Logged out.' })
+})
+
+// ─── Refresh Token ───────────────────────────────────────────
+
+router.post('/refresh', authLimiter, async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token
+    if (!refreshToken) {
+      return res.status(401).json({ detail: 'Refresh token missing.' })
+    }
+
+    const tokenRecord = await RefreshToken.findOne({
+      where: {
+        token: refreshToken,
+        is_revoked: false,
+        expires_at: { [Op.gt]: new Date() },
+      },
+      include: [{ model: User, as: 'user' }],
+    })
+
+    if (!tokenRecord || !tokenRecord.user) {
+      // Clear cookies if invalid
+      const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
+      res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
+      res.clearCookie('refresh_token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
+      return res.status(401).json({ detail: 'Invalid or expired refresh token.' })
+    }
+
+    // Revoke old refresh token (token rotation)
+    await tokenRecord.update({ is_revoked: true })
+
+    // Issue new tokens
+    const newJwt = signToken(tokenRecord.user)
+    const newRefreshStr = generateRefreshToken()
+
+    await RefreshToken.create({
+      user_id: tokenRecord.user_id,
+      token: newRefreshStr,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    })
+
+    setAuthCookies(res, newJwt, newRefreshStr)
+
+    return res.json({ message: 'Token refreshed successfully.' })
+  } catch (error) {
+    return next(error)
+  }
 })
 
 // ─── Resend verification ─────────────────────────────────────
@@ -517,7 +596,15 @@ router.post('/google', authLimiter, async (req, res, next) => {
     }
 
     const jwt = signToken(user)
-    setTokenCookie(res, jwt)
+    const refreshStr = generateRefreshToken()
+
+    await RefreshToken.create({
+      user_id: user.id,
+      token: refreshStr,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    })
+
+    setAuthCookies(res, jwt, refreshStr)
 
     return res.json({ user: serializeUser(user) })
   } catch (error) {
