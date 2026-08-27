@@ -286,7 +286,7 @@ router.post('/logout', async (req, res) => {
 
 // ─── Refresh Token ───────────────────────────────────────────
 
-router.post('/refresh', authLimiter, async (req, res, next) => {
+router.post('/refresh', async (req, res, next) => {
   try {
     const refreshToken = req.cookies?.refresh_token
     if (!refreshToken) {
@@ -333,7 +333,7 @@ router.post('/refresh', authLimiter, async (req, res, next) => {
 
 // ─── Resend verification ─────────────────────────────────────
 
-router.post('/resend-verification', authLimiter, async (req, res, next) => {
+router.post('/resend-verification', async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email)
     if (!email) {
@@ -631,7 +631,7 @@ router.get('/password-rules', (req, res) => {
 
 // ─── Onboarding for Google Users ─────────────────────────────
 
-router.post('/onboard', requireAuth, authLimiter, async (req, res, next) => {
+router.post('/onboard', requireAuth, async (req, res, next) => {
   try {
     const { password, branch, graduation_year } = req.body
 
