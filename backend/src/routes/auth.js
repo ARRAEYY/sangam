@@ -140,6 +140,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
           portfolio_url: payload.portfolio_url || null,
           email_verified: false,
           email_verification_token: verificationToken,
+          is_onboarded: true,
         },
         { transaction: t }
       )

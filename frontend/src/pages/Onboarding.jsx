@@ -3,20 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
 import { api } from '../api'
+import { VALID_COURSES } from '../utils/courses'
 
 const currentYear = new Date().getFullYear()
-
-// Same valid courses from the backend/utils
-const VALID_COURSES = [
-  'B.Tech Computer Science',
-  'B.Tech Artificial Intelligence',
-  'B.Sc Computer Science',
-  'B.B.A',
-  'B.Des',
-  'B.A. (Hons.)',
-  'MBA',
-  'General',
-]
 
 function getPasswordStrength(password) {
   if (!password) return { score: 0, label: 'None', color: 'bg-slate-200' }
