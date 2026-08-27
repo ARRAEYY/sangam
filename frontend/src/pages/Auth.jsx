@@ -68,8 +68,15 @@ export default function Auth() {
   const [forgotMsg, setForgotMsg] = useState('')
   const [forgotSubmitting, setForgotSubmitting] = useState(false)
 
-  const { login, register } = useAuth()
+  const { user, login, register } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) {
+      const target = getSafeRedirect(searchParams.get('redirect'))
+      navigate(target, { replace: true })
+    }
+  }, [user, navigate, searchParams])
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [regForm, setRegForm] = useState({
