@@ -15,5 +15,9 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to={`/auth?redirect=${encodeURIComponent(redirectTarget)}`} replace />
   }
 
+  if (!user.is_onboarded) {
+    return <Navigate to="/onboarding" replace />
+  }
+
   return children
 }

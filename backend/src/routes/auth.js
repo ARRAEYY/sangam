@@ -586,6 +586,7 @@ router.post('/google', authLimiter, async (req, res, next) => {
         google_id: googleId,
         auth_provider: 'GOOGLE',
         email_verified: true,
+        is_onboarded: false,
         branch: 'General',
         graduation_year: currentYear + 2,
         avatar_url: payload.picture || null,
@@ -625,6 +626,54 @@ router.get('/password-rules', (req, res) => {
       'Not a commonly-breached password',
     ],
   })
+})
+
+// ─── Onboarding for Google Users ─────────────────────────────
+
+router.post('/onboard', requireAuth, authLimiter, async (req, res, next) => {
+  try {
+    const { password, branch, graduation_year } = req.body
+
+    if (req.user.is_onboarded) {
+      return res.status(400).json({ detail: 'Profile is already onboarded.' })
+    }
+
+    if (!password) {
+      return res.status(400).json({ detail: 'Password is required.' })
+    }
+
+    const pwResult = validatePassword(password)
+    if (!pwResult.valid) {
+      return res.status(400).json({ detail: pwResult.errors.join(' ') })
+    }
+
+    if (!branch) {
+      return res.status(400).json({ detail: 'Course / branch is required.' })
+    }
+    const normalizedBranch = normalizeCourse(branch)
+    if (!normalizedBranch) {
+      return res.status(400).json({
+        detail: `Invalid course. Must be one of: ${VALID_COURSES.join(', ')}.`,
+      })
+    }
+    const gradYearNum = Number(graduation_year)
+    if (!Number.isInteger(gradYearNum) || gradYearNum < 2000) {
+      return res.status(400).json({ detail: 'Valid graduation year is required.' })
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    await req.user.update({
+      password_hash: passwordHash,
+      branch: normalizedBranch,
+      graduation_year: gradYearNum,
+      is_onboarded: true,
+    })
+
+    return res.json({ message: 'Profile completed.', user: serializeUser(req.user) })
+  } catch (error) {
+    return next(error)
+  }
 })
 
 module.exports = router

@@ -1,39 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import SkillTagInput from '../components/SkillTagInput.jsx'
 import GoogleSignInButton from '../components/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
 import { api } from '../api'
-import { VALID_COURSES } from '../utils/courses'
-
-const currentYear = new Date().getFullYear()
 
 /** UX-only client-side domain check — backend is the authoritative security boundary */
 function isCampusEmail(email) {
   const domain = String(email || '').trim().toLowerCase().split('@')[1]
   if (!domain) return null // not typed yet
   return domain === 'rishihood.edu.in' || domain.endsWith('.rishihood.edu.in')
-}
-
-function getPasswordStrength(password) {
-  if (!password) return { score: 0, label: '', color: '' }
-  let score = 0
-  if (password.length >= 12) score += 1
-  if (/[A-Z]/.test(password)) score += 1
-  if (/[a-z]/.test(password)) score += 1
-  if (/[0-9]/.test(password)) score += 1
-  if (/[^A-Za-z0-9]/.test(password)) score += 1
-
-  const levels = [
-    { label: 'Very Weak', color: 'bg-red-500' },
-    { label: 'Weak', color: 'bg-orange-500' },
-    { label: 'Fair', color: 'bg-amber-500' },
-    { label: 'Good', color: 'bg-emerald-500' },
-    { label: 'Strong', color: 'bg-emerald-600' },
-  ]
-  const idx = Math.min(Math.max(score - 1, 0), 4)
-  return { score, label: levels[idx].label, color: levels[idx].color }
 }
 
 function getSafeRedirect(rawParam) {
@@ -56,7 +32,6 @@ function getSafeRedirect(rawParam) {
 
 export default function Auth() {
   const [searchParams] = useSearchParams()
-  const [mode, setMode] = useState('login')
   const [error, setError] = useState('')
   const [infoMsg, setInfoMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -68,28 +43,21 @@ export default function Auth() {
   const [forgotMsg, setForgotMsg] = useState('')
   const [forgotSubmitting, setForgotSubmitting] = useState(false)
 
-  const { user, login, register } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (user) {
-      const target = getSafeRedirect(searchParams.get('redirect'))
-      navigate(target, { replace: true })
+      if (!user.is_onboarded) {
+        navigate('/onboarding', { replace: true })
+      } else {
+        const target = getSafeRedirect(searchParams.get('redirect'))
+        navigate(target, { replace: true })
+      }
     }
   }, [user, navigate, searchParams])
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
-  const [regForm, setRegForm] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    branch: '',
-    graduation_year: currentYear + 1,
-    github_url: '',
-    skills: [],
-  })
-
-  const regEmailDomainValid = isCampusEmail(regForm.email)
   const loginEmailDomainValid = isCampusEmail(loginForm.email)
 
   useEffect(() => {
@@ -109,8 +77,7 @@ export default function Auth() {
     setSubmitting(true)
     try {
       await login(loginForm.email, loginForm.password)
-      const target = getSafeRedirect(searchParams.get('redirect'))
-      navigate(target)
+      // Redirection is handled by the useEffect above
     } catch (err) {
       setError(err.message)
       if (err.data?.email_unverified) {
@@ -136,23 +103,6 @@ export default function Auth() {
     }
   }
 
-  const handleRegister = async (e) => {
-    e.preventDefault()
-    setError('')
-    setInfoMsg('')
-    setResendSuccess('')
-    setSubmitting(true)
-    try {
-      const res = await register({ ...regForm, graduation_year: Number(regForm.graduation_year) })
-      setInfoMsg(res.message || 'Account created! Please check your email/console to verify your account.')
-      setMode('login')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   const handleResendVerification = async () => {
     if (!resendEmail) return
     try {
@@ -163,42 +113,19 @@ export default function Auth() {
     }
   }
 
-  const strength = getPasswordStrength(regForm.password)
-
   return (
     <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-12">
       <div className="mb-7 text-center">
         <SangamEmblem size={44} className="mx-auto mb-4 text-slate-900" />
         <h1 className="font-sans text-2xl font-bold tracking-tight text-slate-900">
-          {mode === 'login' ? 'Welcome back to Sangam' : 'Join Sangam'}
+          Sign in to Sangam
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          {mode === 'login'
-            ? 'Sign in with your Rishihood campus email or Google account.'
-            : 'Use your Rishihood campus email (e.g. you@nst.rishihood.edu.in).'}
+          Sign in with your Rishihood campus email or Google account.
         </p>
       </div>
 
       <div className="card p-6 sm:p-7">
-        <div className="mb-6 flex rounded-full bg-slate-100 p-1">
-          <button
-            className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
-              mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-            }`}
-            onClick={() => { setMode('login'); setError(''); setInfoMsg(''); }}
-          >
-            Sign in
-          </button>
-          <button
-            className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
-              mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-            }`}
-            onClick={() => { setMode('register'); setError(''); setInfoMsg(''); }}
-          >
-            Create account
-          </button>
-        </div>
-
         {infoMsg && (
           <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{infoMsg}</div>
         )}
@@ -224,171 +151,72 @@ export default function Auth() {
           <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{resendSuccess}</div>
         )}
 
-        {mode === 'login' ? (
-          <>
-            <div className="mb-5">
-              <GoogleSignInButton
-                onSuccess={() => navigate('/explore')}
-                onError={(err) => setError(err)}
-              />
-              <div className="relative my-4 flex items-center justify-center">
-                <div className="w-full border-t border-slate-200" />
-                <span className="absolute bg-white px-2 text-xs uppercase tracking-wider text-slate-400">
-                  or with email
-                </span>
-              </div>
-            </div>
+        <div className="mb-5">
+          <GoogleSignInButton
+            onSuccess={() => { /* Redirection is handled by the useEffect */ }}
+            onError={(err) => setError(err)}
+          />
+          <div className="relative my-4 flex items-center justify-center">
+            <div className="w-full border-t border-slate-200" />
+            <span className="absolute bg-white px-2 text-xs uppercase tracking-wider text-slate-400">
+              or with email
+            </span>
+          </div>
+        </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Field label="Campus email">
-                <input
-                  type="email"
-                  required
-                  placeholder="you@nst.rishihood.edu.in"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  className="input"
-                />
-                {loginEmailDomainValid === false && (
-                  <p className="mt-1 text-xs text-amber-600">Please use your Rishihood campus email address.</p>
-                )}
-              </Field>
-              <Field label="Password">
-                <input
-                  type="password"
-                  required
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                  className="input"
-                />
-              </Field>
-              <SubmitButton submitting={submitting} label="Sign in" />
-            </form>
-            <div className="mt-3 text-center">
-              <button
-                type="button"
-                onClick={() => { setForgotMode(!forgotMode); setForgotMsg(''); setError(''); }}
-                className="text-sm font-medium text-brand-600 hover:text-brand-700 transition"
-              >
-                Forgot password?
-              </button>
-            </div>
-            {forgotMode && (
-              <form onSubmit={handleForgotPassword} className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs text-slate-600">
-                  Enter your campus email and we'll send you a link to reset your password.
-                </p>
-                {forgotMsg && (
-                  <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{forgotMsg}</div>
-                )}
-                <Field label="Campus email">
-                  <input
-                    type="email"
-                    required
-                    placeholder="you@depart.rishihood.edu.in"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="input bg-white"
-                  />
-                </Field>
-                <SubmitButton submitting={forgotSubmitting} label="Reset password" />
-              </form>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Field label="Campus email">
+            <input
+              type="email"
+              required
+              placeholder="you@nst.rishihood.edu.in"
+              value={loginForm.email}
+              onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+              className="input"
+            />
+            {loginEmailDomainValid === false && (
+              <p className="mt-1 text-xs text-amber-600">Please use your Rishihood campus email address.</p>
             )}
-          </>
-        ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
-            <Field label="Full name">
-              <input
-                required
-                value={regForm.full_name}
-                onChange={(e) => setRegForm({ ...regForm, full_name: e.target.value })}
-                className="input"
-              />
-            </Field>
+          </Field>
+          <Field label="Password">
+            <input
+              type="password"
+              required
+              value={loginForm.password}
+              onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+              className="input"
+            />
+          </Field>
+          <SubmitButton submitting={submitting} label="Sign in" />
+        </form>
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => { setForgotMode(!forgotMode); setForgotMsg(''); setError(''); }}
+            className="text-sm font-medium text-brand-600 hover:text-brand-700 transition"
+          >
+            Forgot password?
+          </button>
+        </div>
+        {forgotMode && (
+          <form onSubmit={handleForgotPassword} className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs text-slate-600">
+              Enter your campus email and we'll send you a link to reset your password.
+            </p>
+            {forgotMsg && (
+              <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{forgotMsg}</div>
+            )}
             <Field label="Campus email">
               <input
                 type="email"
                 required
-                placeholder="you@nst.rishihood.edu.in"
-                value={regForm.email}
-                onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                className="input"
-              />
-              {regEmailDomainValid === false && (
-                <p className="mt-1 text-xs text-amber-600">
-                  Please use your Rishihood campus email address (e.g. you@nst.rishihood.edu.in).
-                </p>
-              )}
-            </Field>
-            <Field label="Password">
-              <input
-                type="password"
-                required
-                minLength={12}
-                value={regForm.password}
-                onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                className="input"
-                placeholder="Min 12 chars, upper/lower/digit/special"
-              />
-              {regForm.password && (
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>Strength: {strength.label}</span>
-                    <span>{strength.score}/5</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${strength.color} transition-all duration-300`}
-                      style={{ width: `${(strength.score / 5) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Course / Branch">
-                <select
-                  required
-                  value={regForm.branch}
-                  onChange={(e) => setRegForm({ ...regForm, branch: e.target.value })}
-                  className="input"
-                >
-                  <option value="" disabled>Select course</option>
-                  {VALID_COURSES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Graduation year">
-                <input
-                  type="number"
-                  required
-                  min={currentYear - 5}
-                  max={currentYear + 5}
-                  value={regForm.graduation_year}
-                  onChange={(e) => setRegForm({ ...regForm, graduation_year: e.target.value })}
-                  className="input"
-                />
-              </Field>
-            </div>
-            <Field label="GitHub URL (optional)">
-              <input
-                value={regForm.github_url}
-                onChange={(e) => setRegForm({ ...regForm, github_url: e.target.value })}
-                className="input"
-                placeholder="https://github.com/you"
+                placeholder="you@depart.rishihood.edu.in"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="input bg-white"
               />
             </Field>
-            <Field label="Skills">
-              <SkillTagInput
-                value={regForm.skills}
-                onChange={(skills) => setRegForm({ ...regForm, skills })}
-                placeholder="e.g. React, Figma, Python"
-              />
-            </Field>
-            <SubmitButton submitting={submitting} label="Create account" />
+            <SubmitButton submitting={forgotSubmitting} label="Reset password" />
           </form>
         )}
       </div>

@@ -6,6 +6,7 @@ import MobileBottomNav from './components/MobileBottomNav.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Landing from './pages/Landing.jsx'
 import Auth from './pages/Auth.jsx'
+import Onboarding from './pages/Onboarding.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import Explore from './pages/Explore.jsx'
 import ProjectDetail from './pages/ProjectDetail.jsx'
@@ -17,7 +18,7 @@ import Notifications from './pages/Notifications.jsx'
 // Landing, Auth, and ResetPassword are full-bleed marketing/entry screens; every other
 // route lives inside the app shell with the floating icon sidebar on desktop
 // and bottom navigation on mobile.
-const NO_SHELL_PATHS = ['/', '/auth', '/reset-password']
+const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
 
 export default function App() {
   const location = useLocation()
@@ -38,6 +39,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/explore"

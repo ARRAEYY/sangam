@@ -152,6 +152,15 @@ async function start() {
           allowNull: true,
         })
       }
+      if (!tableInfo.is_onboarded) {
+        await queryInterface.addColumn('users', 'is_onboarded', {
+          type: sequelize.Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        })
+        // Backfill existing users so they are not forced through onboarding
+        await sequelize.query('UPDATE users SET is_onboarded = true WHERE is_onboarded = false;')
+      }
     } catch (err) {
       console.warn('Users column check warning:', err.message)
     }

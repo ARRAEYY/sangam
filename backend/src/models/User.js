@@ -40,6 +40,11 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    is_onboarded: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     password_reset_token: {
       type: DataTypes.STRING,
       allowNull: true,

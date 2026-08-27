@@ -102,6 +102,7 @@ export const api = {
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
   loginWithGoogle: (credential) =>
     request('/api/auth/google', { method: 'POST', body: { credential } }),
+  onboardGoogleUser: (payload) => request('/api/auth/onboard', { method: 'POST', body: payload }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   resendVerification: (email) =>
     request('/api/auth/resend-verification', { method: 'POST', body: { email } }),
