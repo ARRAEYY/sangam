@@ -59,8 +59,11 @@ const csrfCookieOptions = {
 }
 
 app.get('/api/csrf-token', (req, res) => {
-  const token = crypto.randomBytes(32).toString('hex')
-  res.cookie('_csrf', token, csrfCookieOptions)
+  let token = req.cookies && req.cookies._csrf
+  if (!token) {
+    token = crypto.randomBytes(32).toString('hex')
+    res.cookie('_csrf', token, csrfCookieOptions)
+  }
   res.json({ csrfToken: token })
 })
 
