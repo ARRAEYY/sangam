@@ -31,7 +31,7 @@ export default function App() {
       <div className="flex flex-1 w-full relative">
         {/* Sidebar Left Gutter - strictly fixed width */}
         {inAppShell && (
-          <div className="hidden md:block w-[72px] shrink-0 border-r border-transparent z-40">
+          <div className="hidden md:block w-[92px] shrink-0 border-r border-transparent z-40">
             <Sidebar />
           </div>
         )}
