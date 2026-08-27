@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { api } from '../api'
 import ProjectCard from '../components/ProjectCard.jsx'
+import { SkeletonProjectCard } from '../components/Skeletons.jsx'
 
 export default function Explore() {
   const [projects, setProjects] = useState([])
@@ -62,7 +63,6 @@ export default function Explore() {
       </form>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
-      {loading && <p className="text-sm text-slate-500">Loading projects…</p>}
 
       {!loading && projects.length === 0 && (
         <p className="card border-dashed py-14 text-center text-sm text-slate-500">
@@ -71,9 +71,11 @@ export default function Explore() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonProjectCard key={i} />)
+          : projects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
       </div>
     </div>
   )

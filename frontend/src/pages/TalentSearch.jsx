@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Search, Github, Linkedin, Globe, UserPlus, Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award, Crown } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
+import { SkeletonTalentCard } from '../components/Skeletons.jsx'
 
 export default function TalentSearch() {
   const { user } = useAuth()
@@ -95,10 +96,17 @@ export default function TalentSearch() {
 
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
-      {loading && <p className="text-sm text-slate-500">Loading students…</p>}
+      
+      {!loading && talent.length === 0 && (
+        <p className="card border-dashed py-14 text-center text-sm text-slate-500">
+          No students found matching your criteria.
+        </p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {talent.map((person) => (
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonTalentCard key={i} />)
+          : talent.map((person) => (
           <div key={person.id} className="card min-w-0 flex flex-col p-5 hover:border-brand-300 transition-colors cursor-pointer" onClick={() => openProfile(person)}>
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
@@ -166,12 +174,6 @@ export default function TalentSearch() {
           </div>
         ))}
       </div>
-
-      {!loading && talent.length === 0 && (
-        <p className="card border-dashed py-14 text-center text-sm text-slate-500">
-          No students found for that skill yet.
-        </p>
-      )}
 
       {/* Connection Message Modal */}
       {connectingUserId && (

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Bell, Check, CheckCheck, Trash2, UserPlus, FolderKanban, ThumbsUp, ThumbsDown, Crown, UserMinus, Target } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
+import { SkeletonNotification } from '../components/Skeletons.jsx'
 
 // Centralized icon/label mapping so notification rendering never has to be
 // hardcoded per-page - add a new type here and every surface picks it up.
@@ -72,19 +73,17 @@ export default function Notifications() {
     }
   }
 
-  if (notifications === null && !error) {
-    return <p className="py-10 text-sm text-slate-500">Loading notifications…</p>
-  }
   if (error && notifications === null) {
     return <p className="py-10 text-sm text-red-600">{error}</p>
   }
 
-  const visible = notifications.filter((n) => {
+  const isLoading = notifications === null;
+  const visible = isLoading ? [] : notifications.filter((n) => {
     if (filter === 'unread') return !n.is_read
     if (filter === 'read') return n.is_read
     return true
   })
-  const unreadCount = notifications.filter((n) => !n.is_read).length
+  const unreadCount = isLoading ? 0 : notifications.filter((n) => !n.is_read).length
 
   return (
     <div className="max-w-2xl pb-16 pt-2">
@@ -92,7 +91,7 @@ export default function Notifications() {
         <div>
           <h1 className="font-display text-2xl font-semibold text-slate-900">Notifications</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            {unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.'}
+            {isLoading ? 'Checking for updates...' : (unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.')}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -118,7 +117,13 @@ export default function Notifications() {
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
 
-      {visible.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonNotification key={i} />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
         <div className="card flex flex-col items-center gap-2 border-dashed py-14 text-center">
           <Bell size={22} className="text-slate-300" />
           <p className="text-sm text-slate-500">
