@@ -1,7 +1,15 @@
 const jwt = require('jsonwebtoken')
 
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret === 'change_this') {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set securely. System cannot start.')
+  }
+  return secret
+}
+
 function signToken(user) {
-  const secret = process.env.JWT_SECRET || 'change_this'
+  const secret = getJwtSecret()
   const expiresInMinutes = Number(process.env.JWT_EXPIRE_MINUTES || 10080)
 
   return jwt.sign(
@@ -15,7 +23,7 @@ function signToken(user) {
 }
 
 function verifyToken(token) {
-  const secret = process.env.JWT_SECRET || 'change_this'
+  const secret = getJwtSecret()
   return jwt.verify(token, secret)
 }
 

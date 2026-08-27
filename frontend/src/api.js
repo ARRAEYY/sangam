@@ -1,5 +1,22 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+let cachedCsrfToken = null
+
+async function getCsrfToken() {
+  if (cachedCsrfToken) return cachedCsrfToken
+  try {
+    const res = await fetch(`${API_BASE}/api/csrf-token`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      cachedCsrfToken = data.csrfToken
+      return cachedCsrfToken
+    }
+  } catch (err) {
+    console.warn('Failed to fetch CSRF token', err)
+  }
+  return null
+}
+
 async function request(path, { method = 'GET', body, token, params } = {}) {
   let url = `${API_BASE}${path}`
   if (params) {
@@ -10,6 +27,13 @@ async function request(path, { method = 'GET', body, token, params } = {}) {
   }
 
   const headers = { 'Content-Type': 'application/json' }
+  
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+    const csrfToken = await getCsrfToken()
+    if (csrfToken) {
+      headers['CSRF-Token'] = csrfToken
+    }
+  }
   // We rely entirely on the HttpOnly cookie for auth, so no Authorization header is sent.
 
   let res

@@ -12,6 +12,8 @@ const notificationRoutes = require('./routes/notifications')
 const connectionRoutes = require('./routes/connections')
 const errorHandler = require('./middleware/errorHandler')
 const { generalLimiter } = require('./middleware/rateLimit')
+const helmet = require('helmet')
+const csrf = require('csurf')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
@@ -38,7 +40,31 @@ app.use(
 )
 app.use(cookieParser())
 app.use(express.json({ limit: '1mb' }))
+app.use(helmet())
 app.use(generalLimiter)
+
+// Setup CSRF protection
+const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
+const csrfProtection = csrf({ 
+  cookie: {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax',
+  } 
+})
+
+// CSRF token generation endpoint
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() })
+})
+
+// Apply CSRF to state-changing routes
+app.use('/api/auth', csrfProtection, authRoutes)
+app.use('/api/users', csrfProtection, userRoutes)
+app.use('/api/projects', csrfProtection, projectRoutes)
+app.use('/api/applications', csrfProtection, applicationRoutes)
+app.use('/api/notifications', csrfProtection, notificationRoutes)
+app.use('/api/connections', csrfProtection, connectionRoutes)
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -53,13 +79,6 @@ app.get('/api/health', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
 })
-
-app.use('/api/auth', authRoutes)
-app.use('/api/users', userRoutes)
-app.use('/api/projects', projectRoutes)
-app.use('/api/applications', applicationRoutes)
-app.use('/api/notifications', notificationRoutes)
-app.use('/api/connections', connectionRoutes)
 
 app.use((req, res) => {
   res.status(404).json({ detail: 'Route not found.' })
