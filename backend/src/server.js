@@ -14,9 +14,23 @@ const errorHandler = require('./middleware/errorHandler')
 const { generalLimiter } = require('./middleware/rateLimit')
 const helmet = require('helmet')
 const crypto = require('crypto')
+const compression = require('compression')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
+
+// Configure compression to gzip/brotli responses over 1KB
+// This will ignore already-compressed files (images) and only apply to text/json
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false
+    }
+    // fallback to standard filter (handles compressible content types like JSON)
+    return compression.filter(req, res)
+  }
+}))
 
 // Trust the first proxy (Render, Cloudflare, etc.) so req.ip reflects real client IP for rate limiting
 app.set('trust proxy', 1)
