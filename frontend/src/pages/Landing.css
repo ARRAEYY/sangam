@@ -410,7 +410,7 @@
   .landing-nav nav a { padding: 12px; }
   
   .landing-hero { display: block; width: calc(100% - 40px); min-height: auto; padding: 20px 20px 40px; }
-  .hero-copy h1 { font-size: clamp(62px, 15vw, 100px); }
+  .hero-copy h1 { font-size: clamp(40px, 10vw, 75px); }
   .hero-network { top: auto; right: 0; bottom: 0; width: 94%; height: 350px; margin-top: 40px; }
   .hero-index { top: 103px; left: auto; right: 12px; }
   .hero-scroll { display: none; }
