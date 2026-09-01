@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award, Crown, UserPlus } from 'lucide-react';
+import { Check, X as XIcon, Briefcase, FolderGit2, GraduationCap, Award, Crown, UserPlus, Pencil } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,7 +52,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl bg-slate-50 rounded-2xl shadow-xl overflow-hidden my-8 relative flex flex-col max-h-[90vh]">
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
           {selectedUser && user && user.id !== selectedUser.id && (
@@ -72,6 +72,18 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                 </button>
               )}
             </div>
+          )}
+          {selectedUser && user && user.id === selectedUser.id && (
+            <button
+              onClick={() => {
+                onClose();
+                navigate('/profile');
+              }}
+              className="p-2 bg-brand-50 text-brand-600 rounded-full hover:bg-brand-100 transition-colors shadow-sm flex items-center gap-1.5 px-3"
+            >
+              <Pencil size={15} />
+              <span className="text-sm font-semibold hidden sm:block">Edit Profile</span>
+            </button>
           )}
           <button 
             onClick={onClose} 

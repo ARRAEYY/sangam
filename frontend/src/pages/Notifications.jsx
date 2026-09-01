@@ -79,7 +79,7 @@ export default function Notifications() {
     }
     const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     
-    api.getNotifications(token)
+    api.listNotifications(token)
       .then(data => {
         setNotifications(data);
       })

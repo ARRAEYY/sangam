@@ -200,7 +200,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto backdrop-blur-sm">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden my-8 relative flex flex-col max-h-[90vh]">
 
         {/* Top Right Actions */}

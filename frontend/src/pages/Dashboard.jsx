@@ -187,7 +187,7 @@ export default function Dashboard() {
 
         // Fetch Notifications for activity feed
         try {
-          const notifs = await api.getNotifications(token)
+          const notifs = await api.listNotifications(token)
           const mappedActivity = (notifs || []).slice(0, 4).map((n, i) => ({
             id: n.id,
             name: n.title || 'Signal',
