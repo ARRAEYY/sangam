@@ -14,21 +14,21 @@ function isCampusEmail(email) {
 }
 
 function getSafeRedirect(rawParam) {
-  if (!rawParam) return '/explore'
+  if (!rawParam) return '/dashboard'
   let decoded
   try {
     decoded = decodeURIComponent(rawParam)
   } catch {
-    return '/explore'
+    return '/dashboard'
   }
   // Must start with a single '/' (relative path), never '//' or an absolute URL with scheme
   const isRelative = /^\/(?!\/)/.test(decoded)
   const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(decoded)
-  if (!isRelative || hasScheme) return '/explore'
+  if (!isRelative || hasScheme) return '/dashboard'
   // Whitelist to known app routes only — reject arbitrary open redirects
   const allowedPrefixes = ['/projects/', '/explore', '/talent', '/dashboard', '/create', '/notifications']
   const isAllowed = allowedPrefixes.some((p) => decoded.startsWith(p))
-  return isAllowed ? decoded : '/explore'
+  return isAllowed ? decoded : '/dashboard'
 }
 
 export default function Auth() {

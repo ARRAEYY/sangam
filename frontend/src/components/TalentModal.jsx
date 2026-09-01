@@ -52,7 +52,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl bg-slate-50 rounded-2xl shadow-xl overflow-hidden my-8 relative flex flex-col max-h-[90vh]">
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
           {selectedUser && user && user.id !== selectedUser.id && (
@@ -196,9 +196,9 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                   <div className="flex flex-col gap-4 divide-y divide-slate-100">
                     {selectedUser.educations.map((edu) => (
                       <div key={edu.id} className="pt-4 first:pt-0">
-                        <div className="border-l-2 border-[#ffcda3] pl-4">
+                        <div className="border-l-2 border-[#7f1d3b] pl-4">
                           <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
-                          <p className="text-sm text-slate-600">
+                          <p className="text-sm font-medium text-[#7f1d3b]">
                             {edu.institution_name || edu.institution}
                             {edu.department ? ` (${edu.department})` : ''}
                           </p>
@@ -221,9 +221,9 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                   <div className="flex flex-col gap-4 divide-y divide-slate-100">
                     {selectedUser.experiences.map((exp) => (
                       <div key={exp.id} className="pt-4 first:pt-0">
-                        <div className="border-l-2 border-[#ffcda3] pl-4">
+                        <div className="border-l-2 border-[#7f1d3b] pl-4">
                           <h4 className="font-semibold text-slate-800">{exp.role || exp.title}</h4>
-                          <p className="text-sm text-brand-600">{exp.organization || exp.company}</p>
+                          <p className="text-sm font-medium text-[#7f1d3b] mb-1">{exp.organization || exp.company}</p>
                           <p className="text-xs text-slate-500 mb-1">
                             {new Date(exp.start_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} -{' '}
                             {exp.end_date ? new Date(exp.end_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Present'}
@@ -245,7 +245,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                   <div className="flex flex-col gap-4 divide-y divide-slate-100">
                     {selectedUser.achievements.map((ach) => (
                       <div key={ach.id} className="pt-4 first:pt-0">
-                        <div className="border-l-2 border-[#ffcda3] pl-4">
+                        <div className="border-l-2 border-[#7f1d3b] pl-4">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-slate-800">{ach.title}</h4>
                             <span className="pill bg-brand-50 text-brand-700 text-[10px] py-0.5">{ach.type}</span>

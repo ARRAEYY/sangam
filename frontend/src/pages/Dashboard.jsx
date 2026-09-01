@@ -56,8 +56,13 @@ export const ProjectCard = ({ project, featured }) => {
     <>
       <button onClick={() => setIsModalOpen(true)} className={`project-card text-left accent-${project.accent} ${featured ? 'featured' : ''}`}>
       <div className="project-card-topline">
-        <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-          {featured ? 'FEATURED BUILD' : 'PROJECT / 24'}
+        <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+          {featured ? 'FEATURED BUILD' : 'RECOMMENDED PROJECT'}
+          {project.matchCount > 0 && (
+            <span className="bg-[#7f1d3b]/10 text-[#7f1d3b] px-1.5 py-0.5 rounded-sm lowercase text-[9px] font-semibold">
+              {project.matchCount} skill match{project.matchCount > 1 ? 'es' : ''}
+            </span>
+          )}
         </span>
         <div className={`status-pill ${project.status === 'Open' ? 'bg-emerald-50 text-emerald-700' : project.status === 'Seeking co-founder' ? 'bg-[#eef3f5] text-[#30536d]' : 'bg-[#fdf5ea] text-[#8f5b36]'}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${project.status === 'Open' ? 'bg-emerald-500' : project.status === 'Seeking co-founder' ? 'bg-[#30536d]' : 'bg-[#8f5b36]'}`} />
@@ -99,25 +104,43 @@ export const ProjectCard = ({ project, featured }) => {
 }
 
 export default function Dashboard() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   
   const [projects, setProjects] = useState([])
+  const [openProjectsCount, setOpenProjectsCount] = useState(0)
   const [activity, setActivity] = useState([])
   const [stats, setStats] = useState({ builds: 0, network: 0, profileSignal: 25 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!token || !user) return
+    if (!user) return
 
     let isMounted = true
 
     async function loadData() {
       try {
-        // Fetch projects globally to show on dashboard feed
-        const projectsData = await api.listProjects({}, token)
+        const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
         
-        // We only show up to 3 projects
-        const mappedProjects = (projectsData || []).slice(0, 3).map((p, i) => ({
+        // Fetch projects globally to show on dashboard feed
+        const projectsData = await api.listProjects({})
+        if (!isMounted) return;
+        
+        const openProjects = projectsData.filter(p => p.status === 'OPEN')
+        setOpenProjectsCount(openProjects.length)
+
+        // Fetch User's public profile to get accurate skills and projects
+        const fullProfile = await api.getUserPublicProfile(user.id, token)
+        
+        const userSkills = (fullProfile.skills || []).map(s => typeof s === 'string' ? s.toLowerCase() : s.name.toLowerCase())
+        
+        // Score projects based on skill match
+        const scoredProjects = openProjects.map(p => {
+          const projectSkills = p.required_skills ? p.required_skills.map(s => s.name.toLowerCase()) : []
+          const matchCount = projectSkills.filter(s => userSkills.includes(s)).length
+          return { ...p, matchCount }
+        }).sort((a, b) => b.matchCount - a.matchCount)
+
+        const mappedProjects = scoredProjects.slice(0, 3).map((p, i) => ({
           id: p.id,
           title: p.title,
           summary: stripMarkdown(p.description),
@@ -127,57 +150,57 @@ export default function Dashboard() {
           team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
           time: timeAgo(p.created_at),
           skills: (p.required_skills || []).slice(0, 3).map(s => s.name),
-          accent: ['maroon', 'blue', 'sand'][i % 3]
+          accent: ['maroon', 'blue', 'sand'][i % 3],
+          matchCount: p.matchCount
         }))
-        if (isMounted) setProjects(mappedProjects)
+        
+        setProjects(mappedProjects)
 
         // Calculate Profile Signal and Network Stats safely in parallel
         let buildsCount = 0
         let networkCount = 0
-        let signal = 25 // Base signal for having registered
+        let signal = 0 
 
         try {
-          const [myProjects, connections] = await Promise.all([
-            api.listProjects({ owner_id: user.id }, token),
-            api.listConnections(token)
-          ])
+          const connections = await api.listConnections()
           
-          buildsCount = Array.isArray(myProjects) ? myProjects.length : 0
+          const ownedProjects = fullProfile.project_roles?.filter(pr => pr.is_lead).length || 0;
+          const acceptedProjects = fullProfile.accepted_projects?.length || 0;
+          
+          buildsCount = ownedProjects + acceptedProjects
           networkCount = Array.isArray(connections) ? connections.length : 0
           
-          if (buildsCount > 0) signal += 25
-          if (networkCount > 0) signal += 15
-          if (user.avatar_url) signal += 15
-          if (user.bio) signal += 20
+          // Profile completeness (out of 100)
+          if (fullProfile.full_name) signal += 10
+          if (fullProfile.headline) signal += 10
+          if (fullProfile.bio) signal += 15
+          if (fullProfile.avatar_url) signal += 15
+          if (fullProfile.skills && fullProfile.skills.length > 0) signal += 20
+          if (fullProfile.educations && fullProfile.educations.length > 0) signal += 15
+          if (fullProfile.experiences && fullProfile.experiences.length > 0) signal += 15
           
         } catch (e) {
           console.error("Failed to fetch auxiliary stats", e)
         }
         
-        if (isMounted) {
-          setStats({ builds: buildsCount, network: networkCount, profileSignal: Math.min(signal, 100) })
-        }
+        setStats({ builds: buildsCount, network: networkCount, profileSignal: Math.min(signal, 100) })
 
         // Fetch Notifications for activity feed
         try {
-          const notifs = await api.listNotifications(token)
+          const notifs = await api.getNotifications(token)
           const mappedActivity = (notifs || []).slice(0, 4).map((n, i) => ({
             id: n.id,
-            name: n.title || 'Notification',
+            name: n.title || 'Signal',
             detail: n.message || '',
             time: timeAgo(n.created_at),
             tone: ['maroon', 'blue', 'sand', 'maroon'][i % 4]
           }))
           
-          if (isMounted) {
-            setActivity(mappedActivity.length ? mappedActivity : [
-              { id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }
-            ])
-          }
+          setActivity(mappedActivity.length ? mappedActivity : [
+            { id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }
+          ])
         } catch (e) {
-          if (isMounted) {
-            setActivity([{ id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }])
-          }
+          setActivity([{ id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }])
         }
 
       } catch (err) {
@@ -189,7 +212,7 @@ export default function Dashboard() {
 
     loadData()
     return () => { isMounted = false }
-  }, [token, user])
+  }, [user])
 
   return (
     <div className="page-stack dashboard-page max-w-[1200px] mx-auto w-full">
@@ -208,7 +231,7 @@ export default function Dashboard() {
         </div>
         <div className="hero-note hidden md:flex">
           <span className="hero-note-mark mr-2 text-[20px] text-[#7f1d3b]">↗</span>
-          <span className="text-[10px] text-slate-500 leading-tight">{projects.length} open builds<br /><strong className="text-slate-800">waiting for you</strong></span>
+          <span className="text-[10px] text-slate-500 leading-tight">{openProjectsCount} open builds<br /><strong className="text-slate-800">waiting for you</strong></span>
         </div>
       </section>
 
@@ -217,10 +240,10 @@ export default function Dashboard() {
         <div className="stat-block">
           <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Your builds</span>
           <strong className="block mb-1">{stats.builds.toString().padStart(2, '0')}</strong>
-          <span className="stat-caption block text-[11px] text-slate-400">Your open project signals</span>
+          <span className="stat-caption block text-[11px] text-slate-400">Projects you are working on</span>
         </div>
         <div className="stat-block">
-          <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Network size</span>
+          <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Worker network</span>
           <strong className="block mb-1">{stats.network.toString().padStart(2, '0')}</strong>
           <span className="stat-caption block text-[11px] text-slate-400">Accepted connections</span>
         </div>
@@ -230,9 +253,9 @@ export default function Dashboard() {
             <span>{stats.profileSignal}%</span>
           </div>
           <div className="progress-track mb-2">
-            <span style={{ width: `${stats.profileSignal}%` }} />
+            <span style={{ width: `${stats.profileSignal}%` }} className={stats.profileSignal === 100 ? 'bg-emerald-500' : ''} />
           </div>
-          <span className="stat-caption text-[11px] text-slate-400">Profile signal from your saved details</span>
+          <span className="stat-caption text-[11px] text-slate-400">Profile completeness</span>
         </div>
         <div className="dashboard-prompt bg-[#faf9f5]">
           <Sparkles size={16} />
@@ -249,48 +272,50 @@ export default function Dashboard() {
           <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
             Reading campus signals...
           </div>
-        ) : projects.length > 0 ? (
-          <div className="featured-project-grid">
-            {projects[0] && <ProjectCard project={projects[0]} featured />}
-            <div className="side-project-stack">
-              {projects[1] && <ProjectCard project={projects[1]} />}
-              {projects[2] && <ProjectCard project={projects[2]} />}
-            </div>
-          </div>
         ) : (
-          <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
-            No open builds right now. Be the first to start one!
+          <div className="grid md:grid-cols-3 gap-6">
+            {projects.length > 0 ? (
+              projects.map((p, i) => (
+                <ProjectCard key={p.id} project={p} featured={i === 0} />
+              ))
+            ) : (
+              <div className="col-span-3 py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
+                No open projects found. Be the first to start a build!
+              </div>
+            )}
           </div>
         )}
       </section>
 
-      {/* 4. Lower Activity & Action Panel */}
-      <section className="dashboard-lower reveal-in delay-3 mt-4 mb-16">
-        <div className="activity-panel">
-          <SectionHeading label="Live from your network" title="Recent signals" action={<button className="icon-button subtle-button border border-slate-200" aria-label="View all recent activity"><ArrowUpRight size={14} /></button>} />
-          <div className="activity-list">
-            {activity.map((item, index) => (
-              <div className="activity-item" key={item.id}>
-                <span className={`activity-avatar avatar-${item.tone}`}>
-                  {index === 2 && activity.length > 2 ? <CircleDashed size={14} /> : item.name.charAt(0)}
-                </span>
-                <span className="activity-copy"><strong>{item.name}</strong><span>{item.detail}</span></span>
-                <time>{item.time}</time>
+      {/* 4. Secondary Action Area */}
+      <div className="grid md:grid-cols-[1fr_300px] gap-8 mt-12 mb-12 reveal-in delay-3">
+        <section className="dashboard-activity">
+          <SectionHeading label="Activity feed" title="Recent signals" action={<Link to="/notifications" className="text-[11px] font-bold text-slate-500 hover:text-[#7f1d3b] hover:underline transition-colors">See all</Link>} />
+          
+          <div className="activity-list space-y-4">
+            {activity.map((act) => (
+              <div key={act.id} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
+                <div className={`activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400`}>
+                  <Check size={16} />
+                </div>
+                <div className="activity-content flex-1">
+                  <h4 className="text-sm font-semibold text-slate-800">{act.name}</h4>
+                  <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2">{act.detail}</p>
+                </div>
+                <time className="text-[10px] text-slate-400 font-medium whitespace-nowrap pt-0.5">{act.time}</time>
               </div>
             ))}
           </div>
-          <div className="activity-foot mt-6 pt-4 border-t border-slate-100">
-            <span><Clock3 size={14} /> Updated moments ago</span><span className="activity-pulse" />
-          </div>
-        </div>
+        </section>
 
-        <div className="dashboard-side-panel">
-          <div className="side-panel-heading"><span className="eyebrow text-[10px] font-bold tracking-widest uppercase">Your next move</span><UsersRound size={18} /></div>
-          <h3>Put a shape around the idea.</h3>
-          <p>Think. Create . Connect</p>
-          <Link to="/create" className="button button-secondary button-full text-[14px]">Post a project <Plus size={16} /></Link>
-        </div>
-      </section>
+        <section className="dashboard-sidebar">
+          <div className="explore-card accent-maroon mb-6 p-6 rounded-[18px] bg-[#fffaf7] border border-[#7f1d3b]/10">
+            <h3 className="text-lg font-display font-semibold text-slate-900 mb-2">Build your network</h3>
+            <p className="text-sm text-slate-600 mb-4">Connect with talent across campus and start collaborating.</p>
+            <Link to="/talent" className="button button-primary w-full text-center justify-center">Browse Talent</Link>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
