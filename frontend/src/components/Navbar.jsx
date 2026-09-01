@@ -121,12 +121,12 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6">
+    <nav className="sticky top-0 z-30 h-[74px] flex items-center border-b border-[rgba(32,42,57,0.06)] bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between px-5 sm:px-6">
         {/* Brand / Logo - Sangam */}
         <Link to="/" className="flex items-center gap-2.5">
-          <SangamEmblem size={28} className="text-slate-900" />
-          <span className="font-sans text-xl font-bold tracking-tight text-slate-900">
+          <SangamEmblem size={28} className="text-ink" />
+          <span className="font-display text-[25px] tracking-tight text-ink mt-1">
             Sangam
           </span>
         </Link>
@@ -152,12 +152,12 @@ export default function Navbar() {
               </button>
 
               {profileMenuOpen && (
-                <div className="absolute right-0 top-12 w-60 overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-card">
+                <div className="absolute right-0 top-12 w-60 overflow-hidden rounded-card border border-[rgba(32,42,57,0.06)] bg-white py-2 shadow-lift menu-in">
                   <div className="px-4 py-2.5">
-                    <p className="text-sm font-semibold text-slate-900">{user.full_name}</p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="text-sm font-semibold text-ink">{user.full_name}</p>
+                    <p className="truncate text-xs text-ink-soft">{user.email}</p>
                   </div>
-                  <div className="my-1 h-px bg-slate-100" />
+                  <div className="my-1 h-px bg-[rgba(32,42,57,0.06)]" />
                   <Link
                     to="/dashboard"
                     onClick={() => setProfileMenuOpen(false)}
@@ -202,7 +202,7 @@ export default function Navbar() {
         >
           {/* Backdrop */}
           <div 
-            className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${
+            className={`absolute inset-0 bg-ink/40 backdrop-blur-sm transition-opacity duration-300 ${
               mobileMenuOpen ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={() => setMobileMenuOpen(false)}

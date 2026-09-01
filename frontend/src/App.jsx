@@ -12,6 +12,7 @@ import Explore from './pages/Explore.jsx'
 import ProjectDetail from './pages/ProjectDetail.jsx'
 import CreateProject from './pages/CreateProject.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Profile from './pages/Profile.jsx'
 import TalentSearch from './pages/TalentSearch.jsx'
 import Notifications from './pages/Notifications.jsx'
 
@@ -25,22 +26,18 @@ export default function App() {
   const inAppShell = !NO_SHELL_PATHS.includes(location.pathname)
 
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-cream-100 text-slate-900 antialiased">
-      <Navbar />
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
+      {inAppShell && <Navbar />}
       
       <div className="flex flex-1 w-full relative">
-        {/* Sidebar Left Gutter - strictly fixed width */}
-        {inAppShell && (
-          <div className="hidden md:block w-[92px] shrink-0 border-r border-transparent z-40">
-            <Sidebar />
-          </div>
-        )}
+        {/* Fixed position sidebar */}
+        {inAppShell && <Sidebar />}
         
         {/* Main Content Area */}
         <main
           className={`flex-1 min-w-0 ${
             inAppShell
-              ? 'px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 mx-auto max-w-5xl w-full'
+              ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 mx-auto max-w-[1480px] w-full'
               : 'w-full'
           }`}
         >
@@ -54,6 +51,7 @@ export default function App() {
             <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           </Routes>
         </main>

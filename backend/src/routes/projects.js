@@ -116,7 +116,13 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     const project = await Project.findByPk(req.params.id, {
       include: [
         { model: Skill, as: 'required_skills' },
-        { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url'] },
+        { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url', 'headline'] },
+        { 
+          model: ProjectMember, 
+          as: 'members', 
+          include: [{ model: User, as: 'user', attributes: ['id', 'full_name', 'avatar_url', 'headline'] }] 
+        },
+        { model: Milestone, as: 'milestones' },
       ],
     })
 
@@ -143,10 +149,15 @@ router.post('/', requireAuth, async (req, res, next) => {
     const payload = req.body || {}
     const title = String(payload.title || '').trim()
     const description = String(payload.description || '').trim()
+    const short_description = payload.short_description ? String(payload.short_description).trim() : null
+    const time_horizon = payload.time_horizon ? String(payload.time_horizon).trim() : null
+    const tech_stack = Array.isArray(payload.tech_stack) ? payload.tech_stack : []
+    const open_roles = Array.isArray(payload.open_roles) ? payload.open_roles : []
     const teamSizeNeeded = Number(payload.team_size_needed)
     const skills = Array.isArray(payload.skills) ? payload.skills : []
 
     const members = Array.isArray(payload.members) ? payload.members : []
+    const milestones = Array.isArray(payload.milestones) ? payload.milestones : []
     const nextMilestone = payload.next_milestone || null
 
     if (!title) {
@@ -167,6 +178,10 @@ router.post('/', requireAuth, async (req, res, next) => {
         {
           title,
           description,
+          short_description,
+          time_horizon,
+          tech_stack,
+          open_roles,
           team_size_needed: teamSizeNeeded,
           owner_id: req.user.id,
           status: 'OPEN',
@@ -219,16 +234,19 @@ router.post('/', requireAuth, async (req, res, next) => {
         )
       }
 
-      // Add optional next milestone
-      if (nextMilestone && nextMilestone.title) {
+      // Add optional milestones
+      for (let i = 0; i < milestones.length; i++) {
+        const ms = milestones[i]
+        if (!ms.title) continue
         await Milestone.create(
           {
             project_id: project.id,
-            title: nextMilestone.title,
-            due_date: nextMilestone.due_date || null,
-            status: 'NOT_STARTED',
+            title: ms.title,
+            description: ms.description || null,
+            due_date: ms.targetDate || ms.due_date || null,
+            status: ms.status || 'NOT_STARTED',
             created_by: req.user.id,
-            order_index: 0,
+            order_index: i,
           },
           { transaction: t }
         )
@@ -239,6 +257,8 @@ router.post('/', requireAuth, async (req, res, next) => {
       include: [
         { model: Skill, as: 'required_skills' },
         { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url'] },
+        { model: ProjectMember, as: 'members' },
+        { model: Milestone, as: 'milestones' },
       ],
     })
 

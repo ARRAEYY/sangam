@@ -49,7 +49,7 @@ export default function MobileBottomNav() {
     },
     {
       key: 'profile',
-      to: user ? '/dashboard' : '/auth',
+      to: user ? '/profile' : '/auth',
       label: user ? 'Profile' : 'Sign in',
       icon: User,
     },
