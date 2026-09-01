@@ -471,6 +471,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
           excludeUserIds={[project.owner_id, ...(project.members?.map(m => m.user_id) || [])]}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
