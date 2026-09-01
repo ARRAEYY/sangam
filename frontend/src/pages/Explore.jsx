@@ -1,85 +1,227 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Search } from 'lucide-react'
-import { api } from '../api'
-import ProjectCard from '../components/ProjectCard.jsx'
-import { SkeletonProjectCard } from '../components/Skeletons.jsx'
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, Plus, Search, Check, SlidersHorizontal } from 'lucide-react';
+import { ProjectCard } from './Dashboard.jsx';
+import { api } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
 
-export default function Explore() {
-  const [projects, setProjects] = useState([])
-  const [skill, setSkill] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+// Helpers (Same as Dashboard for consistency)
+function stripMarkdown(text) {
+  if (!text) return ''
+  return text
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/\n{2,}/g, ' ')
+    .trim()
+}
 
-  const load = async (skillFilter) => {
-    setLoading(true)
-    setError('')
-    try {
-      const data = await api.listProjects({ skill: skillFilter })
-      setProjects(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+}
 
-  useEffect(() => {
-    load()
-  }, [])
+function timeAgo(dateString) {
+  if (!dateString) return 'Recently'
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 'Recently'
+  const seconds = Math.floor((new Date() - date) / 1000)
+  if (seconds < 60) return 'Just now'
+  let interval = seconds / 86400
+  if (interval >= 1) return Math.floor(interval) + 'd ago'
+  interval = seconds / 3600
+  if (interval >= 1) return Math.floor(interval) + 'h ago'
+  interval = seconds / 60
+  if (interval >= 1) return Math.floor(interval) + 'm ago'
+  return 'Just now'
+}
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    load(skill)
-  }
-
+// --- 1. Shared Design System Components for Explore ---
+export function PageHeader({ eyebrow, title, description, index }) {
   return (
-    <div className="pb-16 pt-2">
-      {/* Page header: stacks on mobile, side-by-side on sm+ */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-xl font-semibold text-slate-900 sm:text-2xl">Open projects</h1>
-          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Teams on campus looking for their next builder.</p>
-        </div>
-        <Link to="/create" className="btn-secondary w-fit text-xs px-3.5 py-2 self-start sm:self-auto sm:shrink-0">
-          + Post a project
-        </Link>
+    <header className={`page-header reveal-in ${!index ? '!grid-cols-1 !gap-0' : ''}`}>
+      {index && <div className="page-header-index">{index}</div>}
+      <div className="page-header-copy">
+        {eyebrow && <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-2">{eyebrow}</span>}
+        <h1>{title}</h1>
+        <p>{description}</p>
       </div>
+    </header>
+  );
+}
 
-      {/* Search bar — stacks on mobile, inline on sm+ */}
-      <form onSubmit={handleSearch} className="mb-5 flex w-full flex-col gap-2 sm:max-w-sm sm:flex-row sm:items-center">
-        <label htmlFor="explore-search" className="sr-only">Search projects by skill</label>
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            id="explore-search"
-            value={skill}
-            onChange={(e) => setSkill(e.target.value)}
-            placeholder="Filter by skill, e.g. React"
-            className="input !pl-10 text-sm"
-          />
-        </div>
-        <button type="submit" className="btn-primary w-full sm:w-auto shrink-0 !px-4 !py-2.5 text-sm">
-          Search
+export function SearchToolbar({ value, onChange, placeholder, filters = ["All projects", "My skills", "Recently added"] }) {
+  const [activeFilter, setActiveFilter] = useState(filters[0]);
+  return (
+    <div className="search-toolbar reveal-in delay-1">
+      <label className="search-field flex items-center gap-3 bg-white border border-slate-200 rounded-full h-[52px] px-5 shadow-sm flex-1 cursor-text focus-within:border-[#7f1d3b] focus-within:ring-1 focus-within:ring-[#7f1d3b] transition-all">
+        <Search size={18} className="text-slate-400" />
+        <input 
+          value={value} 
+          onChange={(event) => onChange(event.target.value)} 
+          placeholder={placeholder} 
+          className="flex-1 bg-transparent outline-none text-[14px] text-slate-800 placeholder:text-slate-400"
+        />
+        <kbd className="hidden md:flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-[10px] text-slate-400 font-mono border border-slate-200">/</kbd>
+      </label>
+      
+      <div className="filter-row flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar" aria-label="Filters">
+        {filters.map((filter) => (
+          <button 
+            key={filter} 
+            className={`filter-chip h-[38px] px-4 rounded-full text-[12px] font-bold whitespace-nowrap flex items-center gap-2 border transition-all ${
+              activeFilter === filter 
+                ? "bg-[#fffaf7] border-[#f4e4e4] text-[#7f1d3b]" 
+                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`} 
+            onClick={() => setActiveFilter(filter)}
+          >
+            {activeFilter === filter && <Check size={14} />}
+            {filter}
+          </button>
+        ))}
+        <button className="filter-chip h-[38px] w-[38px] flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shrink-0">
+          <SlidersHorizontal size={15} />
         </button>
-      </form>
-
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
-
-      {!loading && projects.length === 0 && (
-        <p className="card border-dashed py-14 text-center text-sm text-slate-500">
-          No projects found. Be the first to post one!
-        </p>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {loading
-          ? Array.from({ length: 6 }).map((_, i) => <SkeletonProjectCard key={i} />)
-          : projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
       </div>
     </div>
-  )
+  );
+}
 
+export function EmptyState({ type, onReset }) {
+  const isProject = type === "projects";
+  return (
+    <div className="empty-state surface-card bg-white border border-slate-100 rounded-[24px] p-8 md:p-12 shadow-sm text-center md:text-left">
+      <div className="empty-symbol text-[40px] font-display text-slate-200 leading-none mb-6 md:mb-0">{isProject ? "01" : "∞"}</div>
+      <div>
+        <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-2">A quieter corner</span>
+        <h3 className="font-display text-[32px] text-slate-800 leading-tight mb-2">{isProject ? "No builds here yet." : "No one matches that signal."}</h3>
+        <p className="text-[14px] text-slate-500">{isProject ? "Be the first team to start something worth sharing." : "Try another skill, or open the full campus talent index."}</p>
+      </div>
+      <button className="button button-secondary mt-6 md:mt-0 ml-auto" onClick={onReset}>
+        {isProject ? "Clear search" : "Explore everyone"}
+      </button>
+    </div>
+  );
+}
+
+export function useFilteredItems(items, query) {
+  return useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return items;
+    return items.filter((item) => 
+      [
+        item.title, 
+        item.name, 
+        item.summary, 
+        item.creator,
+        item.bio,
+        item.degree,
+        item.year,
+        ...(item.skills ?? [])
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(needle)
+    );
+  }, [items, query]);
+}
+
+// --- 2. Main Explore Page Component ---
+export default function Explore() {
+  const { token } = useAuth()
+  const [query, setQuery] = useState("");
+  const [projectsData, setProjectsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProjects = async () => {
+      try {
+        const data = await api.listProjects({}, token);
+        const mapped = (data || []).map((p, i) => ({
+          id: p.id,
+          title: p.title,
+          summary: stripMarkdown(p.description),
+          creator: p.owner?.full_name || 'Anonymous',
+          initials: getInitials(p.owner?.full_name),
+          status: p.status === 'OPEN' ? 'Open' : p.status === 'IN_PROGRESS' ? 'In progress' : 'Completed',
+          team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
+          time: timeAgo(p.created_at),
+          skills: (p.required_skills || []).map(s => s.name),
+          accent: ['maroon', 'blue', 'sand'][i % 3]
+        }));
+        if (isMounted) setProjectsData(mapped);
+      } catch (e) {
+        console.error("Failed to load projects", e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchProjects();
+    return () => { isMounted = false; };
+  }, [token]);
+
+  const filtered = useFilteredItems(projectsData, query);
+
+  return (
+    <div className="page-stack discovery-page w-full max-w-[1200px] mx-auto pb-20">
+      
+      {/* Header */}
+      <PageHeader 
+        title="Open projects" 
+        description="Teams on campus looking for their next builder." 
+      />
+      
+      {/* Intro Editorial Strip */}
+      <section className="discovery-intro surface-strip reveal-in delay-1 bg-white border border-slate-100">
+        <div>
+          <h2>Good rooms are
+        <br /><em className="not-italic text-[#7f1d3b]">worth finding.</em></h2>
+        </div>
+        <div className="discovery-art">
+          <img src="/manus-storage/sangam-discovery-forms_2790f846.png" alt="Abstract paper forms assembling into a project" />
+        </div>
+      </section>
+
+      {/* Search & Filter Toolbar */}
+      <SearchToolbar 
+        value={query} 
+        onChange={setQuery} 
+        placeholder="Search projects, skills, or people..." 
+      />
+
+      {/* Grid or Empty State */}
+      {loading ? (
+        <section className="reveal-in delay-2 py-20 text-center text-slate-400 border border-slate-100 rounded-[24px] bg-white">
+          Discovering campus signals...
+        </section>
+      ) : filtered.length > 0 ? (
+        <section className="project-grid reveal-in delay-2">
+          {filtered.map((project) => (
+            <ProjectCard key={project.id || project.title} project={project} />
+          ))}
+          
+          {/* Post a project card (last card in grid) */}
+          <Link to="/create" className="create-card">
+            <span className="create-card-mark"><Plus size={20} className="text-[#7f1d3b]" /></span>
+            <span>
+              <span className="eyebrow block text-[10px] font-bold tracking-widest text-[#7f1d3b]/70 uppercase mb-2">Have an idea?</span>
+              <strong className="block text-[#182232] mb-1">Start a project</strong>
+              <small className="block text-[13px] text-slate-500">Make space for the right people.</small>
+            </span>
+            <ArrowUpRight size={20} className="text-[#7f1d3b] ml-auto" />
+          </Link>
+        </section>
+      ) : (
+        <section className="reveal-in delay-2">
+          <EmptyState type="projects" onReset={() => setQuery("")} />
+        </section>
+      )}
+    </div>
+  );
 }

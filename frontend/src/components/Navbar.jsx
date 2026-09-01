@@ -8,11 +8,11 @@ import {
   PlusCircle,
   Menu,
   X,
-  LayoutGrid,
   Users2,
   Bell,
   LogIn,
 } from 'lucide-react'
+import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
 import NotificationBell from './NotificationBell.jsx'
@@ -40,7 +40,7 @@ export default function Navbar() {
       try {
         const { count } = await api.unreadNotificationCount(token)
         if (!cancelled) setUnreadCount(count || 0)
-      } catch {}
+      } catch { }
     }
 
     fetchCount()
@@ -66,12 +66,12 @@ export default function Navbar() {
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden'
-      
+
       const handleEsc = (e) => {
         if (e.key === 'Escape') setMobileMenuOpen(false)
       }
       document.addEventListener('keydown', handleEsc)
-      
+
       return () => {
         document.body.style.overflow = ''
         document.removeEventListener('keydown', handleEsc)
@@ -89,15 +89,15 @@ export default function Navbar() {
 
   const initials = user
     ? user.full_name
-        .split(' ')
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : ''
 
   const navLinks = [
-    { to: '/explore', label: 'Explore projects', icon: LayoutGrid },
+    { to: '/explore', label: 'Explore projects', icon: ExploreIcon },
     { to: '/talent', label: 'Find talent', icon: Users2 },
     {
       to: '/notifications',
@@ -121,12 +121,12 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6">
+    <nav className="sticky top-0 z-[9999] h-[74px] flex items-center border-b border-[rgba(32,42,57,0.06)] bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between px-5 sm:px-6">
         {/* Brand / Logo - Sangam */}
         <Link to="/" className="flex items-center gap-2.5">
-          <SangamEmblem size={28} className="text-slate-900" />
-          <span className="font-sans text-xl font-bold tracking-tight text-slate-900">
+          <SangamEmblem size={28} className="text-ink" />
+          <span className="font-display text-[25px] tracking-tight text-ink mt-1">
             Sangam
           </span>
         </Link>
@@ -152,12 +152,12 @@ export default function Navbar() {
               </button>
 
               {profileMenuOpen && (
-                <div className="absolute right-0 top-12 w-60 overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-card">
+                <div className="absolute right-0 top-12 w-60 overflow-hidden rounded-card border border-[rgba(32,42,57,0.06)] bg-white py-2 shadow-lift menu-in">
                   <div className="px-4 py-2.5">
-                    <p className="text-sm font-semibold text-slate-900">{user.full_name}</p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="text-sm font-semibold text-ink">{user.full_name}</p>
+                    <p className="truncate text-xs text-ink-soft">{user.email}</p>
                   </div>
-                  <div className="my-1 h-px bg-slate-100" />
+                  <div className="my-1 h-px bg-[rgba(32,42,57,0.06)]" />
                   <Link
                     to="/dashboard"
                     onClick={() => setProfileMenuOpen(false)}
@@ -196,24 +196,21 @@ export default function Navbar() {
       {/* Mobile Dropdown Menu Drawer (Slide-in) using Portal to escape backdrop-filter context */}
       {createPortal(
         <div
-          className={`fixed inset-0 z-[100] flex justify-end transition-opacity duration-300 md:hidden ${
-            mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-          }`}
+          className={`fixed inset-0 z-[100] flex justify-end transition-opacity duration-300 md:hidden ${mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+            }`}
         >
           {/* Backdrop */}
-          <div 
-            className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${
-              mobileMenuOpen ? 'opacity-100' : 'opacity-0'
-            }`}
+          <div
+            className={`absolute inset-0 bg-ink/40 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+              }`}
             onClick={() => setMobileMenuOpen(false)}
           />
-          
+
           {/* Drawer Panel */}
           <div
             ref={mobileMenuRef}
-            className={`relative flex h-[100dvh] w-[85%] max-w-[360px] flex-col bg-white px-5 pb-5 pt-4 shadow-2xl transition-transform duration-300 ease-out ${
-              mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}
+            className={`relative flex h-[100dvh] w-[85%] max-w-[360px] flex-col bg-white px-5 pb-5 pt-4 shadow-2xl transition-transform duration-300 ease-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
           >
             {/* Drawer Header */}
             <div className="mb-6 flex shrink-0 items-center justify-between">
@@ -270,13 +267,12 @@ export default function Navbar() {
                         key={to}
                         to={to}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${
-                          highlight && !active
+                        className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${highlight && !active
                             ? 'bg-brand-600 text-white font-semibold shadow-sm'
                             : active
-                            ? 'bg-brand-50 text-brand-700 font-semibold'
-                            : 'text-slate-700 hover:bg-slate-100'
-                        }`}
+                              ? 'bg-brand-50 text-brand-700 font-semibold'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
                       >
                         <div className="flex items-center gap-3.5">
                           <Icon size={20} />
@@ -284,9 +280,8 @@ export default function Navbar() {
                         </div>
                         {Boolean(badge && badge > 0) && (
                           <span
-                            className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                              active ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
-                            }`}
+                            className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${active ? 'bg-white text-brand-700' : 'bg-red-500 text-white'
+                              }`}
                           >
                             {badge}
                           </span>

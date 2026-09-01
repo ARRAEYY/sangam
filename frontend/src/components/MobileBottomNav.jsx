@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutGrid, Users2, PlusCircle, User, Bell } from 'lucide-react'
+import { Users2, PlusCircle, User, Bell } from 'lucide-react'
+import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
 
@@ -37,7 +38,7 @@ export default function MobileBottomNav() {
   }, [user, token, location.pathname])
 
   const items = [
-    { key: 'explore', to: '/explore', label: 'Explore', icon: LayoutGrid },
+    { key: 'explore', to: '/explore', label: 'Explore', icon: ExploreIcon },
     { key: 'talent', to: '/talent', label: 'Talent', icon: Users2 },
     { key: 'create', to: '/create', label: 'Post', icon: PlusCircle, isAction: true },
     {
@@ -49,7 +50,7 @@ export default function MobileBottomNav() {
     },
     {
       key: 'profile',
-      to: user ? '/dashboard' : '/auth',
+      to: user ? '/profile' : '/auth',
       label: user ? 'Profile' : 'Sign in',
       icon: User,
     },

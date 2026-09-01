@@ -15,6 +15,8 @@ const { generalLimiter } = require('./middleware/rateLimit')
 const helmet = require('helmet')
 const crypto = require('crypto')
 const compression = require('compression')
+const morgan = require('morgan')
+const logger = require('./utils/logger')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
@@ -60,6 +62,9 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "unsafe-none" }
 }))
+
+// HTTP request logging
+app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }))
 
 app.use(generalLimiter)
 
@@ -205,6 +210,36 @@ async function start() {
       console.warn('Experiences column check warning:', err.message)
     }
 
+    try {
+      const projTableInfo = await queryInterface.describeTable('projects')
+      if (!projTableInfo.short_description) {
+        await queryInterface.addColumn('projects', 'short_description', {
+          type: sequelize.Sequelize.STRING(500),
+          allowNull: true,
+        })
+      }
+      if (!projTableInfo.tech_stack) {
+        await queryInterface.addColumn('projects', 'tech_stack', {
+          type: sequelize.Sequelize.JSON,
+          allowNull: true,
+        })
+      }
+      if (!projTableInfo.time_horizon) {
+        await queryInterface.addColumn('projects', 'time_horizon', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+      if (!projTableInfo.open_roles) {
+        await queryInterface.addColumn('projects', 'open_roles', {
+          type: sequelize.Sequelize.JSON,
+          allowNull: true,
+        })
+      }
+    } catch (err) {
+      console.warn('Projects column check warning:', err.message)
+    }
+
     // ─── Safe Postgres ENUM extensions for new notification types ─────
     try {
       const dialect = sequelize.getDialect()
@@ -255,29 +290,33 @@ async function start() {
             is_lead: true,
             status: 'ACTIVE',
           })
-          console.log(`[Migration] Auto-assigned owner ${p.owner_id} as lead for project ${p.id}`)
+          logger.info(`[Migration] Auto-assigned owner ${p.owner_id} as lead for project ${p.id}`)
         }
       }
     } catch (migErr) {
-      console.warn('Migration warning:', migErr.message)
+      logger.warn(`Migration warning: ${migErr.message}`)
     }
 
     const { verifyTransporter } = require('./utils/mailer')
     verifyTransporter().then((smtpStatus) => {
       if (smtpStatus.configured) {
-        console.log(`[SMTP SETUP] ${smtpStatus.status}`)
+        logger.info(`[SMTP SETUP] ${smtpStatus.status}`)
       } else {
-        console.warn(`[SMTP WARN] ${smtpStatus.status}`)
+        logger.warn(`[SMTP WARN] ${smtpStatus.status}`)
       }
     })
 
     app.listen(port, '0.0.0.0', () => {
-      console.log(`Campus Platform API running on port ${port}`)
+      logger.info(`Campus Platform API running on port ${port}`)
     })
   } catch (error) {
-    console.error('Failed to start server:', error)
+    logger.error(`Failed to start server: ${error.message}`, error)
     process.exit(1)
   }
 }
 
-start()
+if (require.main === module) {
+  start()
+}
+
+module.exports = app

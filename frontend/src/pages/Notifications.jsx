@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, Check, CheckCheck, Trash2, UserPlus, FolderKanban, ThumbsUp, ThumbsDown, Crown, UserMinus, Target } from 'lucide-react'
+import { Bell, Check, Trash2, UserPlus, FolderKanban, ThumbsUp, ThumbsDown, Crown, UserMinus, Target } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
-import { SkeletonNotification } from '../components/Skeletons.jsx'
 
-// Centralized icon/label mapping so notification rendering never has to be
-// hardcoded per-page - add a new type here and every surface picks it up.
 const TYPE_META = {
   PROJECT_APPLICATION: { icon: FolderKanban, color: 'text-brand-600 bg-brand-50' },
   APPLICATION_ACCEPTED: { icon: ThumbsUp, color: 'text-emerald-600 bg-emerald-50' },
@@ -26,10 +23,31 @@ function destinationFor(notification) {
   return null
 }
 
+function timeAgo(dateInput) {
+  const date = new Date(dateInput);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " yr ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " mo ago";
+  interval = seconds / 86400;
+  if (interval > 1) {
+    const days = Math.floor(interval);
+    if (days === 1) return "Yesterday";
+    return days + " d ago";
+  }
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hr ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " min ago";
+  return "Just now";
+}
+
 export default function Notifications() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState(null)
-  const [filter, setFilter] = useState('all')
   const [error, setError] = useState('')
 
   const load = async () => {
@@ -43,10 +61,11 @@ export default function Notifications() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const markRead = async (id) => {
+  const markRead = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await api.markNotificationRead(id)
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
@@ -64,7 +83,9 @@ export default function Notifications() {
     }
   }
 
-  const remove = async (id) => {
+  const remove = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await api.deleteNotification(id)
       setNotifications((prev) => prev.filter((n) => n.id !== id))
@@ -73,120 +94,87 @@ export default function Notifications() {
     }
   }
 
-  if (error && notifications === null) {
-    return <p className="py-10 text-sm text-red-600">{error}</p>
-  }
-
   const isLoading = notifications === null;
-  const visible = isLoading ? [] : notifications.filter((n) => {
-    if (filter === 'unread') return !n.is_read
-    if (filter === 'read') return n.is_read
-    return true
-  })
-  const unreadCount = isLoading ? 0 : notifications.filter((n) => !n.is_read).length
+  const visible = isLoading ? [] : notifications;
+  const unreadCount = isLoading ? 0 : notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="max-w-2xl pb-16 pt-2">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="page-stack notifications-page mx-auto w-full max-w-[1200px] px-4 md:px-0">
+      
+      <div className="notification-header">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-slate-900">Notifications</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
-            {isLoading ? 'Checking for updates...' : (unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.')}
-          </p>
+          <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+            Notifications {unreadCount > 0 && `/ ${unreadCount} unread`}
+          </span>
+          <h1>Your signals.</h1>
+          <p>A calm place to catch up with the people and projects moving around you.</p>
         </div>
+        
         {unreadCount > 0 && (
-          <button onClick={markAllRead} className="btn-secondary !px-3.5 !py-1.5 text-xs">
-            <CheckCheck size={14} /> Mark all read
+          <button className="button button-secondary shrink-0" onClick={markAllRead}>
+            Mark all read <Check size={15} />
           </button>
         )}
       </div>
 
-      <div className="mb-5 flex gap-2">
-        {['all', 'unread'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition ${
-              filter === f ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 max-w-[820px]">{error}</p>}
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
+      <div className="notification-list">
+        {isLoading ? (
+          <div className="py-12 text-center text-sm text-slate-500">Loading your signals...</div>
+        ) : visible.length === 0 ? (
+          <div className="py-16 flex flex-col items-center gap-3 opacity-60">
+            <Bell size={24} className="text-slate-400" />
+            <p className="text-sm text-slate-500">No signals found yet.</p>
+          </div>
+        ) : (
+          visible.map((n, index) => { 
+            const meta = TYPE_META[n.type] || TYPE_META.PROJECT_UPDATE;
+            const Icon = meta.icon; 
+            const to = destinationFor(n);
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonNotification key={i} />
-          ))}
-        </div>
-      ) : visible.length === 0 ? (
-        <div className="card flex flex-col items-center gap-2 border-dashed py-14 text-center">
-          <Bell size={22} className="text-slate-300" />
-          <p className="text-sm text-slate-500">
-            {filter === 'unread' ? 'No unread notifications.' : 'No notifications yet.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {visible.map((n) => {
-            const meta = TYPE_META[n.type] || TYPE_META.PROJECT_UPDATE
-            const Icon = meta.icon
-            const to = destinationFor(n)
             const content = (
-              <div className="flex flex-1 items-start gap-3 min-w-0">
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${meta.color}`}>
-                  <Icon size={15} />
+              <>
+                <span className={`notification-icon ${meta.color} ${!n.is_read ? 'ring-2 ring-brand-100 ring-offset-2' : ''}`}>
+                  <Icon size={17} />
                 </span>
-                <div className="min-w-0">
-                  <p className={`text-sm ${n.is_read ? 'text-slate-600' : 'font-semibold text-slate-900'}`}>
-                    {n.message}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            )
+                <span className="notification-copy">
+                  <strong className={!n.is_read ? 'text-slate-900 font-bold' : 'text-slate-700'}>{n.message}</strong>
+                  <span>{n.project ? n.project.title : 'General Update'}</span>
+                </span>
+              </>
+            );
 
             return (
-              <div
-                key={n.id}
-                className={`card flex items-start justify-between gap-3 p-4 ${!n.is_read ? 'border-brand-200 bg-brand-50/30' : ''}`}
-              >
+              <div className={`notification-row group ${!n.is_read ? 'bg-slate-50/50 -mx-4 px-4 rounded-xl' : ''}`} key={n.id}>
                 {to ? (
-                  <Link to={to} onClick={() => !n.is_read && markRead(n.id)} className="flex flex-1 min-w-0">
+                  <Link to={to} onClick={(e) => { if(!n.is_read) markRead(e, n.id); }} className="flex items-center gap-4 md:gap-14 flex-1 hover:opacity-80 transition-opacity">
                     {content}
                   </Link>
                 ) : (
-                  content
+                  <div className="flex items-center gap-4 md:gap-14 flex-1">
+                    {content}
+                  </div>
                 )}
-                <div className="flex shrink-0 items-center gap-1">
-                  {!n.is_read && (
-                    <button
-                      onClick={() => markRead(n.id)}
-                      title="Mark as read"
-                      className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                    >
-                      <Check size={14} />
+                
+                <div className="ml-auto flex items-center gap-4 pl-4">
+                  <time className="whitespace-nowrap">{timeAgo(n.created_at)}</time>
+                  <div className="flex items-center md:opacity-0 md:group-hover:opacity-100 transition-opacity gap-1">
+                    {!n.is_read && (
+                      <button onClick={(e) => markRead(e, n.id)} className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-full hover:bg-slate-100 transition-colors">
+                        <Check size={14} />
+                      </button>
+                    )}
+                    <button onClick={(e) => remove(e, n.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                      <Trash2 size={14} />
                     </button>
-                  )}
-                  <button
-                    onClick={() => remove(n.id)}
-                    title="Delete"
-                    className="rounded-full p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  </div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ); 
+          })
+        )}
+      </div>
     </div>
   )
 }
