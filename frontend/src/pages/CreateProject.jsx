@@ -1,480 +1,378 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, ChevronLeft, Lightbulb, Plus, Sparkles, X, User, Trash2, Search } from 'lucide-react';
-import { api } from '../api';
-import { useAuth } from '../context/AuthContext.jsx';
-import { SkillPickerModal } from '../components/SkillPickerModal.jsx';
-import { MemberPickerModal } from '../components/MemberPickerModal.jsx';
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Search, Loader2, UserPlus, X as XIcon, Trash2, Calendar, Target } from 'lucide-react'
+import { api } from '../api'
+import { useAuth } from '../context/AuthContext.jsx'
+import SkillTagInput from '../components/SkillTagInput.jsx'
 
-const DEFAULT_SKILL_OPTIONS = ["Product", "Design", "Engineering", "Research", "Community", "Storytelling", "Climate", "Data"];
-const DEFAULT_TECH_OPTIONS = ["React", "Node.js", "Python", "TypeScript", "PostgreSQL", "MongoDB", "AWS", "Figma", "Tailwind CSS"];
-
-function getInitials(name) {
-  if (!name) return '?';
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-}
+const ROLE_CATEGORIES = [
+  'FRONTEND', 'BACKEND', 'FULLSTACK', 'DESIGN', 'PRODUCT',
+  'DATA', 'DEVOPS', 'CONTENT', 'MARKETING', 'RESEARCH', 'OTHER',
+]
 
 export default function CreateProject() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth()
+  const navigate = useNavigate()
   
-  // Data State
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [detailedDescription, setDetailedDescription] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [techStack, setTechStack] = useState([]);
+  // Core Project Form
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    team_size_needed: 1,
+    skills: [],
+    members: [], // Array of { user_id, role, role_category, full_name, avatar_url, branch }
+    next_milestone: { title: '', due_date: '' },
+  })
   
-  const [lookingFor, setLookingFor] = useState("A small project team");
-  const [timeHorizon, setTimeHorizon] = useState("This semester");
-  const [teamSizeNeeded, setTeamSizeNeeded] = useState(3);
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Search State for adding members
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchingUsers, setSearchingUsers] = useState(false)
+  const [selectedUserToAdd, setSelectedUserToAdd] = useState(null)
   
-  const [openRoles, setOpenRoles] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [milestones, setMilestones] = useState([]);
+  // Staged member details
+  const [addMemberRole, setAddMemberRole] = useState('')
+  const [addMemberCategory, setAddMemberCategory] = useState('OTHER')
 
-  // UI State
-  const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [isSkillPickerOpen, setIsSkillPickerOpen] = useState(false);
-  const [isTechPickerOpen, setIsTechPickerOpen] = useState(false);
-  const [isMemberPickerOpen, setIsMemberPickerOpen] = useState(false);
-
-  // Inline forms
-  const [newRole, setNewRole] = useState({ title: "", count: 1 });
-  const [newMilestone, setNewMilestone] = useState({ title: "", description: "", targetDate: "" });
-  const [isAddingRole, setIsAddingRole] = useState(false);
-  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
-
-  // Quick toggles for predefined skills
-  function toggleQuickSkill(skill) {
-    if (selectedSkills.includes(skill)) {
-      setSelectedSkills(selectedSkills.filter(s => s !== skill));
-    } else {
-      setSelectedSkills([...selectedSkills, skill]);
+  // Search effect
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      setSearchResults([])
+      setSearchingUsers(false)
+      return
     }
+    const timer = setTimeout(async () => {
+      setSearchingUsers(true)
+      try {
+        const results = await api.searchUsers(searchQuery.trim())
+        // filter out current user and already staged members
+        const filtered = results.filter(
+          (u) => u.id !== user.id && !form.members.some((m) => m.user_id === u.id)
+        )
+        setSearchResults(filtered)
+      } catch (err) {
+        console.error('Search error:', err)
+      } finally {
+        setSearchingUsers(false)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchQuery, user.id, form.members])
+
+  const handleStageMember = () => {
+    if (!selectedUserToAdd || !addMemberRole.trim()) return
+    
+    setForm((prev) => ({
+      ...prev,
+      members: [
+        ...prev.members,
+        {
+          user_id: selectedUserToAdd.id,
+          role: addMemberRole.trim(),
+          role_category: addMemberCategory,
+          full_name: selectedUserToAdd.full_name,
+          avatar_url: selectedUserToAdd.avatar_url,
+          branch: selectedUserToAdd.branch,
+          email: selectedUserToAdd.email,
+        }
+      ]
+    }))
+
+    // Reset add member form
+    setSelectedUserToAdd(null)
+    setAddMemberRole('')
+    setAddMemberCategory('OTHER')
+    setSearchQuery('')
   }
 
-  function handleAddRole() {
-    if (newRole.title.trim()) {
-      setOpenRoles([...openRoles, { title: newRole.title.trim(), count: newRole.count }]);
-      setNewRole({ title: "", count: 1 });
-      setIsAddingRole(false);
-    }
+  const handleRemoveStagedMember = (userId) => {
+    setForm((prev) => ({
+      ...prev,
+      members: prev.members.filter(m => m.user_id !== userId)
+    }))
   }
 
-  function handleAddMilestone() {
-    if (newMilestone.title.trim()) {
-      setMilestones([...milestones, { ...newMilestone, title: newMilestone.title.trim(), status: 'NOT_STARTED' }]);
-      setNewMilestone({ title: "", description: "", targetDate: "" });
-      setIsAddingMilestone(false);
-    }
-  }
-
-  async function submit(event) {
-    event.preventDefault();
-    if (!title.trim() || !shortDescription.trim() || !detailedDescription.trim()) {
-      alert("Please fill out the title, short description, and detailed description.");
-      return;
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    
+    // Clean up payload
+    const payload = {
+      title: form.title,
+      description: form.description,
+      team_size_needed: Number(form.team_size_needed),
+      skills: form.skills,
+      members: form.members,
     }
     
-    setSubmitting(true);
+    if (form.next_milestone.title.trim()) {
+      payload.next_milestone = {
+        title: form.next_milestone.title.trim(),
+        due_date: form.next_milestone.due_date || null,
+      }
+    }
+
     try {
-      const payload = {
-        title: title.trim(),
-        short_description: shortDescription.trim(),
-        description: detailedDescription.trim(),
-        skills: selectedSkills,
-        tech_stack: techStack,
-        team_size_needed: teamSizeNeeded,
-        time_horizon: timeHorizon,
-        open_roles: openRoles,
-        members: teamMembers,
-        milestones: milestones
-      };
-      
-      const project = await api.createProject(payload);
-      
-      setStep(5);
-      // Brief delay before redirect
-      setTimeout(() => {
-        navigate(`/explore`);
-      }, 800);
-      
+      const project = await api.createProject(payload)
+      navigate(`/projects/${project.id}`)
     } catch (err) {
-      alert(err.message || "Something went wrong.");
+      setError(err.message)
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="page-stack create-page w-full max-w-[1200px] mx-auto pb-20">
-      
-      <div className="create-topline reveal-in">
-        <button type="button" className="back-link" onClick={() => navigate(-1)}>
-          <ChevronLeft size={16} /> Back to workspace
-        </button>
-      </div>
-      
-      <section className="create-intro reveal-in delay-1">
-        <div>
-          <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-2">Make an invitation</span>
-          <h1>Let’s build<br /><em className="not-italic text-[#7f1d3b]">something.</em></h1>
-          <p>Give your idea enough shape for the right people to find it.</p>
-        </div>
-        <div className="create-intro-mark">
-          <Lightbulb size={26} strokeWidth={1.3} />
-          <span>01 /<br />the spark</span>
-        </div>
-      </section>
+    <div className="max-w-3xl pb-24 pt-4">
+      <h1 className="font-display text-2xl font-semibold text-slate-900">Post a project</h1>
+      <p className="mt-1 text-sm text-slate-500 max-w-2xl">
+        Tell other students what you're building. You can optionally add existing team members and define your first milestone right now.
+      </p>
 
-      <div className="stepper reveal-in delay-2">
-        <div className={`stepper-item ${step >= 1 ? "is-current" : ""}`} onClick={() => setStep(1)}>
-          <span>01</span><strong>The Idea</strong>
-        </div>
-        <div className="stepper-line" />
-        <div className={`stepper-item ${step >= 2 ? "is-current" : ""}`} onClick={() => setStep(2)}>
-          <span>02</span><strong>Signal</strong>
-        </div>
-        <div className="stepper-line" />
-        <div className={`stepper-item ${step >= 3 ? "is-current" : ""}`} onClick={() => setStep(3)}>
-          <span>03</span><strong>The Door</strong>
-        </div>
-        <div className="stepper-line hidden md:block" />
-        <div className={`stepper-item hidden md:flex ${step >= 4 ? "is-current" : ""}`} onClick={() => setStep(4)}>
-          <span>04</span><strong>Team & Plan</strong>
-        </div>
-      </div>
+      {error && <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">{error}</div>}
 
-      <div className="create-layout reveal-in delay-3">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-8">
         
-        <form className="create-form" onSubmit={submit}>
+        {/* Core Project Details */}
+        <section className="card p-6 space-y-5">
+          <h2 className="font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-2 flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">1</span>
+            Project Details
+          </h2>
           
-          {/* Section 01 */}
-          <div className="form-section">
-            <div className="form-section-heading">
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">01 / The idea</span>
-              <span>Start simple</span>
-            </div>
-            <label className="field-label">
-              Project name
-              <input 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-                placeholder="Give the idea a working title" 
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">Title <span className="text-red-500">*</span></span>
+            <input
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="e.g. Building a campus food-delivery app"
+              className="input"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">Description <span className="text-red-500">*</span></span>
+            <textarea
+              required
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="What are you building? What is the goal? What will teammates own?"
+              className="input min-h-[140px] leading-relaxed"
+            />
+          </label>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700">Required skills</span>
+              <SkillTagInput
+                value={form.skills}
+                onChange={(skills) => setForm({ ...form, skills })}
+                placeholder="e.g. React, Figma, Postgres"
               />
             </label>
-            <label className="field-label">
-              Short Description (Teaser)
-              <textarea 
-                value={shortDescription} 
-                onChange={(e) => setShortDescription(e.target.value)} 
-                placeholder="A one-sentence hook that appears on the project card." 
-                rows={2} 
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700">Open positions needed <span className="text-red-500">*</span></span>
+              <input
+                type="number"
+                min={1}
+                required
+                value={form.team_size_needed}
+                onChange={(e) => setForm({ ...form, team_size_needed: e.target.value })}
+                className="input"
               />
-            </label>
-            <label className="field-label">
-              Detailed Description
-              <textarea 
-                value={detailedDescription} 
-                onChange={(e) => setDetailedDescription(e.target.value)} 
-                placeholder="Explain the problem, your approach, and why it matters." 
-                rows={6} 
-              />
-              <span className="field-hint">Keep it human. You can edit this later.</span>
+              <p className="text-[11px] text-slate-500 mt-1">Number of additional teammates you are looking to recruit.</p>
             </label>
           </div>
-          
-          {/* Section 02 */}
-          <div className="form-section">
-            <div className="form-section-heading">
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">02 / The signal</span>
-              <span>Help people find the fit</span>
-            </div>
-            
-            <div className="field-label">
-              What skills would make this stronger?
-              <div className="skill-selector mt-3">
-                {DEFAULT_SKILL_OPTIONS.map((skill) => (
-                  <button 
-                    type="button" 
-                    key={skill} 
-                    className={`selectable-skill ${selectedSkills.includes(skill) ? "is-selected" : ""}`} 
-                    onClick={() => toggleQuickSkill(skill)}
-                  >
-                    {selectedSkills.includes(skill) ? <Check size={13} /> : <Plus size={13} />}
-                    {skill}
+        </section>
+
+        {/* Optional Team Members */}
+        <section className="card p-6 space-y-5">
+          <div className="border-b border-slate-100 pb-3 mb-2">
+            <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">2</span>
+              Team Members <span className="text-xs font-normal text-slate-400 ml-1">(Optional)</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 pl-7">Add peers who are already working on this project with you.</p>
+          </div>
+
+          {form.members.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {form.members.map(m => (
+                <div key={m.user_id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    {m.avatar_url ? (
+                      <img src={m.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 shrink-0">
+                        {(m.full_name || '?')[0].toUpperCase()}
+                      </span>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{m.full_name}</p>
+                      <p className="text-xs text-brand-600 font-medium">{m.role} <span className="text-slate-400 ml-1 font-normal">• {m.role_category}</span></p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => handleRemoveStagedMember(m.user_id)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-white transition">
+                    <Trash2 size={16} />
                   </button>
-                ))}
-                <button type="button" onClick={() => setIsSkillPickerOpen(true)} className="selectable-skill border-dashed border-[#7f1d3b]/30 text-[#7f1d3b] hover:bg-[#7f1d3b]/5">
-                  <Search size={13} /> Search & Add Other
-                </button>
-              </div>
-              {selectedSkills.filter(s => !DEFAULT_SKILL_OPTIONS.includes(s)).length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="text-xs text-slate-400">Custom skills:</span>
-                  {selectedSkills.filter(s => !DEFAULT_SKILL_OPTIONS.includes(s)).map(skill => (
-                    <span key={skill} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded border border-slate-200">
-                      {skill} <X size={12} className="cursor-pointer hover:text-red-500" onClick={() => toggleQuickSkill(skill)} />
-                    </span>
-                  ))}
                 </div>
-              )}
+              ))}
             </div>
+          )}
 
-            <div className="field-label mt-6">
-              Tech Stack & Tools (Optional)
-              <div className="mt-2 flex flex-wrap gap-2">
-                {techStack.map((tech) => (
-                  <span key={tech} className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-[#2a2a2a]/10 shadow-sm text-sm rounded-full text-[#2a2a2a]">
-                    {tech} <X size={14} className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setTechStack(techStack.filter(t => t !== tech))} />
-                  </span>
-                ))}
-                <button type="button" onClick={() => setIsTechPickerOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#fffaf7] border border-dashed border-[#7f1d3b]/30 text-sm rounded-full text-[#7f1d3b] hover:bg-[#7f1d3b]/5 transition-colors">
-                  <Plus size={14} /> Add Tech
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Section 03 */}
-          <div className="form-section">
-            <div className="form-section-heading">
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">03 / The door</span>
-              <span>Set the invitation</span>
-            </div>
-            <div className="form-row grid grid-cols-1 md:grid-cols-2 gap-6">
-              <label className="field-label">
-                Looking for
-                <select value={lookingFor} onChange={(e) => setLookingFor(e.target.value)} className="form-select">
-                  <option>A small project team</option>
-                  <option>A co-founder</option>
-                  <option>A one-time collaborator</option>
-                  <option>A mentor</option>
-                </select>
-              </label>
-              <label className="field-label">
-                Time horizon
-                <select value={timeHorizon} onChange={(e) => setTimeHorizon(e.target.value)} className="form-select">
-                  <option>This semester</option>
-                  <option>Next 30 days</option>
-                  <option>Open-ended</option>
-                </select>
-              </label>
-              <label className="field-label">
-                Desired Team Size
-                <input type="number" min="1" max="50" value={teamSizeNeeded} onChange={(e) => setTeamSizeNeeded(parseInt(e.target.value) || 1)} className="form-input w-full" />
-              </label>
-            </div>
-
-            <div className="field-label mt-6">
-              Specific Open Roles (Optional)
-              <div className="mt-2 space-y-2">
-                {openRoles.map((role, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded bg-white border border-slate-200 text-xs font-medium text-slate-500">{role.count}x</span>
-                      <span className="font-medium text-[#2a2a2a]">{role.title}</span>
-                    </div>
-                    <button type="button" onClick={() => setOpenRoles(openRoles.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 p-1">
-                      <Trash2 size={16} />
-                    </button>
+          <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200">
+            {!selectedUserToAdd ? (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Search student</label>
+                <div className="relative">
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    className="input !pl-9 bg-white"
+                    placeholder="Search by name or email…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                {searchingUsers && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                    <Loader2 size={12} className="animate-spin" /> Searching…
+                  </p>
+                )}
+                {searchResults.length > 0 && (
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg space-y-1">
+                    {searchResults.map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedUserToAdd(u)
+                          setSearchQuery('')
+                          setSearchResults([])
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-lg p-2 text-left hover:bg-slate-50 transition"
+                      >
+                        {u.avatar_url ? (
+                          <img src={u.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 shrink-0">
+                            {(u.full_name || '?')[0].toUpperCase()}
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-slate-900 truncate">{u.full_name}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{u.branch} · {u.email}</p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                ))}
-                
-                {isAddingRole ? (
-                  <div className="flex items-end gap-2 p-3 bg-[#fffaf7] border border-[#7f1d3b]/20 rounded-xl">
-                    <label className="flex-1 text-xs text-slate-500">Role Title
-                      <input type="text" autoFocus placeholder="e.g. UX Researcher" value={newRole.title} onChange={e => setNewRole({...newRole, title: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                    </label>
-                    <label className="w-20 text-xs text-slate-500">Count
-                      <input type="number" min="1" value={newRole.count} onChange={e => setNewRole({...newRole, count: parseInt(e.target.value)||1})} className="mt-1 w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                    </label>
-                    <div className="flex gap-1 pb-1">
-                      <button type="button" onClick={handleAddRole} className="p-2 bg-[#7f1d3b] text-white rounded hover:bg-[#6a1730]"><Check size={16} /></button>
-                      <button type="button" onClick={() => setIsAddingRole(false)} className="p-2 bg-slate-200 text-slate-600 rounded hover:bg-slate-300"><X size={16} /></button>
-                    </div>
-                  </div>
-                ) : (
-                  <button type="button" onClick={() => setIsAddingRole(true)} className="flex items-center gap-2 text-sm text-[#7f1d3b] hover:underline font-medium">
-                    <Plus size={16} /> Add a specific role
-                  </button>
+                )}
+                {searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchingUsers && (
+                  <p className="text-xs text-slate-400 mt-2">No matching students found.</p>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Section 04: The Team */}
-          <div className="form-section">
-            <div className="form-section-heading">
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">04 / The Team</span>
-              <span>Already have teammates?</span>
-            </div>
-            
-            <div className="space-y-3 mt-4">
-              {teamMembers.map((member, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#7f1d3b]/10 flex items-center justify-center overflow-hidden">
-                      {member.user.avatar_url ? (
-                        <img src={member.user.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs font-bold text-[#7f1d3b]">{getInitials(member.user.full_name)}</span>
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium text-sm text-[#2a2a2a]">{member.user.full_name}</div>
-                      <div className="text-xs text-slate-500">{member.role}</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 p-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {selectedUserToAdd.avatar_url ? (
+                      <img src={selectedUserToAdd.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-200 text-xs font-bold text-brand-800 shrink-0">
+                        {(selectedUserToAdd.full_name || '?')[0].toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">{selectedUserToAdd.full_name}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{selectedUserToAdd.branch} · {selectedUserToAdd.email}</p>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setTeamMembers(teamMembers.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 p-1">
-                    <Trash2 size={16} />
+                  <button type="button" onClick={() => setSelectedUserToAdd(null)} className="text-xs font-semibold text-brand-700 hover:text-brand-800 shrink-0 px-2">
+                    Cancel
                   </button>
                 </div>
-              ))}
-              <button type="button" onClick={() => setIsMemberPickerOpen(true)} className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-[#2a2a2a]/10 rounded-xl text-slate-500 hover:text-[#7f1d3b] hover:border-[#7f1d3b]/30 hover:bg-[#fffaf7] transition-all">
-                <User size={18} /> Add Team Member
-              </button>
-            </div>
-          </div>
-
-          {/* Section 05: The Plan */}
-          <div className="form-section border-b-0">
-            <div className="form-section-heading">
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">05 / The Plan</span>
-              <span>Set early milestones</span>
-            </div>
-            
-            <div className="space-y-3 mt-4">
-              {milestones.map((ms, idx) => (
-                <div key={idx} className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm relative group">
-                  <button type="button" onClick={() => setMilestones(milestones.filter((_, i) => i !== idx))} className="absolute top-3 right-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Trash2 size={16} />
-                  </button>
-                  <div className="font-medium text-[#2a2a2a] flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-500">{idx + 1}</span>
-                    {ms.title}
+                
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-slate-700">Role Title *</label>
+                    <input
+                      className="input bg-white text-sm"
+                      placeholder="e.g. Frontend Developer"
+                      value={addMemberRole}
+                      onChange={(e) => setAddMemberRole(e.target.value)}
+                    />
                   </div>
-                  {ms.description && <div className="mt-1 text-sm text-slate-500 ml-7">{ms.description}</div>}
-                  {ms.targetDate && <div className="mt-2 text-xs font-medium text-[#7f1d3b] ml-7">Target: {new Date(ms.targetDate).toLocaleDateString()}</div>}
-                </div>
-              ))}
-
-              {isAddingMilestone ? (
-                <div className="p-4 bg-[#fffaf7] border border-[#7f1d3b]/20 rounded-xl space-y-3">
-                  <input type="text" autoFocus placeholder="Milestone Title (e.g. MVP Launch)" value={newMilestone.title} onChange={e => setNewMilestone({...newMilestone, title: e.target.value})} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                  <textarea placeholder="Brief description (optional)" rows={2} value={newMilestone.description} onChange={e => setNewMilestone({...newMilestone, description: e.target.value})} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                  <input type="date" value={newMilestone.targetDate} onChange={e => setNewMilestone({...newMilestone, targetDate: e.target.value})} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                  <div className="flex gap-2">
-                    <button type="button" onClick={handleAddMilestone} className="px-4 py-2 bg-[#7f1d3b] text-white rounded-lg text-sm font-medium hover:bg-[#6a1730]">Add Milestone</button>
-                    <button type="button" onClick={() => setIsAddingMilestone(false)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Cancel</button>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-slate-700">Category</label>
+                    <select
+                      className="input bg-white text-sm"
+                      value={addMemberCategory}
+                      onChange={(e) => setAddMemberCategory(e.target.value)}
+                    >
+                      {ROLE_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              ) : (
-                <button type="button" onClick={() => setIsAddingMilestone(true)} className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-[#2a2a2a]/10 rounded-xl text-slate-500 hover:text-[#7f1d3b] hover:border-[#7f1d3b]/30 hover:bg-[#fffaf7] transition-all">
-                  <Plus size={18} /> Add Milestone
+                <button
+                  type="button"
+                  onClick={handleStageMember}
+                  disabled={!addMemberRole.trim()}
+                  className="btn-secondary w-full text-sm !py-2 disabled:opacity-50"
+                >
+                  <UserPlus size={16} /> Add to project
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+        </section>
 
-          <div className="form-actions mt-8 pt-8 border-t border-slate-100">
-            <button type="button" className="button button-quiet" onClick={() => alert("Draft saved locally.")}>
-              <Sparkles size={15} /> Save draft
-            </button>
-            <button type="submit" className="button button-primary" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Launch Project'} <ArrowRight size={16} />
-            </button>
-          </div>
-        </form>
-
-        {/* Right Side: Live Preview Card */}
-        <aside className="project-preview surface-card hidden md:block">
-          <div className="preview-topline">
-            <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase">Discovery Card Preview</span>
-            <span className="preview-live"><span className="pulse-dot" /> Live</span>
+        {/* Optional Next Milestone */}
+        <section className="card p-6 space-y-5">
+          <div className="border-b border-slate-100 pb-3 mb-2">
+            <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">3</span>
+              Next Milestone <span className="text-xs font-normal text-slate-400 ml-1">(Optional)</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 pl-7">Set an immediate goal to give your team a clear target.</p>
           </div>
           
-          {/* Card matches standard Project Card UI intentionally minimal */}
-          <div className="preview-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#7f1d3b]/5 to-transparent rounded-bl-full opacity-50" />
-            <span className="text-[10px] font-bold tracking-widest text-[#7f1d3b] uppercase">{lookingFor}</span>
-            <h2 className="text-xl font-bold text-[#2a2a2a] leading-tight mt-1">{title || "Your project title"}</h2>
-            <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">
-              {shortDescription || "A one-sentence hook that captures attention. Discovery cards are kept intentionally clean and minimal."}
-            </p>
-            
-            <div className="tag-row flex flex-wrap gap-1.5 mt-2 min-h-[24px]">
-              {(selectedSkills.length ? selectedSkills : ["Skill required", "Another skill"]).slice(0, 3).map((skill) => (
-                <span className="px-2 py-1 rounded bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100" key={skill}>
-                  {skill}
-                </span>
-              ))}
-              {selectedSkills.length > 3 && (
-                <span className="px-2 py-1 rounded bg-slate-50 text-[10px] font-medium text-slate-400 border border-slate-100">
-                  +{selectedSkills.length - 3}
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100/60">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 flex items-center justify-center rounded-full bg-[#f4e0e2] text-[#7f1d3b] text-[9px] font-bold">
-                  {getInitials(user?.full_name)}
-                </span>
-                <span className="text-xs text-slate-500">By <strong className="text-[#2a2a2a] font-medium">{user?.full_name || "You"}</strong></span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                 {/* Team Avatar Stack */}
-                 {teamMembers.length > 0 && (
-                   <div className="flex -space-x-1">
-                     {teamMembers.slice(0,2).map((m, i) => (
-                       <div key={i} className="w-5 h-5 rounded-full border border-white bg-slate-200 overflow-hidden">
-                         {m.user.avatar_url ? <img src={m.user.avatar_url} className="w-full h-full object-cover"/> : null}
-                       </div>
-                     ))}
-                   </div>
-                 )}
-                 <span className="text-[10px] font-medium text-slate-400">{teamMembers.length + 1} / {teamSizeNeeded} members</span>
-              </div>
-            </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            <label className="block sm:col-span-2">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700 flex items-center gap-1.5"><Target size={14} className="text-slate-400"/> Milestone Title</span>
+              <input
+                value={form.next_milestone.title}
+                onChange={(e) => setForm({ ...form, next_milestone: { ...form.next_milestone, title: e.target.value } })}
+                placeholder="e.g. Design core database schema"
+                className="input"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700 flex items-center gap-1.5"><Calendar size={14} className="text-slate-400"/> Due Date</span>
+              <input
+                type="date"
+                value={form.next_milestone.due_date}
+                onChange={(e) => setForm({ ...form, next_milestone: { ...form.next_milestone, due_date: e.target.value } })}
+                className="input"
+              />
+            </label>
           </div>
-          
-          <div className="preview-note mt-6 flex gap-3 text-sm text-slate-500 p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <Lightbulb size={20} className="text-[#7f1d3b] shrink-0" />
-            <p><strong>Pro tip:</strong> Keep the short description punchy. People can click the card to read your detailed description, view milestones, and see open roles in the Project Modal.</p>
-          </div>
-        </aside>
-        
-      </div>
+        </section>
 
-      {/* Modals */}
-      <SkillPickerModal 
-        isOpen={isSkillPickerOpen} 
-        onClose={() => setIsSkillPickerOpen(false)} 
-        selectedSkills={selectedSkills} 
-        onSkillsChange={setSelectedSkills} 
-        title="Select Required Skills"
-        commonOptions={DEFAULT_SKILL_OPTIONS}
-      />
-
-      <SkillPickerModal 
-        isOpen={isTechPickerOpen} 
-        onClose={() => setIsTechPickerOpen(false)} 
-        selectedSkills={techStack} 
-        onSkillsChange={setTechStack} 
-        title="Select Tech Stack"
-        commonOptions={DEFAULT_TECH_OPTIONS}
-      />
-
-      <MemberPickerModal
-        isOpen={isMemberPickerOpen}
-        onClose={() => setIsMemberPickerOpen(false)}
-        onAddMember={(member) => setTeamMembers([...teamMembers, member])}
-        excludeUserIds={[user?.id, ...teamMembers.map(m => m.user_id)].filter(Boolean)}
-      />
-
+        <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-6">
+          <button type="button" onClick={() => navigate(-1)} className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4">
+            Cancel
+          </button>
+          <button type="submit" disabled={submitting} className="btn-primary !px-8 !py-3 shadow-md">
+            {submitting ? 'Creating Project…' : 'Create Project'}
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  )
 }

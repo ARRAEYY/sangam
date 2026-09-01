@@ -156,31 +156,6 @@ function serializeProject(project) {
         : null,
     member_count: safeProject.member_count || 0,
     required_skills: serializeSkills(safeProject.required_skills || []),
-    short_description: safeProject.short_description || null,
-    tech_stack: safeProject.tech_stack || [],
-    time_horizon: safeProject.time_horizon || null,
-    open_roles: safeProject.open_roles || [],
-    members: safeProject.members ? safeProject.members.map(m => ({
-      user_id: m.user_id,
-      role: m.role,
-      role_category: m.role_category,
-      is_lead: m.is_lead,
-      status: m.status,
-      user: m.user ? {
-        id: m.user.id,
-        full_name: m.user.full_name,
-        avatar_url: m.user.avatar_url,
-        headline: m.user.headline
-      } : null
-    })) : [],
-    milestones: safeProject.milestones ? safeProject.milestones.map(ms => ({
-      id: ms.id,
-      title: ms.title,
-      description: ms.description,
-      due_date: ms.due_date,
-      status: ms.status,
-      order_index: ms.order_index
-    })) : [],
   }
 }
 

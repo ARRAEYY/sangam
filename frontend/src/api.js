@@ -122,7 +122,6 @@ export const api = {
     request('/api/users/profile', { method: 'DELETE', token }),
   searchTalent: (params) => request('/api/users/talent', { params }),
   searchUsers: (q, token) => request('/api/users/search', { params: { q }, token }),
-  searchSkills: (q, token) => request('/api/skills/search', { params: { q }, token }),
 
   // Experience
   addExperience: (payload, token) => request('/api/users/experience', { method: 'POST', body: payload, token }),

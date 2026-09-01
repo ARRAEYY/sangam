@@ -205,36 +205,6 @@ async function start() {
       console.warn('Experiences column check warning:', err.message)
     }
 
-    try {
-      const projTableInfo = await queryInterface.describeTable('projects')
-      if (!projTableInfo.short_description) {
-        await queryInterface.addColumn('projects', 'short_description', {
-          type: sequelize.Sequelize.STRING(500),
-          allowNull: true,
-        })
-      }
-      if (!projTableInfo.tech_stack) {
-        await queryInterface.addColumn('projects', 'tech_stack', {
-          type: sequelize.Sequelize.JSON,
-          allowNull: true,
-        })
-      }
-      if (!projTableInfo.time_horizon) {
-        await queryInterface.addColumn('projects', 'time_horizon', {
-          type: sequelize.Sequelize.STRING,
-          allowNull: true,
-        })
-      }
-      if (!projTableInfo.open_roles) {
-        await queryInterface.addColumn('projects', 'open_roles', {
-          type: sequelize.Sequelize.JSON,
-          allowNull: true,
-        })
-      }
-    } catch (err) {
-      console.warn('Projects column check warning:', err.message)
-    }
-
     // ─── Safe Postgres ENUM extensions for new notification types ─────
     try {
       const dialect = sequelize.getDialect()

@@ -46,9 +46,9 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
         window.google.accounts.id.renderButton(containerRef.current, {
           theme: 'outline',
           size: 'large',
-          width: 308,
+          width: 320,
           text: 'continue_with',
-          shape: 'pill',
+          shape: 'rectangular',
           logo_alignment: 'left',
         })
 
@@ -140,7 +140,7 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[44px]">
       {isInitializing && (
-        <div className="h-10 w-[308px] animate-pulse rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-400">
+        <div className="h-10 w-[320px] animate-pulse rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-400">
           Loading Google Sign-In...
         </div>
       )}
