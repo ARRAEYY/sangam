@@ -34,6 +34,30 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   // Members state
   const [isAddingMember, setIsAddingMember] = useState(false);
 
+  // Handle scroll locking when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && projectPreview?.id) {
+      setLoading(true);
+      setError(null);
+      setApplyStatus('idle');
+      fetchProject().finally(() => setLoading(false));
+    } else {
+      setProject(null);
+      setIsEditing(false);
+      setIsAddingMilestone(false);
+    }
+  }, [isOpen, projectPreview, user]);
+
   const isOwner = user && project && project.owner_id === user.id;
 
   const fetchProject = async () => {
@@ -200,7 +224,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto backdrop-blur-sm">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden my-8 relative flex flex-col max-h-[90vh]">
 
         {/* Top Right Actions */}
@@ -213,7 +237,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
           </button>
         </div>
 
-        <div className="overflow-y-auto p-6 sm:p-8">
+        <div className="overflow-y-auto p-6 sm:p-8 overscroll-contain">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400">
               <Loader2 size={32} className="animate-spin mb-4 text-slate-300" />

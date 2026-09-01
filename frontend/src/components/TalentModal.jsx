@@ -16,6 +16,16 @@ export function TalentModal({ isOpen, onClose, talentId }) {
   const [connectState, setConnectState] = useState({});
 
   useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen || !talentId) {
       setSelectedUser(null);
       return;
@@ -52,7 +62,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-slate-50 rounded-2xl shadow-xl overflow-hidden my-8 relative flex flex-col max-h-[90vh]">
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
           {selectedUser && user && user.id !== selectedUser.id && (
@@ -93,7 +103,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
           </button>
         </div>
         
-        <div className="overflow-y-auto p-6 sm:p-8">
+        <div className="overflow-y-auto p-6 sm:p-8 overscroll-contain">
           {profileLoading || !selectedUser ? (
             <p className="text-sm text-slate-500">Loading details...</p>
           ) : (
