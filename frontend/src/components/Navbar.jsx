@@ -121,7 +121,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-[9999] h-[74px] flex items-center border-b border-[rgba(32,42,57,0.06)] bg-white/95 backdrop-blur-md">
+    <nav className="sticky top-0 z-[999] h-[74px] flex items-center border-b border-[rgba(32,42,57,0.06)] bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between px-5 sm:px-6">
         {/* Brand / Logo - Sangam */}
         <Link to="/" className="flex items-center gap-2.5">
@@ -268,10 +268,10 @@ export default function Navbar() {
                         to={to}
                         onClick={() => setMobileMenuOpen(false)}
                         className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${highlight && !active
-                            ? 'bg-brand-600 text-white font-semibold shadow-sm'
-                            : active
-                              ? 'bg-brand-50 text-brand-700 font-semibold'
-                              : 'text-slate-700 hover:bg-slate-100'
+                          ? 'bg-brand-600 text-white font-semibold shadow-sm'
+                          : active
+                            ? 'bg-brand-50 text-brand-700 font-semibold'
+                            : 'text-slate-700 hover:bg-slate-100'
                           }`}
                       >
                         <div className="flex items-center gap-3.5">
