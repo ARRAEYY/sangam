@@ -63,14 +63,6 @@ app.use(helmet({
 
 app.use(generalLimiter)
 
-// Maintenance Mode: Stop the server from processing anything but health checks
-app.use((req, res, next) => {
-  if (req.path === '/api/health' || req.path === '/health') {
-    return next()
-  }
-  res.status(503).json({ detail: 'System is currently under development and offline for maintenance.' })
-})
-
 // Setup robust custom CSRF protection (Double Submit Cookie)
 const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
 const csrfCookieOptions = {
