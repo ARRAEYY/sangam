@@ -17,6 +17,22 @@ const Project = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    short_description: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    tech_stack: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    time_horizon: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    open_roles: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
     team_size_needed: {
       type: DataTypes.INTEGER,
       allowNull: false,
