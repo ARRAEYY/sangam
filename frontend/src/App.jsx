@@ -1,64 +1,27 @@
 import React from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
-import Navbar from './components/Navbar.jsx'
-import Sidebar from './components/Sidebar.jsx'
-import MobileBottomNav from './components/MobileBottomNav.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
-import Landing from './pages/Landing.jsx'
-import Auth from './pages/Auth.jsx'
-import Onboarding from './pages/Onboarding.jsx'
-import ResetPassword from './pages/ResetPassword.jsx'
-import Explore from './pages/Explore.jsx'
-import ProjectDetail from './pages/ProjectDetail.jsx'
-import CreateProject from './pages/CreateProject.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import Profile from './pages/Profile.jsx'
-import TalentSearch from './pages/TalentSearch.jsx'
-import Notifications from './pages/Notifications.jsx'
-
-// Landing, Auth, and ResetPassword are full-bleed marketing/entry screens; every other
-// route lives inside the app shell with the floating icon sidebar on desktop
-// and bottom navigation on mobile.
-const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
+import { SangamEmblem } from './components/SangamLogo.jsx'
 
 export default function App() {
-  const location = useLocation()
-  const inAppShell = !NO_SHELL_PATHS.includes(location.pathname)
-
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
-      {inAppShell && <Navbar />}
-      
-      <div className="flex flex-1 w-full relative">
-        {/* Fixed position sidebar */}
-        {inAppShell && <Sidebar />}
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#f8f7f3] p-6 text-center antialiased">
+      <div className="max-w-md rounded-[18px] bg-white p-12 shadow-soft border border-[rgba(24,34,50,.08)] relative overflow-hidden">
+        <SangamEmblem size={56} className="mx-auto mb-6 text-[#7f1d3b]" />
         
-        {/* Main Content Area */}
-        <main
-          className={`flex-1 min-w-0 ${
-            inAppShell
-              ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 mx-auto max-w-[1480px] w-full'
-              : 'w-full'
-          }`}
-        >
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-            <Route path="/talent" element={<ProtectedRoute><TalentSearch /></ProtectedRoute>} />
-            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-            <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-          </Routes>
-        </main>
+        <h1 className="font-display text-4xl font-normal text-[#202a39] mb-4 tracking-tight">
+          Under Development
+        </h1>
+        
+        <p className="text-[#667182] text-sm leading-relaxed">
+          Sangam is currently undergoing scheduled maintenance. We are building something exciting and will be back shortly.
+        </p>
+        
+        <div className="mt-8 flex justify-center relative z-10">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#f4e4e4] px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#7f1d3b]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7f1d3b] animate-pulse"></span>
+            System Offline
+          </span>
+        </div>
       </div>
-
-      {/* Mobile Bottom Navigation Bar on mobile screens */}
-      {inAppShell && <MobileBottomNav />}
     </div>
   )
 }
