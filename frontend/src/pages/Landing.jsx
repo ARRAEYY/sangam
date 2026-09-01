@@ -1,253 +1,413 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Search,
-  Users,
-  ShieldCheck,
+  ArrowDownRight,
   ArrowRight,
-  Target,
+  ArrowUpRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  ChevronRight,
+  Link2,
+  Menu,
   Sparkles,
-  Award,
-  Crown,
-  CheckCircle2,
-  FolderGit2,
-  Lock,
-} from 'lucide-react'
-import { useAuth } from '../context/AuthContext.jsx'
-import { SangamEmblem } from '../components/SangamLogo.jsx'
-import { api } from '../api'
+  UsersRound,
+  X
+} from "lucide-react";
+import { SangamEmblem } from "../components/SangamLogo.jsx";
+import "./Landing.css";
 
-export default function Landing() {
-  const { user } = useAuth()
-  const [teaserProjects, setTeaserProjects] = useState([])
+// Sample Data mimicking the DB for the landing showcase
+const projects = [
+  { number: "01", title: "The local food atlas", meta: "Research / Storytelling", copy: "A living map of the recipes, people, and places that make campus feel like home.", skills: ["Research", "Figma"], initials: "MS", tone: "rose" },
+  { number: "02", title: "Night bus radio", meta: "Audio / Culture", copy: "A late-evening audio guide to the ideas, music, and conversations that move across campus.", skills: ["Audio", "Branding"], initials: "RD", tone: "blue" },
+  { number: "03", title: "Pocket climate lab", meta: "Data / Climate", copy: "Making everyday energy choices visible through a small, playful campus experiment.", skills: ["Python", "Climate"], initials: "IR", tone: "sand" },
+];
 
+const talent = [
+  { name: "Anika Menon", detail: "B.Des · Interaction design", signal: "Turns fuzzy ideas into clear, generous experiences.", skills: ["Figma", "Research"], tone: "rose" },
+  { name: "Kabir Sethi", detail: "B.Tech · Computer science", signal: "Builds calm systems for complicated problems.", skills: ["React", "Python"], tone: "blue" },
+  { name: "Sana Iqbal", detail: "B.A. · Sociology", signal: "Asks better questions, then gets people in the room.", skills: ["Community", "Writing"], tone: "sand" },
+];
+
+const opportunities = [
+  { icon: BriefcaseBusiness, type: "Internship", title: "Build the next campus experience", detail: "Design systems / 6 weeks", color: "rose" },
+  { icon: Sparkles, type: "Hackathon", title: "A better way to share a table", detail: "Product / This weekend", color: "blue" },
+  { icon: CalendarDays, type: "Event", title: "Open studio: first drafts", detail: "Community / Thursday, 6pm", color: "sand" },
+];
+
+// Reusable Scroll Hook for Animations
+function useActiveSection() {
+  const [activeSection, setActiveSection] = useState(0);
   useEffect(() => {
-    api.getTeaserProjects()
-      .then((data) => setTeaserProjects(data.projects || []))
-      .catch(() => setTeaserProjects([]))
-  }, [])
+    const sections = document.querySelectorAll(".snap-section");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(Number(entry.target.dataset.index));
+          entry.target.setAttribute("data-active", "true");
+        } else {
+          entry.target.setAttribute("data-active", "false");
+        }
+      });
+    }, { threshold: 0.35 });
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+  return activeSection;
+}
+
+function ScrollProgressIndicator({ activeSection, totalSections }) {
+  return (
+    <div className="scroll-progress" aria-hidden="true">
+      {Array.from({ length: totalSections }).map((_, i) => (
+        <button
+          key={i}
+          className={`scroll-dot ${activeSection === i ? "is-active" : ""}`}
+          aria-label={`Scroll to section ${i + 1}`}
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById(`section-${i}`)?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Interactive SVG Network Visual for the Hero
+function NetworkVisual() {
+  const [active, setActive] = useState("people");
+  const nodes = [
+    { id: "people", label: "People", x: 19, y: 28, tone: "node-maroon" },
+    { id: "projects", label: "Projects", x: 63, y: 16, tone: "node-blue" },
+    { id: "skills", label: "Skills", x: 80, y: 55, tone: "node-sand" },
+    { id: "opportunities", label: "Open calls", x: 45, y: 78, tone: "node-rose" },
+    { id: "you", label: "You", x: 47, y: 43, tone: "node-you" },
+  ];
 
   return (
-    <div className="mx-auto max-w-[92%] max-w-6xl px-3 pb-24 pt-8 sm:px-6">
-      {/* ─── Hero Section ────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-4xl bg-gradient-to-br from-[#3d0012] via-[#5c0019] to-[#800023] px-6 py-16 text-center shadow-card sm:px-12 sm:py-20">
-        <svg
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-60"
-          viewBox="0 0 800 400"
-          preserveAspectRatio="xMidYMid slice"
+    <div className="network-visual" aria-label="Interactive map of people, projects, skills, and opportunities">
+      <div className="network-grid" />
+      {nodes.map((node) => (
+        <button
+          key={node.id}
+          className={`network-node ${node.tone} ${active === node.id ? "is-active" : ""}`}
+          style={{ left: `${node.x}%`, top: `${node.y}%` }}
+          onMouseEnter={() => setActive(node.id)}
+          onFocus={() => setActive(node.id)}
+          onClick={() => setActive(node.id)}
         >
-          <defs>
-            <radialGradient id="glow" cx="50%" cy="45%" r="60%">
-              <stop offset="0%" stopColor="#e97a45" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#e97a45" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <rect width="800" height="400" fill="url(#glow)" />
-          {[...Array(6)].map((_, i) => (
-            <path
-              key={i}
-              d={`M -50 ${120 + i * 28} Q 400 ${60 + i * 10} 850 ${140 + i * 24}`}
-              stroke="#f7ac7d"
-              strokeOpacity={0.18 - i * 0.02}
-              strokeWidth="1.5"
-              fill="none"
-            />
-          ))}
-        </svg>
-
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <SangamEmblem size={48} className="mx-auto mb-6 text-white" />
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-brand-200 border border-white/15 backdrop-blur-sm mb-4">
-            <Lock size={11} /> Rishihood Campus Network
-          </span>
-          <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Where campus builders connect, form teams, and ship.
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-[15px] sm:text-base leading-relaxed text-brand-100/90">
-            Sangam is the private collaboration layer for Rishihood University. Discover peers across CS, AI, Design, and Business, assemble project teams with defined roles, and track milestone progress end-to-end.
-          </p>
-
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link
-              to={user ? '/explore' : '/auth'}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-brand-700 shadow-md transition hover:bg-brand-50 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {user ? 'Go to Explore' : 'Join Sangam with Campus Email'} <ArrowRight size={16} />
-            </Link>
-            {!user && (
-              <Link
-                to="/auth"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Sign in to your account
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Core Q&A: What is Sangam? ───────────────────────── */}
-      <div className="mt-16 text-center max-w-2xl mx-auto">
-        <h2 className="font-display text-2xl sm:text-3xl font-semibold text-slate-900">
-          Everything you need to turn ideas into real projects
-        </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Built strictly for Rishihood students — verified campus emails only, no spam, no recruiters, just builders.
-        </p>
-      </div>
-
-      {/* ─── 4 Pillar Capabilities ───────────────────────────── */}
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 text-left">
-        <div className="card p-6 flex flex-col justify-between">
-          <div>
-            <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-              <Users size={20} />
-            </span>
-            <h3 className="font-display font-semibold text-slate-900 text-base">Project Teams & Rosters</h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Create projects, pitch to join, or have leads directly add teammates. Clear roles for Frontend, Backend, AI, Design, and Product.
-            </p>
-          </div>
-          <span className="mt-4 text-[11px] font-semibold text-brand-600 flex items-center gap-1">
-            <Crown size={12} className="text-amber-500" /> Lead controls included
-          </span>
-        </div>
-
-        <div className="card p-6 flex flex-col justify-between">
-          <div>
-            <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Target size={20} />
-            </span>
-            <h3 className="font-display font-semibold text-slate-900 text-base">Milestone Progress</h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Break down project goals into clear deliverables. Real-time progress bars show what's complete, in progress, or next.
-            </p>
-          </div>
-          <span className="mt-4 text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-            <CheckCircle2 size={12} /> Stage visibility
-          </span>
-        </div>
-
-        <div className="card p-6 flex flex-col justify-between">
-          <div>
-            <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <Search size={20} />
-            </span>
-            <h3 className="font-display font-semibold text-slate-900 text-base">Talent Directory</h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Search students by skills (React, PyTorch, Figma, SQL), academic branch, or graduation batch to find the ideal collaborator.
-            </p>
-          </div>
-          <span className="mt-4 text-[11px] font-semibold text-amber-700 flex items-center gap-1">
-            <Sparkles size={12} /> Filter by stack
-          </span>
-        </div>
-
-        <div className="card p-6 flex flex-col justify-between">
-          <div>
-            <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-              <FolderGit2 size={20} />
-            </span>
-            <h3 className="font-display font-semibold text-slate-900 text-base">Verified Project History</h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Every project you work on automatically builds your portfolio profile with verified tenure, role badges, and achievements.
-            </p>
-          </div>
-          <span className="mt-4 text-[11px] font-semibold text-purple-700 flex items-center gap-1">
-            <Award size={12} /> Auto-documented
-          </span>
-        </div>
-      </div>
-
-      {/* ─── Live Teaser Social Proof ────────────────────────── */}
-      {teaserProjects.length > 0 && (
-        <div className="mt-16 card p-6 sm:p-8 bg-gradient-to-b from-white to-slate-50/50">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div>
-              <h3 className="font-display text-lg font-semibold text-slate-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-brand-600" /> Active Campus Projects
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">A glimpse into what students are currently building on Sangam.</p>
-            </div>
-            <Link to="/explore" className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1">
-              View all on Explore →
-            </Link>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {teaserProjects.map((p, idx) => (
-              <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col justify-between gap-3">
-                <h4 className="font-semibold text-slate-900 text-sm">{p.title}</h4>
-                <div className="flex flex-wrap gap-1">
-                  {(p.required_skills || []).slice(0, 3).map((s, i) => (
-                    <span key={i} className="pill bg-slate-100 text-slate-600 text-[10px]">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ─── How It Works (4 Steps) ─────────────────────────── */}
-      <div className="mt-16 text-center">
-        <h2 className="font-display text-2xl sm:text-3xl font-semibold text-slate-900">How Sangam Works</h2>
-        <p className="mt-2 text-sm text-slate-600 max-w-xl mx-auto">
-          From first sign-in to delivering your project with a squad.
-        </p>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 text-left">
-          <div className="card p-5 border-l-4 border-l-brand-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600">Step 1</span>
-            <h4 className="font-semibold text-slate-900 mt-1">Create Profile</h4>
-            <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-              Verify your campus email, pick your course, add your tech skills, and complete your builder portfolio.
-            </p>
-          </div>
-
-          <div className="card p-5 border-l-4 border-l-amber-500">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Step 2</span>
-            <h4 className="font-semibold text-slate-900 mt-1">Discover & Match</h4>
-            <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-              Browse open projects needing your skillset or search the student directory to find specific talents.
-            </p>
-          </div>
-
-          <div className="card p-5 border-l-4 border-l-emerald-500">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Step 3</span>
-            <h4 className="font-semibold text-slate-900 mt-1">Build Your Team</h4>
-            <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-              Accept pitches or directly invite peers with assigned roles and categories to form a balanced roster.
-            </p>
-          </div>
-
-          <div className="card p-5 border-l-4 border-l-purple-500">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-600">Step 4</span>
-            <h4 className="font-semibold text-slate-900 mt-1">Track & Showcase</h4>
-            <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-              Check off milestones, complete projects, and showcase verified team experience on your public profile.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Bottom CTA ─────────────────────────────────────── */}
-      <div className="mt-20 rounded-3xl bg-slate-900 p-8 sm:p-12 text-center text-white shadow-xl relative overflow-hidden">
-        <h2 className="font-display text-2xl sm:text-3xl font-semibold">Ready to start building?</h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm text-slate-300">
-          Join your fellow Rishihood University students today. All you need is your college email address.
-        </p>
-        <div className="mt-8 flex justify-center">
-          <Link
-            to={user ? '/explore' : '/auth'}
-            className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-7 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-brand-700 hover:scale-105 active:scale-95"
-          >
-            {user ? 'Explore Projects' : 'Get Started with Campus Email'} <ArrowRight size={16} />
-          </Link>
-        </div>
+          <span className="network-node-dot" />
+          <span>{node.label}</span>
+        </button>
+      ))}
+      <svg className="network-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M19 28 L47 43 L63 16 M47 43 L80 55 M47 43 L45 78" />
+        <path d="M19 28 L63 16 M63 16 L80 55 M80 55 L45 78" />
+      </svg>
+      <div className="network-caption">
+        <strong>{active === "you" ? "Your next move starts here." : `${nodes.find((node) => node.id === active)?.label} connect the dots.`}</strong>
+        <span>Hover to trace the signal.</span>
       </div>
     </div>
-  )
+  );
+}
+
+export default function Landing() {
+  const activeSection = useActiveSection();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [step, setStep] = useState(0);
+  const steps = [
+    { title: "Discover", copy: "See the projects, skills, and open calls already taking shape." },
+    { title: "Connect", copy: "Find the person whose point of view unlocks your next step." },
+    { title: "Collaborate", copy: "Share a brief, make a plan, and let the work get specific." },
+    { title: "Build", copy: "Turn a good idea into something the campus can feel." }
+  ];
+
+  return (
+    <div className="landing-site">
+      <header className="landing-nav">
+        <Link to="/" className="public-brand">
+          <SangamEmblem size={24} className="text-maroon" />
+          <span>sangam</span>
+        </Link>
+        <nav className={menuOpen ? "is-open" : ""}>
+          <a href="#about">About</a>
+          <a href="#explore">Explore</a>
+          <a href="#talent">Find talent</a>
+          <a href="#opportunities">Opportunities</a>
+    
+          <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
+        </nav>
+        <button className="landing-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
+          {menuOpen ? <X size={19} /> : <Menu size={19} />}
+        </button>
+      </header>
+
+      <main>
+
+
+        {/* Hero Section */}
+        <section id="section-0" className="snap-section" data-index={0}>
+          <div className="snap-content-wrapper">
+            <div className="landing-hero">
+              <div className="hero-copy reveal-element delay-1">
+                <h1>Where campus<br /><em>ideas find</em><br />their people.</h1>
+
+                <div className="hero-actions">
+                  <Link to="/explore" className="button button-primary">Explore Sangam <ArrowRight size={16} /></Link>
+                  <Link to="/talent" className="button button-quiet">Find your team <ArrowUpRight size={16} /></Link>
+                </div>
+              </div>
+              <div className="hero-network reveal-element delay-2">
+                <NetworkVisual />
+              </div>
+              <div className="hero-scroll reveal-element delay-3">
+                <ArrowDownRight size={15} /> Scroll to find your people
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* The Problem Section */}
+        <section id="section-1" className="snap-section" data-index={1}>
+          <div className="story-section" id="about">
+            <div className="story-heading reveal-element delay-1">
+              <h2>Good people are<br /><em>hard to find</em> in a<br />busy place.</h2>
+            </div>
+            <div className="story-grid">
+              <div className="problem-list reveal-element delay-2">
+                <div className="problem-row">
+                  <span>01</span><strong>Ideas stay in notebooks.</strong>
+                  <p>Because there is no obvious place to share the half-formed version.</p>
+                </div>
+                <div className="problem-row">
+                  <span>02</span><strong>Talent stays invisible.</strong>
+                  <p>Because a timetable can’t show you who thinks in the same direction.</p>
+                </div>
+                <div className="problem-row">
+                  <span>03</span><strong>Opportunities pass by.</strong>
+                  <p>Because the best campus moments move faster than a noticeboard.</p>
+                </div>
+              </div>
+              <div className="solution-card reveal-element delay-3">
+                <div className="solution-mark"><Link2 size={22} /></div>
+                <h3 className="font-display text-[40px] text-white my-4 leading-none">Make the invisible<br /><em className="text-[#f0c7c8] not-italic">easy to find.</em></h3>
+                <p className="text-white/70 text-[12px]">One calm layer for campus energy—where people, projects, and possibilities can meet before they become obvious.</p>
+                <Link to="/auth" className="inline-flex items-center gap-2 mt-4 text-white font-bold text-[11px]">Join the network <ArrowUpRight size={15} /></Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How it Works Section */}
+        <section id="section-2" className="snap-section" data-index={2}>
+          <div className="how-section">
+            <div className="how-layout">
+              <div className="reveal-element delay-1">
+                <h2>Make the next<br /><em>step visible.</em></h2>
+                <p>There is no perfect starting point. Sangam gives every kind of momentum somewhere to go.</p>
+              </div>
+              <div className="step-system reveal-element delay-2">
+                <div className="step-tabs">
+                  {steps.map((item, index) => (
+                    <button
+                      key={item.title}
+                      className={step === index ? "is-active" : ""}
+                      onClick={() => setStep(index)}
+                    >
+                      <span>0{index + 1}</span>{item.title}
+                    </button>
+                  ))}
+                </div>
+                <div className="step-panel">
+                  <span className="step-number">0{step + 1}</span>
+                  <div>
+                    <h3>{steps[step].title}<span>/</span></h3>
+                    <p>{steps[step].copy}</p>
+                  </div>
+                  <button className="step-arrow" onClick={() => setStep((step + 1) % steps.length)}>
+                    <ChevronRight size={21} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Project Showcase Section */}
+        <section id="section-3" className="snap-section" data-index={3}>
+          <div className="showcase-section" id="explore">
+            <div className="section-heading-row reveal-element delay-1">
+              <div>
+                <h2>Something worth<br /><em>joining.</em></h2>
+              </div>
+              <Link to="/explore" className="text-link">View all projects <ArrowUpRight size={15} /></Link>
+            </div>
+            <div className="project-showcase">
+              {projects.map((project, index) => (
+                <article className={`landing-project project-${project.tone} reveal-element delay-2`} key={project.title}>
+                  <div className="project-top flex justify-between text-[9px] font-bold tracking-wider text-ink-soft mb-6">
+                    <span>PROJECT / {project.number}</span>
+                    <span className="bg-[#e8f0e8] text-[#4a7751] px-2 py-1 rounded-full">{index === 0 ? "Open" : index === 1 ? "Seeking co-founder" : "In progress"}</span>
+                  </div>
+                  <h3 className="font-display text-[22px] leading-tight mb-2">{project.title}</h3>
+                  <p className="text-[13px] text-ink-soft leading-relaxed mb-6">{project.copy}</p>
+                  <div className="project-bottom flex justify-between items-end mt-auto">
+                    <div>
+                      <div className="tag-row flex gap-2 mb-3">
+                        {project.skills.map((skill) => <span key={skill} className="text-[10px] bg-white border border-[rgba(0,0,0,.05)] px-2 py-1 rounded-md text-ink-soft">{skill}</span>)}
+                      </div>
+                      <small className="text-[11px] text-ink-soft flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[rgba(0,0,0,.05)] flex items-center justify-center text-[9px] font-bold text-ink">{project.initials}</span>
+                        {project.meta}
+                      </small>
+                    </div>
+                    <button className="w-8 h-8 rounded-full border border-[rgba(24,34,50,.1)] flex items-center justify-center hover:bg-maroon hover:text-white transition"><ArrowUpRight size={16} /></button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Talent Showcase Section */}
+        <section id="section-4" className="snap-section" data-index={4}>
+          <div className="talent-section" id="talent">
+            <div className="section-heading-row reveal-element delay-1">
+              <div>
+                <h2>The missing piece<br /><em>might be closer.</em></h2>
+              </div>
+              <Link to="/talent" className="text-link">Meet the network <ArrowUpRight size={15} /></Link>
+            </div>
+            <div className="talent-showcase">
+              {talent.map((person) => (
+                <article className={`landing-talent bg-white p-6 rounded-[18px] border border-[rgba(24,34,50,.08)] hover:-translate-y-1 transition duration-300 shadow-sm reveal-element delay-2`} key={person.name}>
+                  <div className={`talent-avatar w-12 h-12 rounded-full mb-4 flex items-center justify-center font-display text-xl ${person.tone === 'rose' ? 'bg-[#f4e4e4] text-maroon' : person.tone === 'blue' ? 'bg-[#e8eef0] text-[#345b73]' : 'bg-[#f2eadc] text-[#8c6731]'}`}>
+                    {person.name.split(" ").map((word) => word[0]).join("")}
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-ink-soft mb-2 block">{person.detail}</span>
+                  <h3 className="font-display text-[22px] mb-2">{person.name}</h3>
+                  <p className="text-[13px] text-ink-soft mb-6">{person.signal}</p>
+                  <div className="talent-footer mt-auto flex justify-between items-center pt-4 border-t border-[rgba(24,34,50,.06)]">
+                    <div className="tag-row flex gap-1">
+                      {person.skills.map((skill) => <span key={skill} className="text-[10px] bg-[rgba(0,0,0,.04)] px-2 py-1 rounded-md text-ink-soft">{skill}</span>)}
+                    </div>
+                    <Link to="/talent" className="text-[11px] font-bold text-maroon flex items-center gap-1 hover:gap-2 transition-all">Connect <ArrowUpRight size={13} /></Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Opportunities */}
+        <section id="section-5" className="snap-section" data-index={5}>
+          <div className="showcase-section" id="opportunities">
+            <div className="opportunity-section reveal-element delay-1">
+              <div className="opportunity-art">
+                <div className="orbit orbit-c"></div>
+                <div className="orbit orbit-b"></div>
+                <div className="orbit orbit-a"></div>
+                <div className="orbit-core"><Sparkles size={24} /></div>
+                <div className="orbit-label label-a">Internships</div>
+                <div className="orbit-label label-b">Hackathons</div>
+                <div className="orbit-label label-c">Events</div>
+              </div>
+              <div>
+                <div className="opportunity-copy">
+                  <h2>Not just<br /><em>projects.</em></h2>
+                  <p>Somewhere between an invitation and a first step, the next opportunity is waiting.</p>
+                  <Link to="/explore" className="button button-primary">See open calls <ArrowRight size={16} /></Link>
+                </div>
+                <div className="opportunity-list">
+                  {opportunities.map((o, i) => {
+                    const Icon = o.icon;
+                    return (
+                      <Link to="/auth" key={i} className="opportunity-row">
+                        <div className={`opp-icon ${o.color}`}><Icon size={20} /></div>
+                        <span>
+                          <small>{o.type}</small>
+                          <strong>{o.title}</strong>
+                          <em>{o.detail}</em>
+                        </span>
+                        <ArrowUpRight size={16} className="text-ink-soft" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Community */}
+        <section id="section-6" className="snap-section" data-index={6}>
+          <div className="community-section">
+            <div className="community-layout reveal-element delay-1">
+              <div>
+                <h2>A campus<br />feels<br /><em>different</em><br />when<br />you can see<br />it.</h2>
+                <p>Every connection gives the place a little more shape. Follow the movement without adding to the noise.</p>
+                <Link to="/auth" className="text-link mt-4">Add your signal <ArrowUpRight size={14} /></Link>
+              </div>
+              <div className="activity-board">
+                <div className="activity-head">
+                  Recent movement <span>Updated moments ago <i></i></span>
+                </div>
+                <div className="activity-list">
+                  <div className="activity-row">
+                    <div className="activity-avatar rose">N</div>
+                    <span><strong>Neel joined</strong><small>The local food atlas</small></span>
+                    <time>12 min</time>
+                  </div>
+                  <div className="activity-row">
+                    <div className="activity-avatar blue">A</div>
+                    <span><strong>Alisha saved</strong><small>Sangam studio sessions</small></span>
+                    <time>1 hr</time>
+                  </div>
+                  <div className="activity-row">
+                    <div className="activity-avatar sand"><UsersRound size={16} /></div>
+                    <span><strong>Your profile appeared</strong><small>in 8 searches this week</small></span>
+                    <time>Yesterday</time>
+                  </div>
+                </div>
+                <Link to="/auth" className="activity-footer">
+                  <span className="flex items-center gap-2"><UsersRound size={14} /> 28 students in your orbit</span>
+                  <ArrowUpRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section id="section-7" className="snap-section" data-index={7}>
+          <div className="snap-content-wrapper w-full h-full flex flex-col justify-end">
+            <div className="final-cta bg-maroon text-center text-white py-24 px-8 mt-auto relative overflow-hidden w-full flex-1 flex flex-col justify-center">
+
+              <div className="relative z-10 reveal-element delay-1">
+                <h2 className="font-display text-[clamp(58px,7vw,98px)] my-6 leading-none">Your next team<br />is already <em className="text-[#f2c7c9] not-italic">on campus.</em></h2>
+                <Link to="/auth" className="button bg-white text-maroon hover:bg-[#f7ece8]">Join Sangam <ArrowRight size={16} /></Link>
+              </div>
+
+            </div>
+            <footer className="landing-footer flex items-center justify-between py-8 px-[4vw] text-[10px] text-[#8a9198] w-full">
+              <Link to="/" className="public-brand font-display text-[20px] text-ink flex items-center gap-2">
+                <SangamEmblem size={20} className="text-maroon" /> <span>sangam</span>
+              </Link>
+
+              <div className="flex gap-4 font-bold text-ink">
+                <Link to="/explore">Explore</Link>
+                <Link to="/talent">Talent</Link>
+                <Link to="/auth">Join</Link>
+                <a href="#about">About</a>
+              </div>
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
 }
