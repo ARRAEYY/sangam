@@ -9,7 +9,8 @@
     "seed": "node seed.js",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
-    "migrate:status": "sequelize-cli db:migrate:status"
+    "migrate:status": "sequelize-cli db:migrate:status",
+    "test": "jest"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,12 +21,18 @@
     "express": "^4.21.2",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.12.0",
     "nodemailer": "^9.0.5",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "resend": "^6.22.1",
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.2",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "jest": "^30.5.1",
+    "supertest": "^7.2.2"
   }
 }

@@ -4,37 +4,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Warm maroon / terracotta system, in the spirit of the campus-portal
-        // reference: cream-white surfaces, deep crimson primary, burnt-orange accent.
+        paper: 'var(--paper, #f8f7f3)',
+        surface: 'var(--surface, #fffefa)',
+        ink: {
+          DEFAULT: 'var(--ink, #202a39)',
+          soft: 'var(--ink-soft, #667182)',
+        },
+        maroon: {
+          DEFAULT: 'var(--maroon, #7f1d3b)',
+          dark: 'var(--maroon-dark, #5c132b)',
+        },
+        rose: 'var(--rose, #f4e4e4)',
+        'blue-wash': 'var(--blue-wash, #e8eef0)',
+        'sand-wash': 'var(--sand-wash, #f2eadc)',
         brand: {
-          50: '#fff3ec',
-          100: '#fee6d8',
-          200: '#fdd0b3',
-          300: '#f7ac7d',
-          400: '#e97a45',
-          500: '#d85a28',
-          600: 'var(--color-primary)',
-          700: '#800023',
-          800: '#5c001a',
-          900: '#3d0012',
+          600: 'var(--maroon, #7f1d3b)', // Alias for legacy usage
+          700: 'var(--maroon-dark, #5c132b)',
         },
         cream: {
-          DEFAULT: 'var(--color-background)',
-          50: '#fbfaf8',
-          100: 'var(--color-background)',
-          200: '#f0eee9',
-        },
+          100: 'var(--paper, #f8f7f3)', // Alias for legacy usage
+        }
       },
       fontFamily: {
-        display: ['"Fraunces"', 'serif'],
-        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"DM Serif Display"', 'serif'],
+        sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(20, 15, 10, 0.04), 0 8px 24px -8px rgba(80, 30, 20, 0.10)',
-        card: '0 1px 3px rgba(20, 15, 10, 0.05), 0 16px 40px -20px rgba(80, 30, 20, 0.18)',
+        soft: 'var(--shadow-soft, 0 18px 42px rgba(59, 43, 38, 0.07))',
+        lift: 'var(--shadow-lift, 0 22px 54px rgba(59, 43, 38, 0.12))',
       },
       borderRadius: {
         '4xl': '2rem',
+        card: '18px',
       },
     },
   },

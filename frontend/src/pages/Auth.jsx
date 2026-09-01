@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import GoogleSignInButton from '../components/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { SangamEmblem } from '../components/SangamLogo.jsx'
@@ -114,112 +115,162 @@ export default function Auth() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-12">
-      <div className="mb-7 text-center">
-        <SangamEmblem size={44} className="mx-auto mb-4 text-slate-900" />
-        <h1 className="font-sans text-2xl font-bold tracking-tight text-slate-900">
-          Sign in to Sangam
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Sign in with your Rishihood campus email or Google account.
-        </p>
-      </div>
+    <div className="min-h-[100dvh] bg-[#faf9f5] flex flex-col font-sans text-[#182232] relative overflow-hidden">
+      {/* Background Decor (Optional subtlety, keeping it ultra minimal) */}
 
-      <div className="card p-6 sm:p-7">
-        {infoMsg && (
-          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{infoMsg}</div>
-        )}
+      {/* Header Logo */}
+      <header className="pt-10 absolute top-0 left-0 w-full z-10 flex justify-center">
+        <Link to="/" className="w-full max-w-[1150px] px-8 md:px-12 inline-flex items-center gap-2 font-display text-2xl text-[#182232] transition-opacity hover:opacity-80">
+          <SangamEmblem size={24} className="text-[#7f1d3b]" /> <span>sangam</span>
+        </Link>
+      </header>
 
-        {error && (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
-            {error}
-            {resendEmail && (
-              <div className="mt-2">
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  className="font-semibold underline text-red-800 hover:text-red-900"
-                >
-                  Resend verification link
-                </button>
+      {/* Main Grid Layout */}
+      <main className="flex-1 flex w-full h-full items-center justify-center px-6">
+        <div className="w-full max-w-[1060px] grid grid-cols-1 md:grid-cols-[1fr_380px] gap-12 md:gap-20 items-center mt-12 md:mt-0">
+
+          {/* Left Editorial Side */}
+          <div className="relative z-10 w-full">
+            <div className="max-w-[500px]">
+              <span className="text-[10px] font-bold tracking-[0.17em] text-[#8e9499] uppercase block mb-6">
+                The campus, in motion
+              </span>
+              <h1 className="font-display text-[clamp(52px,6.5vw,88px)] leading-[0.85] tracking-tight mb-6">
+                <span className="text-[#182232] whitespace-nowrap">There's a place</span><br />
+                <span className="text-[#7f1d3b]">for you.</span>
+              </h1>
+              <p className="text-[14px] text-[#737d88] leading-[1.6] max-w-[340px]">
+                Your next collaboration might already be<br />taking shape.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Authentication Card */}
+          <div className="relative z-10 w-full max-w-[380px] mx-auto">
+            <div className="w-full bg-white rounded-[24px] p-8 md:p-9 shadow-[0_12px_40px_rgba(24,34,50,0.04)] border border-[#f4f4f4]">
+
+              {/* Card Header */}
+              <div className="mb-7">
+                <span className="text-[9px] font-bold tracking-[0.2em] text-[#8e9499] uppercase block mb-3">
+                  Login
+                </span>
+                <h2 className="font-display text-[28px] text-[#182232] leading-[1.1] mb-1.5">Welcome to <span className="text-[#7f1d3b]">Sangam</span></h2>
+
               </div>
-            )}
-          </div>
-        )}
 
-        {resendSuccess && (
-          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{resendSuccess}</div>
-        )}
+              {/* Error/Info States */}
+              {infoMsg && (
+                <div className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{infoMsg}</div>
+              )}
 
-        <div className="mb-5">
-          <GoogleSignInButton
-            onSuccess={() => { /* Redirection is handled by the useEffect */ }}
-            onError={(err) => setError(err)}
-          />
-          <div className="relative my-4 flex items-center justify-center">
-            <div className="w-full border-t border-slate-200" />
-            <span className="absolute bg-white px-2 text-xs uppercase tracking-wider text-slate-400">
-              or with email
-            </span>
+              {error && (
+                <div className="mb-5 rounded-[12px] bg-red-50 px-4 py-3 text-[12px] text-red-700 border border-red-100">
+                  {error}
+                  {resendEmail && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        className="font-bold underline text-red-800 hover:text-red-900 transition-colors"
+                      >
+                        Resend verification link
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {resendSuccess && (
+                <div className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{resendSuccess}</div>
+              )}
+
+              {/* Authentication Form */}
+              {forgotMode ? (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <p className="text-[12px] text-slate-600 mb-4">
+                    Enter your campus email and we'll send you a link to reset your password.
+                  </p>
+                  {forgotMsg && (
+                    <div className="mb-4 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{forgotMsg}</div>
+                  )}
+                  <Field label="Email">
+                    <input
+                      type="email"
+                      required
+                      placeholder="you@rishihood.edu.in"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="w-full h-[46px] px-4 rounded-full border border-slate-200 bg-white text-[13px] outline-none focus:border-[#7f1d3b] focus:ring-1 focus:ring-[#7f1d3b] transition-all"
+                    />
+                  </Field>
+                  <div className="pt-2">
+                    <SubmitButton submitting={forgotSubmitting} label="Reset password" />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <button type="button" onClick={() => setForgotMode(false)} className="text-[11px] font-medium text-[#8e9499] hover:text-[#7f1d3b] transition-colors">Back to sign in</button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <Field label="Email">
+                      <input
+                        type="email"
+                        required
+                        placeholder="you@rishihood.edu.in"
+                        value={loginForm.email}
+                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                        className="w-full h-[46px] px-4 rounded-full border border-slate-200 bg-white text-[13px] outline-none focus:border-[#7f1d3b] focus:ring-1 focus:ring-[#7f1d3b] transition-all"
+                      />
+                      {loginEmailDomainValid === false && (
+                        <p className="mt-1.5 text-[10px] text-amber-600">Please use your Rishihood campus email address.</p>
+                      )}
+                    </Field>
+                    <Field label="Password">
+                      <input
+                        type="password"
+                        required
+                        placeholder="Your password"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                        className="w-full h-[46px] px-4 rounded-full border border-slate-200 bg-white text-[13px] outline-none focus:border-[#7f1d3b] focus:ring-1 focus:ring-[#7f1d3b] transition-all"
+                      />
+                    </Field>
+
+                    <div className="pt-1">
+                      <button type="submit" disabled={submitting} className="w-full h-[46px] bg-[#7f1d3b] hover:bg-[#5c132b] text-white rounded-full text-[13px] font-bold flex items-center justify-center gap-2 transition-colors">
+                        {submitting ? 'Please wait…' : (
+                          <>Sign in <ArrowRight size={14} strokeWidth={2.5} /></>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className="relative my-6 flex items-center justify-center">
+                    <div className="w-full border-t border-slate-100" />
+                    <span className="absolute bg-white px-3 text-[11px] text-[#8e9499]">
+                      or
+                    </span>
+                  </div>
+
+                  <GoogleSignInButton
+                    onSuccess={() => { /* Redirection is handled by the useEffect */ }}
+                    onError={(err) => setError(err)}
+                  />
+
+                  {/* Forgot Password Link moved here */}
+                  <div className="mt-6 text-center">
+                    <button type="button" onClick={() => { setForgotMode(true); setForgotMsg(''); setError(''); }} className="text-[10px] font-bold text-[#7f1d3b] hover:text-[#5c132b] transition-colors">
+                      Forgot password?
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
+      </main>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <Field label="Campus email">
-            <input
-              type="email"
-              required
-              placeholder="you@nst.rishihood.edu.in"
-              value={loginForm.email}
-              onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-              className="input"
-            />
-            {loginEmailDomainValid === false && (
-              <p className="mt-1 text-xs text-amber-600">Please use your Rishihood campus email address.</p>
-            )}
-          </Field>
-          <Field label="Password">
-            <input
-              type="password"
-              required
-              value={loginForm.password}
-              onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-              className="input"
-            />
-          </Field>
-          <SubmitButton submitting={submitting} label="Sign in" />
-        </form>
-        <div className="mt-3 text-center">
-          <button
-            type="button"
-            onClick={() => { setForgotMode(!forgotMode); setForgotMsg(''); setError(''); }}
-            className="text-sm font-medium text-brand-600 hover:text-brand-700 transition"
-          >
-            Forgot password?
-          </button>
-        </div>
-        {forgotMode && (
-          <form onSubmit={handleForgotPassword} className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs text-slate-600">
-              Enter your campus email and we'll send you a link to reset your password.
-            </p>
-            {forgotMsg && (
-              <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{forgotMsg}</div>
-            )}
-            <Field label="Campus email">
-              <input
-                type="email"
-                required
-                placeholder="you@depart.rishihood.edu.in"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                className="input bg-white"
-              />
-            </Field>
-            <SubmitButton submitting={forgotSubmitting} label="Reset password" />
-          </form>
-        )}
-      </div>
     </div>
   )
 }
@@ -227,7 +278,7 @@ export default function Auth() {
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+      <span className="mb-2 block text-[11px] font-bold text-[#182232]">{label}</span>
       {children}
     </label>
   )
@@ -235,7 +286,7 @@ function Field({ label, children }) {
 
 function SubmitButton({ submitting, label }) {
   return (
-    <button type="submit" disabled={submitting} className="btn-primary w-full">
+    <button type="submit" disabled={submitting} className="w-full h-[46px] bg-[#7f1d3b] hover:bg-[#5c132b] text-white rounded-full text-[14px] font-bold flex items-center justify-center gap-2 transition-colors">
       {submitting ? 'Please wait…' : label}
     </button>
   )

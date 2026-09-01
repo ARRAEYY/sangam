@@ -70,7 +70,7 @@ export default function TalentSearch() {
   }
 
   return (
-    <div className="w-full max-w-[1480px] mx-auto pb-16 pt-2">
+    <div className="pb-16 pt-2">
       {/* Header */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
