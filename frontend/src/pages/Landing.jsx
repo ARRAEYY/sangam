@@ -385,11 +385,11 @@ export default function Landing() {
         {/* Final CTA */}
         <section id="section-7" className="snap-section" data-index={7}>
           <div className="snap-content-wrapper w-full h-full flex flex-col justify-end">
-            <div className="final-cta bg-maroon text-center text-white py-24 px-8 mt-auto relative overflow-hidden w-full flex-1 flex flex-col justify-center">
+            <div className="final-cta bg-[#7f1d3b] text-center text-white py-24 px-8 mt-auto relative overflow-hidden w-full flex-1 flex flex-col justify-center">
 
               <div className="relative z-10 reveal-element delay-1">
-                <h2 className="font-display text-[clamp(58px,7vw,98px)] my-6 leading-none">Your next team<br />is already <em className="text-[#f2c7c9] not-italic">on campus.</em></h2>
-                <Link to="/auth" className="button bg-white text-maroon hover:bg-[#f7ece8]">Join Sangam <ArrowRight size={16} /></Link>
+                <h2 className="font-display text-[clamp(48px,6vw,84px)] my-6 leading-none">Your next team<br />is already <em className="text-[#f2c7c9] not-italic">on campus.</em></h2>
+                <Link to="/auth" className="button bg-white text-[#7f1d3b] hover:bg-[#f7ece8]">Join Sangam <ArrowRight size={16} /></Link>
               </div>
 
             </div>
