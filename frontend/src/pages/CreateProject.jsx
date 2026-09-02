@@ -35,7 +35,7 @@ export default function CreateProject() {
   const [isTechPickerOpen, setIsTechPickerOpen] = useState(false);
   const [isMemberPickerOpen, setIsMemberPickerOpen] = useState(false);
 
-  const [newMilestone, setNewMilestone] = useState({ title: "", description: "", targetDate: "" });
+  const [newMilestone, setNewMilestone] = useState({ title: "", description: "", targetDate: "", status: 'NOT_STARTED' });
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
 
   // Quick toggles for predefined skills
@@ -51,8 +51,8 @@ export default function CreateProject() {
 
   function handleAddMilestone() {
     if (newMilestone.title.trim()) {
-      setMilestones([...milestones, { ...newMilestone, title: newMilestone.title.trim(), status: 'NOT_STARTED' }]);
-      setNewMilestone({ title: "", description: "", targetDate: "" });
+      setMilestones([...milestones, { ...newMilestone, title: newMilestone.title.trim() }]);
+      setNewMilestone({ title: "", description: "", targetDate: "", status: 'NOT_STARTED' });
       setIsAddingMilestone(false);
     }
   }
@@ -272,7 +272,12 @@ export default function CreateProject() {
                     {ms.title}
                   </div>
                   {ms.description && <div className="mt-1 text-sm text-slate-500 ml-7">{ms.description}</div>}
-                  {ms.targetDate && <div className="mt-2 text-xs font-medium text-[#7f1d3b] ml-7">Target: {new Date(ms.targetDate).toLocaleDateString()}</div>}
+                  <div className="flex gap-4 ml-7 mt-2">
+                    {ms.targetDate && <div className="text-xs font-medium text-[#7f1d3b]">Target: {new Date(ms.targetDate).toLocaleDateString()}</div>}
+                    <div className="text-xs font-medium text-slate-500">
+                      Status: {ms.status === 'NOT_STARTED' ? 'Not Started' : ms.status === 'IN_PROGRESS' ? 'Working' : ms.status === 'COMPLETED' ? 'Done' : 'Blocked'}
+                    </div>
+                  </div>
                 </div>
               ))}
 
@@ -280,7 +285,19 @@ export default function CreateProject() {
                 <div className="p-4 bg-[#fffaf7] border border-[#7f1d3b]/20 rounded-xl space-y-3">
                   <input type="text" autoFocus placeholder="Milestone Title (e.g. MVP Launch)" value={newMilestone.title} onChange={e => setNewMilestone({ ...newMilestone, title: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
                   <textarea placeholder="Brief description (optional)" rows={2} value={newMilestone.description} onChange={e => setNewMilestone({ ...newMilestone, description: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                  <input type="date" value={newMilestone.targetDate} onChange={e => setNewMilestone({ ...newMilestone, targetDate: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="date" value={newMilestone.targetDate} onChange={e => setNewMilestone({ ...newMilestone, targetDate: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
+                    <select 
+                      value={newMilestone.status}
+                      onChange={e => setNewMilestone({ ...newMilestone, status: e.target.value })}
+                      className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a] bg-white outline-none"
+                    >
+                      <option value="NOT_STARTED">Not Started</option>
+                      <option value="IN_PROGRESS">Working</option>
+                      <option value="COMPLETED">Done</option>
+                      <option value="BLOCKED">Blocked</option>
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <button type="button" onClick={handleAddMilestone} className="px-4 py-2 bg-[#7f1d3b] text-white rounded-lg text-sm font-medium hover:bg-[#6a1730]">Add Milestone</button>
                     <button type="button" onClick={() => setIsAddingMilestone(false)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Cancel</button>

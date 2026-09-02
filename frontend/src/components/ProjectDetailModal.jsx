@@ -459,10 +459,10 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                         getInitials(project.owner?.full_name)
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
+                    {/* <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-900 truncate">{project.owner?.full_name}</p>
                       <p className="text-xs text-[#7f1d3b] font-medium mt-0.5">Project Lead</p>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Members */}
