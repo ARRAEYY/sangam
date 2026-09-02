@@ -403,6 +403,8 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                             <CheckCircle2 size={18} className="text-emerald-500" />
                           ) : ms.status === 'IN_PROGRESS' ? (
                             <Play size={18} className="text-amber-500" />
+                          ) : ms.status === 'BLOCKED' ? (
+                            <AlertCircle size={18} className="text-red-500" />
                           ) : (
                             <Clock size={18} className="text-slate-300" />
                           )}
@@ -421,7 +423,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                               <option value="NOT_STARTED">Not Started</option>
                               <option value="IN_PROGRESS">Working</option>
                               <option value="COMPLETED">Done</option>
-                              <option value="BLOCKED">Next</option>
+                              <option value="BLOCKED">Blocked</option>
                             </select>
                           </div>
                         )}
@@ -466,7 +468,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                   {/* Members */}
                   {project.members?.map((m) => (
                     <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                      <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-sm font-medium overflow-hidden shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[#7f1d3b]/10 text-[#7f1d3b] flex items-center justify-center text-sm font-medium overflow-hidden shrink-0">
                         {m.user?.avatar_url ? (
                           <img src={m.user.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
@@ -475,7 +477,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-900 truncate">{m.user?.full_name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5 truncate">{m.role || 'Member'}</p>
+                        <p className="text-xs text-[#7f1d3b] font-medium mt-0.5 truncate">{m.role || 'Member'}</p>
                       </div>
                     </div>
                   ))}
