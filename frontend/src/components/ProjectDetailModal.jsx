@@ -29,7 +29,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
   // Milestones state
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
-  const [newMilestone, setNewMilestone] = useState({ title: '', description: '' });
+  const [newMilestone, setNewMilestone] = useState({ title: '', description: '', status: 'NOT_STARTED' });
 
   // Members state
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -130,8 +130,8 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const handleAddMilestone = async () => {
     if (!newMilestone.title.trim()) return;
     try {
-      await api.addMilestone(project.id, { ...newMilestone, status: 'PENDING' });
-      setNewMilestone({ title: '', description: '' });
+      await api.addMilestone(project.id, { ...newMilestone });
+      setNewMilestone({ title: '', description: '', status: 'NOT_STARTED' });
       setIsAddingMilestone(false);
       fetchProject();
     } catch (err) {
@@ -321,8 +321,33 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                   </button>
                 </div>
               )}
+              {/* Skills & Tech Stack */}
+              {(project.required_skills?.length > 0 || project.tech_stack?.length > 0) && (
+                <div className="mb-8 space-y-4">
+                  {project.required_skills?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-2">General Skills</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.required_skills.map((s) => (
+                          <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600">{s.name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.tech_stack?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-2">Tech Stack</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.tech_stack.map((t) => (
+                          <span key={t} className="pill border border-slate-200 text-slate-600">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Milestones Section */}
+              {(project.milestones?.length > 0 || isOwner) && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
@@ -350,9 +375,21 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                       onChange={(e) => setNewMilestone({...newMilestone, description: e.target.value})}
                       className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 h-20 focus:outline-none focus:border-slate-300"
                     />
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
-                      <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
+                    <div className="flex justify-between items-center mb-3 mt-3">
+                      <select 
+                        value={newMilestone.status}
+                        onChange={(e) => setNewMilestone({...newMilestone, status: e.target.value})}
+                        className="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 outline-none"
+                      >
+                        <option value="NOT_STARTED">Not Started</option>
+                        <option value="IN_PROGRESS">Working</option>
+                        <option value="COMPLETED">Done</option>
+                        <option value="BLOCKED">Blocked</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
+                        <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -381,9 +418,10 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                               onChange={(e) => handleUpdateMilestoneStatus(ms.id, e.target.value)}
                               className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-600 outline-none"
                             >
-                              <option value="PENDING">Not Started</option>
-                              <option value="IN_PROGRESS">Active</option>
-                              <option value="COMPLETED">Completed</option>
+                              <option value="NOT_STARTED">Not Started</option>
+                              <option value="IN_PROGRESS">Working</option>
+                              <option value="COMPLETED">Done</option>
+                              <option value="BLOCKED">Next</option>
                             </select>
                           </div>
                         )}
@@ -395,32 +433,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                 )}
               </div>
 
-              {/* Skills & Tech Stack */}
-              {(project.required_skills?.length > 0 || project.tech_stack?.length > 0) && (
-                <div className="mb-8 space-y-4">
-                  {project.required_skills?.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900 mb-2">General Skills</h3>
-                      <div className="flex flex-wrap gap-1.5">
-                        {project.required_skills.map((s) => (
-                          <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600">{s.name}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {project.tech_stack?.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900 mb-2">Tech Stack</h3>
-                      <div className="flex flex-wrap gap-1.5">
-                        {project.tech_stack.map((t) => (
-                          <span key={t} className="pill border border-slate-200 text-slate-600">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               )}
-
               {/* Team Members */}
               <div>
                 <div className="flex items-center justify-between mb-4">

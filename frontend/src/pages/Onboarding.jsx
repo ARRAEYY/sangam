@@ -64,7 +64,7 @@ export default function Onboarding() {
         graduation_year: Number(form.graduation_year),
       })
       await refreshProfile()
-      navigate('/explore', { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

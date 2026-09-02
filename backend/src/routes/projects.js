@@ -705,7 +705,7 @@ router.post('/:id/milestones', requireAuth, async (req, res, next) => {
       return res.status(403).json({ detail: 'Only the project lead can add milestones.' })
     }
 
-    const { title, description, due_date } = req.body || {}
+    const { title, description, status, due_date } = req.body || {}
     if (!title || !String(title).trim()) {
       return res.status(400).json({ detail: 'Milestone title is required.' })
     }
@@ -714,14 +714,23 @@ router.post('/:id/milestones', requireAuth, async (req, res, next) => {
     const maxOrder = await Milestone.max('order_index', { where: { project_id: project.id } })
     const nextOrder = (maxOrder ?? -1) + 1
 
-    const milestone = await Milestone.create({
+    const createPayload = {
       project_id: project.id,
       title: String(title).trim(),
       description: description ? String(description).trim() : null,
       due_date: due_date || null,
       order_index: nextOrder,
       created_by: req.user.id,
-    })
+    }
+    
+    if (status && Milestone.STATUSES.includes(status)) {
+      createPayload.status = status;
+      if (status === 'COMPLETED') {
+        createPayload.completed_at = new Date();
+      }
+    }
+
+    const milestone = await Milestone.create(createPayload)
 
     return res.status(201).json({
       id: milestone.id,

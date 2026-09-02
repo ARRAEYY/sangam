@@ -231,7 +231,7 @@ export default function Dashboard() {
         </div>
         <div className="hero-note hidden md:flex">
           <span className="hero-note-mark mr-2 text-[20px] text-[#7f1d3b]">↗</span>
-          <span className="text-[10px] text-slate-500 leading-tight">{openProjectsCount} open builds<br /><strong className="text-slate-800">waiting for you</strong></span>
+          <span className="text-[10px] text-slate-500 leading-tight">{loading ? <span className="inline-block w-4 h-4 bg-slate-200 animate-pulse rounded"></span> : openProjectsCount} open builds<br /><strong className="text-slate-800">waiting for you</strong></span>
         </div>
       </section>
 
@@ -239,21 +239,21 @@ export default function Dashboard() {
       <section className="dashboard-stats reveal-in delay-1" aria-label="Your Sangam overview">
         <div className="stat-block">
           <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Your builds</span>
-          <strong className="block mb-1">{stats.builds.toString().padStart(2, '0')}</strong>
+          <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.builds.toString().padStart(2, '0')}</strong>
           <span className="stat-caption block text-[11px] text-slate-400">Projects you are working on</span>
         </div>
         <div className="stat-block">
           <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Worker network</span>
-          <strong className="block mb-1">{stats.network.toString().padStart(2, '0')}</strong>
+          <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.network.toString().padStart(2, '0')}</strong>
           <span className="stat-caption block text-[11px] text-slate-400">Accepted connections</span>
         </div>
         <div className="stat-block profile-stat flex flex-col justify-center px-6">
           <div className="stat-line mb-2">
             <span className="eyebrow text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile signal</span>
-            <span>{stats.profileSignal}%</span>
+            <span>{loading ? <div className="w-6 h-4 bg-slate-200 animate-pulse rounded inline-block" /> : `${stats.profileSignal}%`}</span>
           </div>
           <div className="progress-track mb-2">
-            <span style={{ width: `${stats.profileSignal}%` }} className={stats.profileSignal === 100 ? 'bg-emerald-500' : ''} />
+            <span style={{ width: loading ? '0%' : `${stats.profileSignal}%` }} className={stats.profileSignal === 100 ? 'bg-emerald-500' : ''} />
           </div>
           <span className="stat-caption text-[11px] text-slate-400">Profile completeness</span>
         </div>
@@ -293,18 +293,30 @@ export default function Dashboard() {
           <SectionHeading label="Activity feed" title="Recent signals" action={<Link to="/notifications" className="text-[11px] font-bold text-slate-500 hover:text-[#7f1d3b] hover:underline transition-colors">See all</Link>} />
           
           <div className="activity-list space-y-4">
-            {activity.map((act) => (
-              <div key={act.id} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
-                <div className={`activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400`}>
-                  <Check size={16} />
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white">
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-slate-100 animate-pulse"></div>
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse"></div>
+                    <div className="h-3 bg-slate-100 rounded w-2/3 animate-pulse"></div>
+                  </div>
                 </div>
-                <div className="activity-content flex-1">
-                  <h4 className="text-sm font-semibold text-slate-800">{act.name}</h4>
-                  <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2">{act.detail}</p>
+              ))
+            ) : (
+              activity.map((act) => (
+                <div key={act.id} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
+                  <div className={`activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400`}>
+                    <Check size={16} />
+                  </div>
+                  <div className="activity-content flex-1">
+                    <h4 className="text-sm font-semibold text-slate-800">{act.name}</h4>
+                    <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2">{act.detail}</p>
+                  </div>
+                  <time className="text-[10px] text-slate-400 font-medium whitespace-nowrap pt-0.5">{act.time}</time>
                 </div>
-                <time className="text-[10px] text-slate-400 font-medium whitespace-nowrap pt-0.5">{act.time}</time>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
