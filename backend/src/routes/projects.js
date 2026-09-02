@@ -1,6 +1,6 @@
 const express = require('express')
 const { Op, Sequelize } = require('sequelize')
-const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone } = require('../models')
+const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone, Notification } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 const { generalLimiter } = require('../middleware/rateLimit')
 const { serializeProject, serializeApplication } = require('../utils/serializers')
