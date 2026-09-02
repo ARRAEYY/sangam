@@ -725,7 +725,7 @@ export default function Profile() {
                   <div className="flex justify-between items-start gap-4">
                     <div>
                       <h3 className="font-semibold text-slate-900">{edu.degree}</h3>
-                      <p className="text-sm text-slate-600">{edu.institution}{edu.department ? ` (${edu.department})` : ''}</p>
+                      <p className="text-sm text-brand-700 font-medium mt-0.5">{edu.institution}{edu.department ? ` (${edu.department})` : ''}</p>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {edu.start_year} - {edu.graduation_year || 'Present'}
                       </p>
