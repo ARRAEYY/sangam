@@ -11,7 +11,7 @@ export function TalentModal({ isOpen, onClose, talentId }) {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
-  
+
   // To match the master branch connectState behavior (which was in the parent component)
   const [connectState, setConnectState] = useState({});
 
@@ -95,14 +95,14 @@ export function TalentModal({ isOpen, onClose, talentId }) {
               <span className="text-sm font-semibold hidden sm:block">Edit Profile</span>
             </button>
           )}
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full shadow-sm"
           >
             <XIcon size={20} />
           </button>
         </div>
-        
+
         <div className="overflow-y-auto p-6 sm:p-8 overscroll-contain">
           {profileLoading || !selectedUser ? (
             <p className="text-sm text-slate-500">Loading details...</p>
@@ -145,14 +145,14 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                   </div>
                 )}
               </div>
-              
+
               {selectedUser.bio && (
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-slate-900 mb-2">About</h3>
                   <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedUser.bio}</p>
                 </div>
               )}
-              
+
               <div className="mb-8">
                 <h3 className="text-sm font-semibold text-slate-900 mb-2">Skills</h3>
                 <div className="flex flex-wrap gap-1.5">
@@ -220,11 +220,11 @@ export function TalentModal({ isOpen, onClose, talentId }) {
                       <div key={edu.id} className="pt-4 first:pt-0">
                         <div className="border-l-2 border-[#7f1d3b] pl-4">
                           <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
-                          <p className="text-sm font-medium text-[#7f1d3b]">
+                          <p className="text-s text-brand-700 font-medium mt-0.5">
                             {edu.institution_name || edu.institution}
                             {edu.department ? ` (${edu.department})` : ''}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs  text-slate-500">
                             {edu.start_year} - {edu.graduation_year || 'Present'}
                           </p>
                         </div>

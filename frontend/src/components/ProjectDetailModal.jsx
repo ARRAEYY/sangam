@@ -450,21 +450,6 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Owner Card */}
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                    <div className="w-10 h-10 rounded-full bg-[#7f1d3b]/10 text-[#7f1d3b] flex items-center justify-center text-sm font-medium overflow-hidden shrink-0">
-                      {project.owner?.avatar_url ? (
-                        <img src={project.owner.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        getInitials(project.owner?.full_name)
-                      )}
-                    </div>
-                    {/* <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900 truncate">{project.owner?.full_name}</p>
-                      <p className="text-xs text-[#7f1d3b] font-medium mt-0.5">Project Lead</p>
-                    </div> */}
-                  </div>
-
                   {/* Members */}
                   {project.members?.map((m) => (
                     <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
