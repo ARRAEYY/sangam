@@ -349,7 +349,7 @@ export default function TalentSearch() {
                           <div key={edu.id} className="pt-4 first:pt-0">
                             <div className="border-l-2 border-brand-200 pl-4">
                               <h4 className="font-semibold text-slate-800">{edu.degree}</h4>
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-brand-700 font-medium mt-0.5">
                                 {edu.institution}
                                 {edu.department ? ` (${edu.department})` : ''}
                               </p>
