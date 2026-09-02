@@ -11,6 +11,7 @@ import {
   Users2,
   Bell,
   LogIn,
+  Settings,
 } from 'lucide-react'
 import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
