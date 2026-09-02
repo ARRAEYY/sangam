@@ -22,8 +22,9 @@ export function MemberPickerModal({ isOpen, onClose, onAddMember, excludeUserIds
       setLoading(true);
       try {
         const data = await api.searchUsers(query);
+        const usersArray = Array.isArray(data) ? data : (data?.users || []);
         // Filter out already added members
-        const filtered = data.users.filter(u => !excludeUserIds.includes(u.id));
+        const filtered = usersArray.filter(u => !excludeUserIds.includes(u.id));
         setResults(filtered);
       } catch (err) {
         console.error(err);
