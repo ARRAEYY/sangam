@@ -164,10 +164,14 @@ export default function Dashboard() {
         try {
           const connections = await api.listConnections()
           
-          const ownedProjects = fullProfile.project_roles?.filter(pr => pr.is_lead).length || 0;
-          const acceptedProjects = fullProfile.accepted_projects?.length || 0;
-          
-          buildsCount = ownedProjects + acceptedProjects
+          const uniqueProjectIds = new Set();
+          if (fullProfile.project_roles) {
+            fullProfile.project_roles.forEach(pr => uniqueProjectIds.add(pr.project_id));
+          }
+          if (fullProfile.accepted_projects) {
+            fullProfile.accepted_projects.forEach(p => uniqueProjectIds.add(p.id));
+          }
+          buildsCount = uniqueProjectIds.size;
           networkCount = Array.isArray(connections) ? connections.length : 0
           
           // Profile completeness (out of 100)
