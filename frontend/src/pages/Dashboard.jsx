@@ -259,7 +259,7 @@ export default function Dashboard() {
         </div>
         <div className="dashboard-prompt bg-[#faf9f5]">
           <Sparkles size={16} />
-          <span><strong>Small prompt</strong><br />What would you build with a marine biologist?</span>
+          <span><strong>Learn. Connect. Grow.</strong></span>
           <ChevronRight size={16} />
         </div>
       </section>
