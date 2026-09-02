@@ -165,6 +165,13 @@ export default function Navbar() {
                   >
                     <User size={15} /> Your dashboard
                   </Link>
+                  <Link
+                    to="/settings"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    <Settings size={15} /> Settings
+                  </Link>
                   <button
                     onClick={() => {
                       setProfileMenuOpen(false)

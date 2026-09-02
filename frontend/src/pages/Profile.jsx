@@ -96,8 +96,7 @@ export default function Profile() {
   const [changingPassword, setChangingPassword] = useState(false)
 
   // Account deletion
-  const [deletingAccount, setDeletingAccount] = useState(false)
-
+  
   const handleChangePassword = async (e) => {
     e.preventDefault()
     setPasswordError('')
@@ -320,24 +319,7 @@ export default function Profile() {
     }
   }
 
-  // Account deletion
-  const handleDeleteAccount = async () => {
-    const confirmPrompt = window.prompt(
-      'WARNING: This will permanently delete your account, projects, applications, connections, and portfolio data.\\n\\nType DELETE to confirm:'
-    )
-    if (confirmPrompt !== 'DELETE') return
-
-    setDeletingAccount(true)
-    try {
-      await api.deleteAccount()
-      await logout()
-      navigate('/')
-    } catch (err) {
-      setError(err.message)
-      setDeletingAccount(false)
-    }
-  }
-
+  
   if (!user) return null
 
   const initials = user.full_name
@@ -1174,23 +1156,7 @@ export default function Profile() {
         )}
       </section>
 
-      {/* Danger Zone: Account Deletion */}
-      <section className="rounded-2xl border border-red-200 bg-red-50/50 p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-red-800">
-          <AlertTriangle size={18} />
-          <h2 className="font-semibold text-sm uppercase tracking-wider">Danger Zone</h2>
-        </div>
-        <p className="mt-2 text-xs leading-relaxed text-red-700">
-          Permanently delete your account and all associated data including your projects, applications, portfolio entries, and connections. This action cannot be undone.
-        </p>
-        <button
-          onClick={handleDeleteAccount}
-          disabled={deletingAccount}
-          className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition disabled:opacity-50"
-        >
-          {deletingAccount ? 'Deleting account...' : 'Delete Account'}
-        </button>
-      </section>
+      
     </div>
   )
 }

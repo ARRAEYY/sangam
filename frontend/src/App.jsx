@@ -13,6 +13,7 @@ import ProjectDetail from './pages/ProjectDetail.jsx'
 import CreateProject from './pages/CreateProject.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Profile from './pages/Profile.jsx'
+import Settings from './pages/Settings.jsx'
 import TalentSearch from './pages/TalentSearch.jsx'
 import Notifications from './pages/Notifications.jsx'
 
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           </Routes>
         </main>
