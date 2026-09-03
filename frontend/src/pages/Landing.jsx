@@ -130,7 +130,6 @@ export default function Landing() {
       <header className="landing-nav">
         <Link to="/" className="public-brand">
           <SangamEmblem size={24} className="text-maroon" />
-          <span>sangam</span>
         </Link>
         <nav className={menuOpen ? "is-open" : ""}>
           <a href="#about">About</a>
@@ -395,7 +394,7 @@ export default function Landing() {
             </div>
             <footer className="landing-footer flex items-center justify-between py-8 px-[4vw] text-[10px] text-[#8a9198] w-full">
               <Link to="/" className="public-brand font-display text-[20px] text-ink flex items-center gap-2">
-                <SangamEmblem size={20} className="text-maroon" /> <span>sangam</span>
+                <SangamEmblem size={20} className="text-maroon" />
               </Link>
 
               <div className="flex gap-4 font-bold text-ink">

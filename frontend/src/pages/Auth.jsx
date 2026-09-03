@@ -121,7 +121,7 @@ export default function Auth() {
       {/* Header Logo */}
       <header className="pt-10 absolute top-0 left-0 w-full z-10 flex justify-center">
         <Link to="/" className="w-full max-w-[1150px] px-8 md:px-12 inline-flex items-center gap-2 font-display text-2xl text-[#182232] transition-opacity hover:opacity-80">
-          <SangamEmblem size={24} className="text-[#7f1d3b]" /> <span>sangam</span>
+          <SangamEmblem size={24} className="text-[#7f1d3b]" />
         </Link>
       </header>
 

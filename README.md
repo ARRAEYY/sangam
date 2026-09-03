@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="frontend/public/logo-full.png" alt="Sangam Logo" width="300" />
+</div>
+
 # Sangam
 
 > Your campus, in motion. A platform for students to discover, connect, collaborate, and build projects together.
