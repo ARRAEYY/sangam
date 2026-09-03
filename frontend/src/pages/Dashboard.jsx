@@ -55,49 +55,57 @@ export const ProjectCard = ({ project, featured }) => {
   return (
     <>
       <button onClick={() => setIsModalOpen(true)} className={`project-card text-left accent-${project.accent} ${featured ? 'featured' : ''}`}>
-      <div className="project-card-topline">
-        <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
-          {featured ? 'FEATURED BUILD' : 'RECOMMENDED PROJECT'}
-          {project.matchCount > 0 && (
-            <span className="bg-[#7f1d3b]/10 text-[#7f1d3b] px-1.5 py-0.5 rounded-sm lowercase text-[9px] font-semibold">
-              {project.matchCount} skill match{project.matchCount > 1 ? 'es' : ''}
-            </span>
-          )}
-        </span>
-        <div className={`status-pill ${project.status === 'Open' ? 'bg-emerald-50 text-emerald-700' : project.status === 'Seeking co-founder' ? 'bg-[#eef3f5] text-[#30536d]' : 'bg-[#fdf5ea] text-[#8f5b36]'}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${project.status === 'Open' ? 'bg-emerald-500' : project.status === 'Seeking co-founder' ? 'bg-[#30536d]' : 'bg-[#8f5b36]'}`} />
-          {project.status}
-        </div>
-      </div>
-      
-      <div className="project-card-body">
-        <h3>{project.title}</h3>
-        <p>{project.summary}</p>
-        
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {project.skills.map(s => (
-            <span key={s} className="px-2.5 py-1 rounded-md bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100">{s}</span>
-          ))}
-        </div>
-      </div>
-      
-      <div className="project-card-footer">
-        <div className="flex items-center gap-3">
-          <span className={`avatar avatar-${project.accent}`}>
-            {project.initials}
+        <div className="project-card-topline">
+          <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+            {featured ? 'FEATURED BUILD' : 'RECOMMENDED PROJECT'}
+            {project.matchCount > 0 && (
+              <span className="bg-[#7f1d3b]/10 text-[#7f1d3b] px-1.5 py-0.5 rounded-sm lowercase text-[9px] font-semibold">
+                {project.matchCount} skill match{project.matchCount > 1 ? 'es' : ''}
+              </span>
+            )}
           </span>
-          <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-slate-800">{project.creator}</span>
-            <span className="text-[10px] text-slate-400">{project.time}</span>
+          <div className={`status-pill ${project.status === 'Open' ? 'bg-emerald-50 text-emerald-700' : project.status === 'Seeking co-founder' ? 'bg-[#eef3f5] text-[#30536d]' : 'bg-[#fdf5ea] text-[#8f5b36]'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${project.status === 'Open' ? 'bg-emerald-500' : project.status === 'Seeking co-founder' ? 'bg-[#30536d]' : 'bg-[#8f5b36]'}`} />
+            {project.status}
           </div>
         </div>
-        <span className="text-[10px] font-medium text-slate-500">{project.team}</span>
-      </div>
+
+        <div className="project-card-body">
+          {project.looking_for && (
+            <div className="mb-2 text-[15px] font-bold tracking-[0.1em] uppercase">
+              <span className="text-black font-medium mr-1.5">LOOKING FOR:</span>
+              <span className="text-[#7f1d3b] font-bold">{project.looking_for}</span>
+            </div>
+          )}
+
+          <h3>{project.title}</h3>
+
+          <p>{project.summary}</p>
+
+          <div className="flex flex-wrap gap-1.5 mt-4">
+            {project.skills.map(s => (
+              <span key={s} className="px-2.5 py-1 rounded-md bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100">{s}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="project-card-footer">
+          <div className="flex items-center gap-3">
+            <span className={`avatar avatar-${project.accent}`}>
+              {project.initials}
+            </span>
+            <div className="flex flex-col">
+              <span className="text-[12px] font-bold text-slate-800">{project.creator}</span>
+              <span className="text-[10px] text-slate-400">{project.time}</span>
+            </div>
+          </div>
+          <span className="text-[10px] font-medium text-slate-500">{project.team}</span>
+        </div>
       </button>
-      <ProjectDetailModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        projectPreview={project} 
+      <ProjectDetailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        projectPreview={project}
       />
     </>
   )
@@ -105,7 +113,7 @@ export const ProjectCard = ({ project, featured }) => {
 
 export default function Dashboard() {
   const { user } = useAuth()
-  
+
   const [projects, setProjects] = useState([])
   const [openProjectsCount, setOpenProjectsCount] = useState(0)
   const [activity, setActivity] = useState([])
@@ -120,19 +128,19 @@ export default function Dashboard() {
     async function loadData() {
       try {
         const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
-        
+
         // Fetch projects globally to show on dashboard feed
         const projectsData = await api.listProjects({})
         if (!isMounted) return;
-        
+
         const openProjects = projectsData.filter(p => p.status === 'OPEN')
         setOpenProjectsCount(openProjects.length)
 
         // Fetch User's public profile to get accurate skills and projects
         const fullProfile = await api.getUserPublicProfile(user.id, token)
-        
+
         const userSkills = (fullProfile.skills || []).map(s => typeof s === 'string' ? s.toLowerCase() : s.name.toLowerCase())
-        
+
         // Score projects based on skill match
         const scoredProjects = openProjects.map(p => {
           const projectSkills = p.required_skills ? p.required_skills.map(s => s.name.toLowerCase()) : []
@@ -147,23 +155,24 @@ export default function Dashboard() {
           creator: p.owner?.full_name || 'Anonymous',
           initials: getInitials(p.owner?.full_name),
           status: p.status === 'OPEN' ? 'Open' : p.status === 'IN_PROGRESS' ? 'In progress' : 'Completed',
+          looking_for: p.looking_for,
           team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
           time: timeAgo(p.created_at),
           skills: (p.required_skills || []).slice(0, 3).map(s => s.name),
           accent: ['maroon', 'blue', 'sand'][i % 3],
           matchCount: p.matchCount
         }))
-        
+
         setProjects(mappedProjects)
 
         // Calculate Profile Signal and Network Stats safely in parallel
         let buildsCount = 0
         let networkCount = 0
-        let signal = 0 
+        let signal = 0
 
         try {
           const connections = await api.listConnections()
-          
+
           const uniqueProjectIds = new Set();
           if (fullProfile.project_roles) {
             fullProfile.project_roles.forEach(pr => uniqueProjectIds.add(pr.project_id));
@@ -173,7 +182,7 @@ export default function Dashboard() {
           }
           buildsCount = uniqueProjectIds.size;
           networkCount = Array.isArray(connections) ? connections.length : 0
-          
+
           // Profile completeness (out of 100)
           if (fullProfile.full_name) signal += 10
           if (fullProfile.headline) signal += 10
@@ -182,11 +191,11 @@ export default function Dashboard() {
           if (fullProfile.skills && fullProfile.skills.length > 0) signal += 20
           if (fullProfile.educations && fullProfile.educations.length > 0) signal += 15
           if (fullProfile.experiences && fullProfile.experiences.length > 0) signal += 15
-          
+
         } catch (e) {
           console.error("Failed to fetch auxiliary stats", e)
         }
-        
+
         setStats({ builds: buildsCount, network: networkCount, profileSignal: Math.min(signal, 100) })
 
         // Fetch Notifications for activity feed
@@ -199,7 +208,7 @@ export default function Dashboard() {
             time: timeAgo(n.created_at),
             tone: ['maroon', 'blue', 'sand', 'maroon'][i % 4]
           }))
-          
+
           setActivity(mappedActivity.length ? mappedActivity : [
             { id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }
           ])
@@ -271,7 +280,7 @@ export default function Dashboard() {
       {/* 3. Featured Open Projects */}
       <section className="dashboard-section reveal-in delay-2 mt-8">
         <SectionHeading title="Builds worth joining" action={<Link to="/explore" className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">View all projects <ArrowUpRight size={14} /></Link>} />
-        
+
         {loading ? (
           <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
             Reading campus signals...
@@ -295,7 +304,7 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-[1fr_300px] gap-8 mt-12 mb-12 reveal-in delay-3">
         <section className="dashboard-activity">
           <SectionHeading label="Activity feed" title="Recent signals" action={<Link to="/notifications" className="text-[11px] font-bold text-slate-500 hover:text-[#7f1d3b] hover:underline transition-colors">See all</Link>} />
-          
+
           <div className="activity-list space-y-4">
             {loading ? (
               [1, 2, 3].map(i => (

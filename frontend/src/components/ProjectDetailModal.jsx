@@ -24,7 +24,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ title: '', description: '', team_size_needed: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', team_size_needed: '', looking_for: '', expectations: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   // Milestones state
@@ -115,6 +115,8 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       await api.editProject(project.id, {
         title: editForm.title,
         description: editForm.description,
+        looking_for: editForm.looking_for,
+        expectations: editForm.expectations || null,
         team_size_needed: Number(editForm.team_size_needed)
       });
       await fetchProject();
@@ -176,7 +178,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               if (isEditing) {
                 setIsEditing(false);
               } else {
-                setEditForm({ title: project.title, description: project.description || '', team_size_needed: project.team_size_needed || 1 });
+                setEditForm({ title: project.title, description: project.description || '', team_size_needed: project.team_size_needed || 1, looking_for: project.looking_for || '', expectations: project.expectations || '' });
                 setIsEditing(true);
               }
             }}
@@ -266,6 +268,39 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                       <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
                     )}
                     <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
+                    {isEditing ? (
+                      <div className="mt-2 space-y-3">
+                        <input
+                          type="text"
+                          value={editForm.looking_for || ''}
+                          onChange={(e) => setEditForm({...editForm, looking_for: e.target.value})}
+                          className="text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-1 w-full"
+                          placeholder="Looking for (e.g. Frontend Developer)"
+                        />
+                        <textarea
+                          value={editForm.expectations || ''}
+                          onChange={(e) => setEditForm({...editForm, expectations: e.target.value})}
+                          className="text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-1 w-full"
+                          placeholder="Expectations from applicants (e.g. comfortable with React)"
+                          rows={2}
+                        />
+                      </div>
+                    ) : (
+                      project.looking_for && (
+                        <div className="mt-2">
+                          <div className="text-sm">
+                            <span className="font-bold text-slate-900 mr-1.5">Looking for:</span>
+                            <span className="font-bold text-[#7f1d3b]">{project.looking_for}</span>
+                          </div>
+                          {project.expectations && (
+                            <div className="mt-6 mb-2">
+                              <h3 className="text-sm font-semibold text-slate-900 mb-2">Expectations</h3>
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap">{project.expectations}</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    )}
                     {project.time_horizon && (
                       <p className="text-sm text-slate-500 mt-0.5">{project.time_horizon}</p>
                     )}

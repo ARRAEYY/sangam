@@ -53,7 +53,7 @@ export function PageHeader({ eyebrow, title, description, index }) {
   );
 }
 
-export function SearchToolbar({ value, onChange, placeholder, filters = ["All projects", "My skills", "Recently added"] }) {
+export function SearchToolbar({ value, onChange, placeholder, filters = ["All projects", "My skills", "Recently added"], roleFilter, onRoleFilterChange }) {
   const [activeFilter, setActiveFilter] = useState(filters[0]);
   return (
     <div className="search-toolbar reveal-in delay-1">
@@ -65,6 +65,24 @@ export function SearchToolbar({ value, onChange, placeholder, filters = ["All pr
           placeholder={placeholder} 
           className="flex-1 bg-transparent outline-none text-[14px] text-slate-800 placeholder:text-slate-400"
         />
+        {onRoleFilterChange && (
+          <select 
+            value={roleFilter} 
+            onChange={(e) => onRoleFilterChange(e.target.value)}
+            className="hidden md:block bg-slate-50 border-none outline-none text-[12px] text-slate-600 rounded px-2 py-1 cursor-pointer"
+          >
+            <option value="">Any Role</option>
+            <option value="Frontend Developer">Frontend</option>
+            <option value="Backend Developer">Backend</option>
+            <option value="Full Stack Developer">Full Stack</option>
+            <option value="UI/UX Designer">UI/UX</option>
+            <option value="Product Designer">Product</option>
+            <option value="Marketing">Marketing</option>
+            <option value="AI/ML Engineer">AI/ML</option>
+            <option value="Researcher">Researcher</option>
+            <option value="Content Writer">Content</option>
+          </select>
+        )}
         <kbd className="hidden md:flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-[10px] text-slate-400 font-mono border border-slate-200">/</kbd>
       </label>
       
@@ -118,6 +136,7 @@ export function useFilteredItems(items, query) {
         item.name, 
         item.summary, 
         item.creator,
+        item.looking_for,
         item.bio,
         item.degree,
         item.year,
@@ -135,6 +154,7 @@ export function useFilteredItems(items, query) {
 export default function Explore() {
   const { token } = useAuth()
   const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
   const [projectsData, setProjectsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -150,6 +170,7 @@ export default function Explore() {
           creator: p.owner?.full_name || 'Anonymous',
           initials: getInitials(p.owner?.full_name),
           status: p.status === 'OPEN' ? 'Open' : p.status === 'IN_PROGRESS' ? 'In progress' : 'Completed',
+          looking_for: p.looking_for,
           team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
           time: timeAgo(p.created_at),
           skills: (p.required_skills || []).map(s => s.name),
@@ -166,7 +187,11 @@ export default function Explore() {
     return () => { isMounted = false; };
   }, [token]);
 
-  const filtered = useFilteredItems(projectsData, query);
+  const baseFiltered = useFilteredItems(projectsData, query);
+  const filtered = useMemo(() => {
+    if (!roleFilter) return baseFiltered;
+    return baseFiltered.filter(p => p.looking_for === roleFilter);
+  }, [baseFiltered, roleFilter]);
 
   return (
     <div className="page-stack discovery-page w-full max-w-[1200px] mx-auto pb-20">
@@ -192,6 +217,8 @@ export default function Explore() {
       <SearchToolbar 
         value={query} 
         onChange={setQuery} 
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
         placeholder="Search projects, skills, or people..." 
       />
 

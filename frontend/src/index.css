@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100; src: url('/font/inter/Inter-Thin-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 100; src: url('/font/inter/Inter-ThinItalic-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 200; src: url('/font/inter/Inter-ExtraLight-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 200; src: url('/font/inter/Inter-ExtraLightItalic-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; src: url('/font/inter/Inter-Light-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 300; src: url('/font/inter/Inter-LightItalic-BETA.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('/font/inter/Inter-Regular.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 400; src: url('/font/inter/Inter-Italic.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('/font/inter/Inter-Medium.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 500; src: url('/font/inter/Inter-MediumItalic.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('/font/inter/Inter-SemiBold.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 600; src: url('/font/inter/Inter-SemiBoldItalic.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; src: url('/font/inter/Inter-Bold.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 700; src: url('/font/inter/Inter-BoldItalic.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; src: url('/font/inter/Inter-ExtraBold.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 800; src: url('/font/inter/Inter-ExtraBoldItalic.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 900; src: url('/font/inter/Inter-Black.otf') format('opentype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 900; src: url('/font/inter/Inter-BlackItalic.otf') format('opentype'); }
+
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 100; src: url('/font/sora-3/Sora-Thin.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 200; src: url('/font/sora-3/Sora-ExtraLight.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 300; src: url('/font/sora-3/Sora-Light.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 400; src: url('/font/sora-3/Sora-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 600; src: url('/font/sora-3/Sora-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 700; src: url('/font/sora-3/Sora-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 800; src: url('/font/sora-3/Sora-ExtraBold.ttf') format('truetype'); }
+
 :root {
   --radius: 1.1rem;
   --background: oklch(0.975 0.008 88);
@@ -32,7 +59,7 @@
 }
 
 html {
-  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-sans-serif;
   overflow-x: hidden;
   overflow-y: scroll;
 }
@@ -50,7 +77,7 @@ h1,
 h2,
 h3,
 .font-display {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Sora', sans-sans-serif;
 }
 
 /* Base focus style for accessibility */
@@ -285,11 +312,11 @@ h3,
 .hero-copy h1 {
   margin: 14px 0 18px;
   color: var(--ink);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-sans-serif;
   font-size: clamp(54px, 7.2vw, 98px);
-  font-weight: 400;
-  letter-spacing: -0.07em;
-  line-height: 0.84;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.88;
 }
 
 .hero-copy p {
@@ -369,10 +396,10 @@ h3,
 
 .stat-block strong {
   color: var(--ink);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-sans-serif;
   font-size: 44px;
-  font-weight: 400;
-  letter-spacing: -0.05em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -568,11 +595,11 @@ h3,
   z-index: 1;
   max-width: 250px;
   margin: 25px 0 10px;
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-sans-serif;
   font-size: 32px;
-  font-weight: 400;
-  letter-spacing: -0.05em;
-  line-height: 0.96;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .dashboard-side-panel>p {
@@ -713,11 +740,11 @@ button:focus-visible {
 .section-heading h2 {
   margin: 5px 0 0;
   color: var(--ink);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-sans-serif;
   font-size: 31px;
-  font-weight: 400;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 /* --- Project Cards --- */
@@ -806,6 +833,7 @@ button:focus-visible {
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .project-card-footer {
@@ -1094,7 +1122,7 @@ button:focus-visible {
 .page-header-copy h1 {
   margin: 8px 0 13px;
   color: var(--ink, #182232);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: clamp(45px, 6vw, 79px);
   font-weight: 400;
   letter-spacing: -0.055em;
@@ -1105,7 +1133,7 @@ button:focus-visible {
   content: "/";
   margin-left: 7px;
   color: var(--maroon, #7f1d3b);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-sans-serif;
   font-size: 0.42em;
   vertical-align: 0.26em;
 }
@@ -1143,7 +1171,7 @@ button:focus-visible {
   z-index: 2;
   margin: 9px 0 0;
   color: var(--ink, #182232);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: 39px;
   font-weight: 400;
   letter-spacing: -0.055em;
@@ -1180,7 +1208,7 @@ button:focus-visible {
 
 .discovery-stat strong {
   color: var(--maroon, #7f1d3b);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: 48px;
   font-weight: 400;
   letter-spacing: -0.05em;
@@ -1259,7 +1287,7 @@ button:focus-visible {
 }
 
 .create-card strong {
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: 29px;
   font-weight: 400;
   letter-spacing: -0.045em;
@@ -1446,11 +1474,12 @@ button:focus-visible {
   margin: 25px 0 16px;
   overflow: hidden;
   color: var(--ink-soft, #424d5b);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: 16px;
   line-height: 1.25;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .talent-card>.tag-row {
@@ -1591,7 +1620,7 @@ button:focus-visible {
 
 .create-intro h1 {
   margin: 12px 0 14px;
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: clamp(52px, 8vw, 90px);
   color: var(--ink, #182232);
   font-weight: 400;
@@ -1861,7 +1890,7 @@ button:focus-visible {
   max-width: 280px;
   margin: 28px 0 10px;
   color: var(--ink, #182232);
-  font-family: "DM Serif Display", serif;
+  font-family: "Sora", sans-serif;
   font-size: 30px;
   font-weight: 400;
   letter-spacing: -0.05em;
@@ -1878,6 +1907,7 @@ button:focus-visible {
   line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .preview-footer {

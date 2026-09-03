@@ -26,8 +26,8 @@ export default {
         }
       },
       fontFamily: {
-        display: ['"DM Serif Display"', 'serif'],
-        sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Sora"', 'sans-serif'],
+        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: 'var(--shadow-soft, 0 18px 42px rgba(59, 43, 38, 0.07))',

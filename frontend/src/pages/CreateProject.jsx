@@ -22,6 +22,8 @@ export default function CreateProject() {
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [detailedDescription, setDetailedDescription] = useState("");
+  const [lookingFor, setLookingFor] = useState("");
+  const [expectations, setExpectations] = useState("");
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [techStack, setTechStack] = useState([]);
 
@@ -59,8 +61,8 @@ export default function CreateProject() {
 
   async function submit(event) {
     event.preventDefault();
-    if (!title.trim() || !shortDescription.trim() || !detailedDescription.trim()) {
-      alert("Please fill out the title, short description, and detailed description.");
+    if (!title.trim() || !shortDescription.trim() || !detailedDescription.trim() || !lookingFor.trim()) {
+      alert("Please fill out the title, descriptions, and what role you are looking for.");
       return;
     }
 
@@ -70,6 +72,8 @@ export default function CreateProject() {
         title: title.trim(),
         short_description: shortDescription.trim(),
         description: detailedDescription.trim(),
+        looking_for: lookingFor.trim(),
+        expectations: expectations.trim() || null,
         skills: selectedSkills,
         tech_stack: techStack,
         team_size_needed: 3,
@@ -175,7 +179,38 @@ export default function CreateProject() {
               <span>Help people find the fit</span>
             </div>
 
-            <div className="field-label">
+            <label className="field-label">
+              Looking for
+              <input
+                list="roleOptions"
+                value={lookingFor}
+                onChange={(e) => setLookingFor(e.target.value)}
+                placeholder="e.g. Frontend Developer, UI/UX Designer"
+              />
+              <datalist id="roleOptions">
+                <option value="Frontend Developer" />
+                <option value="Backend Developer" />
+                <option value="Full Stack Developer" />
+                <option value="UI/UX Designer" />
+                <option value="Product Designer" />
+                <option value="Marketing" />
+                <option value="AI/ML Engineer" />
+                <option value="Researcher" />
+                <option value="Content Writer" />
+              </datalist>
+            </label>
+
+            <label className="field-label mt-4">
+              Expectations from applicants
+              <textarea
+                value={expectations}
+                onChange={(e) => setExpectations(e.target.value)}
+                placeholder="What are you expecting from the person joining?"
+                rows={3}
+              />
+            </label>
+
+            <div className="field-label mt-4">
               What skills would make this stronger?
               <div className="skill-selector mt-3">
                 {DEFAULT_SKILL_OPTIONS.map((skill) => (
