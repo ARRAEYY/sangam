@@ -1,5 +1,9 @@
 <div align="center">
-  <img src="frontend/public/logo-full.png" alt="Sangam Logo" width="300" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/logo-full-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="frontend/public/logo-full.png">
+    <img alt="Sangam Logo" src="frontend/public/logo-full.png" width="300">
+  </picture>
 </div>
 
 # Sangam
