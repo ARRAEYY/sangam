@@ -119,32 +119,32 @@ Major Entities:
 ## API Overview
 
 ### Authentication
-| Method | Endpoint | Purpose | Auth |
-|--------|----------|---------|------|
-| POST | `/api/auth/register` | Register a new user | No |
-| POST | `/api/auth/login` | Authenticate and receive JWT | No |
-| POST | `/api/auth/google` | Google SSO login | No |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Authenticate and receive JWT |
+| POST | `/api/auth/google` | Google SSO login |
 
 ### Projects
-| Method | Endpoint | Purpose | Auth |
-|--------|----------|---------|------|
-| GET | `/api/projects` | List active projects | Yes |
-| POST | `/api/projects` | Create a new project | Yes |
-| GET | `/api/projects/:id` | Get project details | Yes |
-| POST | `/api/projects/:id/members` | Add a team member | Yes |
+| Method | Endpoint | Purpose | 
+|--------|----------|---------|
+| GET | `/api/projects` | List active projects | 
+| POST | `/api/projects` | Create a new project |
+| GET | `/api/projects/:id` | Get project details |
+| POST | `/api/projects/:id/members` | Add a team member |
 
 ### Users & Profiles
-| Method | Endpoint | Purpose | Auth |
-|--------|----------|---------|------|
-| GET | `/api/users/profile` | Get current user profile | Yes |
-| PATCH | `/api/users/profile` | Update profile details | Yes |
-| GET | `/api/users/:id` | Get public profile | Yes |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/users/profile` | Get current user profile |
+| PATCH | `/api/users/profile` | Update profile details | 
+| GET | `/api/users/:id` | Get public profile | 
 
 ### Connections & Applications
-| Method | Endpoint | Purpose | Auth |
-|--------|----------|---------|------|
-| POST | `/api/applications` | Apply to a project | Yes |
-| POST | `/api/connections/request` | Send connection request | Yes |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/applications` | Apply to a project |
+| POST | `/api/connections/request` | Send connection request |
 
 ## Authentication
 
@@ -276,7 +276,7 @@ Automated testing infrastructure is configured using `Vitest` and `React Testing
 
 ## License
 
-No license has been specified yet.
+MIT License
 
 ## Acknowledgements
 
