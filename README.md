@@ -1,212 +1,285 @@
-# Sangam — Campus Project & Collaboration Platform
+# Sangam
 
-Sangam is a private student collaboration and project execution platform built exclusively for **Rishihood University**. It bridges the gap between campus builders across Computer Science, AI, Design, and Business — allowing students to discover peers, assemble project squads with structured roles, manage milestone progress, and build a verified portfolio of shipped work.
+> Your campus, in motion. A platform for students to discover, connect, collaborate, and build projects together.
 
----
+Sangam solves the fragmented experience of student collaboration by providing a unified platform to find co-founders, discover projects, manage teams, and track milestones. Whether you want to build something new or find your people, Sangam connects the campus ecosystem.
 
-## 📌 Problem
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![React](https://img.shields.io/badge/frontend-React%20%7C%20Vite-61dafb)
+![Node](https://img.shields.io/badge/backend-Node.js%20%7C%20Express-339933)
+![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL-336791)
+![Deployment](https://img.shields.io/badge/deployment-Vercel%20%7C%20Render-black)
 
-In college campuses, students frequently face friction when building projects, preparing for hackathons, or launching startups:
-- **Fragmented Discovery**: Finding someone with complementary skills (e.g. an AI engineer needing a Figma designer) requires word-of-mouth or crowded WhatsApp groups.
-- **Lack of Structure**: Projects often fail due to unclear ownership, lack of defined roles, and zero stage visibility.
-- **Unverified Experience**: Resumes rely on unverified claims rather than verifiable campus project track records.
+## Overview
 
----
+Finding the right teammates for a hackathon, startup, or academic project on campus is traditionally difficult. Students rely on scattered WhatsApp groups, Discord servers, and word-of-mouth. Sangam bridges this gap by offering a centralized hub where students can showcase their skills, pitch projects, and organically form teams based on matching tech stacks and roles.
 
-## 🎯 What is Sangam?
+## The Problem
 
-Sangam is a lightweight project management and peer collaboration layer:
-1. **Verified Student Network**: Restricted exclusively to `@rishihood.edu.in` accounts.
-2. **Project Teams & Rosters**: Move beyond simple bulletin boards to structured teams with explicit roles (`Frontend`, `Backend`, `AI`, `Design`, `Product`, etc.).
-3. **Stage & Milestone Tracking**: Measure project progress with deliverables and real-time completion bars.
-4. **Verified Builder Portfolios**: Every completed role and project automatically builds your public campus profile.
+- **Fragmented Workflows:** Students struggle to find peers with complementary skills across different departments.
+- **Lost Opportunities:** Many great ideas die because students cannot find a technical co-founder or a designer.
+- **Inadequate Portfolios:** Resumes don't always capture a student's actual build history or project milestones.
 
----
+## The Solution
 
-## ⚡ Current Features (Fully Implemented & Working)
+Sangam acts as a professional network tailored specifically for the university ecosystem:
+**User** → **Sangam** → **Discover Projects/Talent** → **Apply/Connect** → **Collaborate & Build**
 
-### 1. Authentication & Security
-- **Campus Email Gating**: Locked to `@rishihood.edu.in` and subdomains (`@*.rishihood.edu.in`).
-- **Google OAuth / GIS**: "Continue with Google" token verification with domain validation.
-- **Password Strength & Reset**: 12+ character enforcement with SHA-256 expiring reset links.
-- **Access Gating**: All core pages (`/explore`, `/talent`, `/projects/:id`, `/dashboard`, `/create`, `/notifications`) protected with server and client auth guards.
-- **Safe Open-Redirect Defense**: Validates and sanitizes post-login redirect paths against an allowlisted set of routes.
+## Key Features
 
-### 2. Student Profiles & Portfolio
-- **Canonical Course Selection**: Controlled dropdown for verified university courses (`B-Tech CS & AI`, `B-Tech CS & DS`, `B.Design`, `Bsc Phy`, `BBA`).
-- **Dynamic Profile Completion**: Weighted 0–100% completion bar with smart next-step recommendation prompts.
-- **Extended Portfolio**: Work experience, education history, hackathon & certification achievements, avatar photos, and social/code links (GitHub, LinkedIn, Portfolio, LeetCode, Codeforces).
-- **Verified Project History (LinkedIn-Style)**: Displays active and past project roles with badges and lead crowns.
+- **Authentication:** Local email/password and Google OAuth integration.
+- **User Profiles:** Build a comprehensive portfolio with experiences, education, and achievements.
+- **Talent Discovery:** Search and filter the student directory by skills, branch, or keywords.
+- **Project Creation:** Pitch ideas, define required tech stacks, set milestones, and specify open roles.
+- **Project Discovery:** Browse active projects on campus and filter by matching skills.
+- **Team Formation:** Add members, assign roles, and manage applications to join your project.
+- **Milestones:** Track project progress with granular milestone states.
+- **Connections:** Send and accept connection requests to build your network.
+- **Responsive Experience:** Beautifully designed interfaces for desktop and mobile workflows.
 
-### 3. Projects & Team Collaboration
-- **Project Workspaces**: Post projects with required skill tags, description, and team size needed.
-- **Auto-Lead Assignment**: Project creator is automatically registered as Project Lead.
-- **Direct Member Addition**: Project leads can search existing Sangam students by name or email and add them directly with specific roles and categories.
-- **Pitch Applications**: Students can pitch to open projects; leads can accept with role assignment or reject.
-- **Team Roster Management**: Leads can edit roles and remove members; non-lead members can self-leave.
-- **Duplicate Protection**: Guards prevent duplicate active memberships and handle reactivations cleanly.
+## How Sangam Works
 
-### 4. Milestones & Progress Tracking
-- **Milestone Management**: Project leads can create, edit, reorder, and delete deliverable milestones with optional due dates.
-- **Status Lifecycle**: `NOT_STARTED` → `IN_PROGRESS` → `COMPLETED` / `BLOCKED`.
-- **Dynamic Progress Bar**: Live calculation of completion percentage and deliverables count.
-- **Milestone Notifications**: Broadcasting milestone completions to all active project teammates.
+### Discover Talent
+`Login` → `Talent` → `Search/Filter` → `Open Profile` → `Connect`
 
-### 5. Talent Directory & Networking
-- **Student Directory**: Search and filter peers by specific tech stack (React, Python, Figma, etc.).
-- **Campus Connections**: Send personalized connection requests, accept/decline, and manage mutual connections.
-- **Public Profile Modal**: View peer portfolios, project experience, skills, and achievements.
+### Create a Project
+`Login` → `Create Project` → `Add Details & Skills` → `Add Members & Roles` → `Define Milestones` → `Publish`
 
-### 6. Notification Center
-- Real-time in-app notifications for applications, decisions, connection requests, role assignments, member removals, and milestone completions.
+### Join a Project
+`Explore` → `Open Project` → `View Details` → `Apply` → `Track Application Status`
 
----
+## Architecture
 
-## 🗺️ Core User Flow
-
-```
-1. Landing Page
-   │  (Explains value proposition, showcases live public project teasers)
-   ▼
-2. Sign Up / Sign In
-   │  (Campus email verification or Google OAuth + Canonical Course selection)
-   ▼
-3. Complete Profile
-   │  (Follow dynamic completion bar: bio, skills, socials, education, achievements)
-   ▼
-4. Discover & Connect
-   │  (Explore open projects by skill or search student talent directory)
-   ▼
-5. Form Teams & Assign Roles
-   │  (Post a project, accept applicant pitches, or directly invite peers with roles)
-   ▼
-6. Track Milestones & Ship
-   │  (Check off project deliverables, progress bar updates in real-time)
-   ▼
-7. Build Verified Portfolio
-   │  (Shipped projects automatically populate your public profile)
+```mermaid
+flowchart TD
+    Client[User Browser] -->|REST API| Frontend[React SPA]
+    Frontend -->|JWT Auth| Backend[Node.js + Express]
+    Backend -->|Sequelize ORM| DB[(PostgreSQL / SQLite)]
 ```
 
----
+## Tech Stack
 
-## 👥 Benefits
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | React, Vite | Core UI framework and build tool |
+| **Backend** | Node.js, Express | API server |
+| **Database** | PostgreSQL, SQLite | Primary data storage (PG for prod, SQLite for dev) |
+| **ORM** | Sequelize | Database modeling and migrations |
+| **Authentication**| JWT, Google OAuth | Session management and SSO |
+| **Styling** | TailwindCSS | Utility-first CSS styling |
+| **Deployment** | Vercel, Render | Frontend and Backend hosting |
 
-- **For Students**: Find cross-disciplinary peers, gain team project experience, and build a verified builder profile.
-- **For Project Leads**: Assemble squads quickly with direct invites or pitch applications, define clear roles, and track deliverable milestones.
-- **For Team Members**: Transparent project roadmap, defined responsibilities, and documented project experience.
-- **For the Campus Community**: Bridges silos between engineering, design, and business departments, fostering an active shipping culture.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework**: React 18 with Vite 5
-- **Styling**: Tailwind CSS with customized typography & design system
-- **Routing**: React Router v6 (with ProtectedRoute wrappers)
-- **Icons**: Lucide React
-- **Auth**: Google Identity Services (GIS) Web SDK + JWT Cookies
-
-### Backend
-- **Runtime**: Node.js (v20+)
-- **Server**: Express.js
-- **ORM**: Sequelize v6
-- **Databases**:
-  - **Development**: SQLite (`campus.db`, zero-config local setup)
-  - **Production**: PostgreSQL (Neon Serverless Postgres)
-- **Security**: Rate Limiting (`express-rate-limit`), Cookie-Parser, Bcryptjs, SHA-256 Tokens
-
----
-
-## 🏗️ Architecture
+## Project Structure
 
 ```
-Campus-log/
-├── backend/
+sangam/
+├── frontend/             # React Single Page Application
 │   ├── src/
-│   │   ├── config/          # Sequelize DB config (Postgres in prod, SQLite in dev)
-│   │   ├── middleware/      # Auth (JWT cookie/header), RateLimit, ErrorHandler
-│   │   ├── models/          # User, Project, ProjectMember, Milestone, Application,
-│   │   │                    # Skill, Notification, Connection, Experience, Education, Achievement
-│   │   ├── routes/          # auth, users, projects, applications, notifications, connections
-│   │   ├── scripts/         # Safe backfill scripts (backfillProjectMembers.js)
-│   │   ├── services/        # Centralized notification service
-│   │   ├── utils/           # Password policy, courses, profile completion, serializers, mailer
-│   │   └── server.js        # Server bootstrap & safe startup schema migrations
-├── frontend/
+│   │   ├── components/   # Reusable UI components
+│   │   ├── context/      # React contexts (AuthContext)
+│   │   ├── pages/        # Main route components
+│   │   └── api.js        # API client and request handlers
+│   └── package.json
+├── backend/              # Express API Server
 │   ├── src/
-│   │   ├── components/      # Navbar, Sidebar, ProjectCard, ProtectedRoute, GoogleSignIn, etc.
-│   │   ├── context/         # AuthContext
-│   │   ├── pages/           # Landing, Auth, Explore, ProjectDetail, CreateProject,
-│   │   │                    # Dashboard, TalentSearch, Notifications, ResetPassword
-│   │   ├── utils/           # Canonical courses list
-│   │   ├── api.js           # Centralized API request client
-│   │   └── App.jsx          # Route declarations & shell layout
+│   │   ├── config/       # Database & environment configuration
+│   │   ├── middleware/   # Authentication, CSRF, and rate limiting
+│   │   ├── models/       # Sequelize ORM models
+│   │   ├── routes/       # API endpoint definitions
+│   │   ├── services/     # Business logic (e.g., notifications)
+│   │   ├── utils/        # Helpers (mailer, logger, serializers)
+│   │   └── server.js     # Server entry point
+│   └── package.json
+└── render.yaml           # Render deployment configuration
 ```
 
----
+## Data Model
 
-## ⚙️ Environment Setup
+```mermaid
+erDiagram
+    USER ||--o{ PROJECT : "owns"
+    USER ||--o{ PROJECT_MEMBER : "has role"
+    PROJECT ||--o{ PROJECT_MEMBER : "has members"
+    USER ||--o{ SKILL : "has"
+    PROJECT ||--o{ SKILL : "requires"
+    USER ||--o{ APPLICATION : "applies"
+    PROJECT ||--o{ APPLICATION : "receives"
+    USER ||--o{ CONNECTION : "connects"
+    PROJECT ||--o{ MILESTONE : "tracks"
+```
+Major Entities:
+- **User**: Core identity, authentication, and portfolio data.
+- **Skill**: Standardized tags for tech stacks and expertise.
+- **Project**: The core collaboration entity, including status and milestones.
+- **ProjectMember**: Tracks which user has what role in a specific project.
+- **Application**: Join requests for open project roles.
+- **Connection**: Peer-to-peer networking links.
+- **Notification**: Real-time alerts for system events.
 
-### `backend/.env`
+## API Overview
+
+### Authentication
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| POST | `/api/auth/register` | Register a new user | No |
+| POST | `/api/auth/login` | Authenticate and receive JWT | No |
+| POST | `/api/auth/google` | Google SSO login | No |
+
+### Projects
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| GET | `/api/projects` | List active projects | Yes |
+| POST | `/api/projects` | Create a new project | Yes |
+| GET | `/api/projects/:id` | Get project details | Yes |
+| POST | `/api/projects/:id/members` | Add a team member | Yes |
+
+### Users & Profiles
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| GET | `/api/users/profile` | Get current user profile | Yes |
+| PATCH | `/api/users/profile` | Update profile details | Yes |
+| GET | `/api/users/:id` | Get public profile | Yes |
+
+### Connections & Applications
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| POST | `/api/applications` | Apply to a project | Yes |
+| POST | `/api/connections/request` | Send connection request | Yes |
+
+## Authentication
+
+Sangam uses stateless JSON Web Tokens (JWT) for authentication. Tokens are securely passed between the client and server. The platform also supports Google OAuth via Google Identity Services, allowing one-click sign-ins without managing passwords. Protected routes are secured by an Express middleware that validates the token signature and expiration.
+
+## Environment Variables
+
+### Backend (`backend/.env`)
 ```env
 PORT=8000
 NODE_ENV=development
-JWT_SECRET=your_long_random_jwt_secret_key
+JWT_SECRET=your_secure_random_string
 JWT_EXPIRE_MINUTES=10080
+DATABASE_STORAGE=campus.db # Used for local SQLite
+# DATABASE_URL=postgresql://user:pass@host:5432/db # For production Postgres
 CORS_ORIGINS=http://localhost:5173
-
-# Production Database (Leave unset for local SQLite)
-# DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
-# DATABASE_SSL=true
-
-# Google OAuth (Optional for local dev)
-# GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
-
-# SMTP Email Configuration (Optional for password resets)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=584
-# SMTP_USER=your_email@domain.com
-# SMTP_PASS=your_app_password
-# SMTP_FROM="Sangam <noreply@sangam.edu>"
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
-### `frontend/.env`
+### Frontend (`frontend/.env`)
 ```env
 VITE_API_URL=http://localhost:8000
-# VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
----
+## Getting Started
 
-## 🚀 Running Locally
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
 
-1. **Clone & Install Backend**:
-   ```bash
-   cd backend
-   npm install
-   npm run dev        # Runs Express on http://localhost:8000
-   ```
+### Local Development
 
-2. **Install & Run Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev        # Runs Vite on http://localhost:5173
-   ```
+**1. Clone the repository**
+```bash
+git clone https://github.com/yourusername/sangam.git
+cd sangam
+```
 
----
+**2. Setup Backend**
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm run dev
+```
+*Note: The backend runs on `http://localhost:8000` and uses SQLite by default for zero-config local development.*
 
-## 🚢 Production Deployment
+**3. Setup Frontend**
+Open a new terminal window:
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+*Note: The frontend runs on `http://localhost:5173`.*
 
-- **Frontend**: Hosted on [Vercel](https://vercel.com) (SPA routing with `vercel.json` rewrite rules).
-- **Backend**: Hosted on [Render](https://render.com) as a persistent Web Service.
-- **Database**: Managed PostgreSQL on [Neon](https://neon.tech).
+## Production Build
 
----
+To build the frontend for production:
+```bash
+cd frontend
+npm run build
+```
+This generates optimized static files in the `dist` directory.
 
-## 📋 Current Intentional Limitations
+## Deployment
 
-- **Email Domain**: Registration is strictly limited to `@rishihood.edu.in` and university subdomains.
-- **Leadership Transfer**: Project ownership transfer is currently handled directly by project leads; multiple leads per project is intentionally disallowed.
-- **Team Scope**: Teams are scoped to student builders on campus; public internet visitors can only view sanitized teasers without sensitive student data.
+### Frontend (Vercel)
+The frontend is optimized for deployment on Vercel. A `vercel.json` is included for proper client-side routing.
+Set the `VITE_API_URL` environment variable in the Vercel dashboard to point to your live backend URL.
+
+### Backend (Render)
+The backend is configured for deployment on Render via the included `render.yaml`.
+It automatically runs database migrations (`npm run migrate`) during the build phase. You must provision a PostgreSQL database on Render and set the `DATABASE_URL` environment variable.
+
+## Security
+
+- **Password Hashing:** Implemented using `bcryptjs`.
+- **JWT:** Stateless authentication for secure sessions.
+- **CSRF Protection:** Custom Double Submit Cookie pattern implemented for state-changing API routes.
+- **Rate Limiting:** Global rate limiting applied to prevent brute-force attacks.
+- **Helmet:** Secure HTTP headers and Cross-Origin policies enforced.
+- **CORS:** Strictly configured to allow only authorized frontend origins.
+
+## Testing
+
+Automated testing infrastructure is configured using `Vitest` and `React Testing Library` on the frontend, and `Jest` + `Supertest` on the backend. 
+*Note: Automated E2E coverage is currently limited; core flows should be manually verified before production deployment.*
+
+## Project Status
+
+- ✅ User Authentication & Profiles
+- ✅ Project Creation & Team Management
+- ✅ Talent Discovery & Search
+- ✅ Connections & Applications
+- 🚧 Real-time WebSocket Chat (Planned)
+- 📌 Email Notifications Integration
+
+## Roadmap
+
+**Completed:**
+- Core API architecture and database schemas
+- Frontend dashboard, profile, and project workflows
+- Google OAuth integration
+
+**Next:**
+- Expanded analytics dashboard for project leads
+- In-app direct messaging
+
+**Future:**
+- University-specific SSO integration (SAML/Shibboleth)
+- Mobile application (React Native)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Troubleshooting
+
+- **CORS Errors:** Ensure your frontend URL is exactly matched in the backend's `CORS_ORIGINS` environment variable.
+- **Database Connection:** If deploying to production, ensure `DATABASE_URL` uses the correct PostgreSQL connection string and SSL is appropriately configured for your provider.
+- **Google OAuth Fails:** Ensure your Google Cloud Console has authorized `http://localhost:5173` as a JavaScript Origin.
+
+## License
+
+No license has been specified yet.
+
+## Acknowledgements
+
+- UI Icons provided by [Lucide](https://lucide.dev/)
+- Built with [React](https://reactjs.org/) and [TailwindCSS](https://tailwindcss.com/)
+- API powered by [Express](https://expressjs.com/) and [Sequelize](https://sequelize.org/)

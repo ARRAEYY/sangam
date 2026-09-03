@@ -28,3 +28,9 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Temporary / Backup / Generated
+*.py
+*master.jsx
+audit_results.json
+package-lock 2.json
