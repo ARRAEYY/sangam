@@ -150,6 +150,8 @@ router.post('/', requireAuth, async (req, res, next) => {
     const title = String(payload.title || '').trim()
     const description = String(payload.description || '').trim()
     const short_description = payload.short_description ? String(payload.short_description).trim() : null
+    const looking_for = payload.looking_for ? String(payload.looking_for).trim() : null
+    const expectations = payload.expectations ? String(payload.expectations).trim() : null
     const time_horizon = payload.time_horizon ? String(payload.time_horizon).trim() : null
     const tech_stack = Array.isArray(payload.tech_stack) ? payload.tech_stack : []
     const open_roles = Array.isArray(payload.open_roles) ? payload.open_roles : []
@@ -172,6 +174,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     if (description.length > 20000) {
       return res.status(400).json({ detail: 'Description is too long.' })
     }
+    if (!looking_for) {
+      return res.status(400).json({ detail: 'Looking for role is required.' })
+    }
     if (!Number.isInteger(teamSizeNeeded) || teamSizeNeeded < 1 || teamSizeNeeded > 100) {
       return res.status(400).json({ detail: 'Team size needed must be a positive integer (max 100).' })
     }
@@ -185,6 +190,8 @@ router.post('/', requireAuth, async (req, res, next) => {
           title,
           description,
           short_description,
+          looking_for,
+          expectations,
           time_horizon,
           tech_stack,
           open_roles,
@@ -298,6 +305,14 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       if (!description) return res.status(400).json({ detail: 'Description is required.' })
       project.description = description
     }
+    if (payload.looking_for !== undefined) {
+      const looking_for = String(payload.looking_for || '').trim()
+      if (!looking_for) return res.status(400).json({ detail: 'Looking for role is required.' })
+      project.looking_for = looking_for
+    }
+    if (payload.expectations !== undefined) {
+      project.expectations = payload.expectations ? String(payload.expectations).trim() : null
+    }
     if (payload.team_size_needed !== undefined) {
       const teamSizeNeeded = Number(payload.team_size_needed)
       if (!Number.isInteger(teamSizeNeeded) || teamSizeNeeded < 1) {
@@ -306,6 +321,10 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       project.team_size_needed = teamSizeNeeded
     }
 
+    if (payload.short_description !== undefined) project.short_description = payload.short_description ? String(payload.short_description).trim() : null
+    if (payload.tech_stack !== undefined) project.tech_stack = Array.isArray(payload.tech_stack) ? payload.tech_stack : []
+    if (payload.open_roles !== undefined) project.open_roles = Array.isArray(payload.open_roles) ? payload.open_roles : []
+
     await sequelize.transaction(async (t) => {
       await project.save({ transaction: t })
 
@@ -313,6 +332,90 @@ router.put('/:id', requireAuth, async (req, res, next) => {
         const skills = Array.isArray(payload.skills) ? payload.skills : []
         await assignSkills(project, skills, { transaction: t })
       }
+
+      // Sync members
+      if (payload.members !== undefined) {
+        const members = Array.isArray(payload.members) ? payload.members : []
+        const incomingUserIds = new Set(members.map(m => m.user_id).filter(id => id && id !== req.user.id))
+        
+        await ProjectMember.destroy({
+          where: {
+            project_id: project.id,
+            user_id: { [Op.notIn]: [req.user.id, ...Array.from(incomingUserIds)] }
+          },
+          transaction: t
+        })
+
+        for (const m of members) {
+          if (!m.user_id || !m.role || m.user_id === req.user.id) continue
+          
+          const existing = await ProjectMember.findOne({
+            where: { project_id: project.id, user_id: m.user_id },
+            transaction: t
+          })
+
+          if (existing) {
+            existing.role = m.role
+            existing.role_category = m.role_category || 'OTHER'
+            await existing.save({ transaction: t })
+          } else {
+            await ProjectMember.create({
+              project_id: project.id,
+              user_id: m.user_id,
+              role: m.role,
+              role_category: m.role_category || 'OTHER',
+              is_lead: false,
+              status: 'ACTIVE'
+            }, { transaction: t })
+
+            await Notification.create({
+              recipient_id: m.user_id,
+              actor_id: req.user.id,
+              type: 'MEMBER_ROLE_ASSIGNED',
+              message: `You were added to "${project.title}" as ${m.role}!`,
+              project_id: project.id
+            }, { transaction: t })
+          }
+        }
+      }
+
+      // Sync milestones
+      if (payload.milestones !== undefined) {
+        const milestones = Array.isArray(payload.milestones) ? payload.milestones : []
+        const incomingMilestoneIds = new Set(milestones.filter(m => m.id).map(m => m.id))
+
+        await Milestone.destroy({
+          where: {
+            project_id: project.id,
+            ...(incomingMilestoneIds.size > 0 ? { id: { [Op.notIn]: Array.from(incomingMilestoneIds) } } : {})
+          },
+          transaction: t
+        })
+
+        for (const m of milestones) {
+          if (!m.title) continue
+          if (m.id) {
+            const existing = await Milestone.findOne({ where: { id: m.id, project_id: project.id }, transaction: t })
+            if (existing) {
+              existing.title = m.title
+              existing.description = m.description || ''
+              existing.status = m.status || 'NOT_STARTED'
+              existing.due_date = m.due_date || null
+              await existing.save({ transaction: t })
+            }
+          } else {
+            await Milestone.create({
+              project_id: project.id,
+              title: m.title,
+              description: m.description || '',
+              status: m.status || 'NOT_STARTED',
+              due_date: m.due_date || null,
+              created_by: req.user.id
+            }, { transaction: t })
+          }
+        }
+      }
+
     })
 
     const updated = await Project.findByPk(project.id, {

@@ -21,6 +21,14 @@ const Project = sequelize.define(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
+    looking_for: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    expectations: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     tech_stack: {
       type: DataTypes.JSON,
       allowNull: true,

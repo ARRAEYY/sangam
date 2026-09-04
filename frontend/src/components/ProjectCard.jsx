@@ -45,15 +45,18 @@ function OwnerAvatar({ owner }) {
   )
 }
 
-export default function ProjectCard({ project }) {
+export default function ProjectCard({ project, onClick }) {
   const memberCount = project.member_count || 0
   const statusLabel = (project.status || 'OPEN').replace('_', ' ')
   const description = stripMarkdown(project.description)
 
+  const Wrapper = onClick ? 'button' : Link
+  const wrapperProps = onClick ? { onClick: () => onClick(project), type: 'button' } : { to: `/projects/${project.id}` }
+
   return (
-    <Link
-      to={`/projects/${project.id}`}
-      className="card min-w-0 flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card"
+    <Wrapper
+      {...wrapperProps}
+      className="card min-w-0 flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card text-left w-full"
     >
       {/* Header row: title + badge */}
       <div className="flex items-start justify-between gap-2">
@@ -106,7 +109,7 @@ export default function ProjectCard({ project }) {
           <Clock size={12} /> {formatDate(project.created_at)}
         </span>
       </div>
-    </Link>
+    </Wrapper>
   )
 }
 

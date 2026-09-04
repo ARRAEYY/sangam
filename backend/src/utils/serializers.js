@@ -158,6 +158,8 @@ function serializeProject(project) {
     required_skills: serializeSkills(safeProject.required_skills || []),
     short_description: safeProject.short_description || null,
     tech_stack: safeProject.tech_stack || [],
+    looking_for: safeProject.looking_for || null,
+    expectations: safeProject.expectations || null,
     time_horizon: safeProject.time_horizon || null,
     open_roles: safeProject.open_roles || [],
     members: safeProject.members ? safeProject.members.map(m => ({

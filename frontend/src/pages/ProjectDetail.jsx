@@ -49,6 +49,13 @@ const MILESTONE_STATUS_PILLS = {
   BLOCKED: 'bg-red-50 text-red-600',
 }
 
+const MILESTONE_STATUS_LABELS = {
+  NOT_STARTED: 'Not Started',
+  IN_PROGRESS: 'Working',
+  COMPLETED: 'Done',
+  BLOCKED: 'Blocked',
+}
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -63,8 +70,6 @@ export default function ProjectDetail() {
   const [error, setError] = useState('')
   const [showApplyForm, setShowApplyForm] = useState(false)
 
-  const [isEditingProject, setIsEditingProject] = useState(false)
-  const [projectForm, setProjectForm] = useState(null)
 
   // Accept modal state
   const [acceptModal, setAcceptModal] = useState(null) // { appId, applicantName }
@@ -73,7 +78,7 @@ export default function ProjectDetail() {
 
   // Milestone form state
   const [showMilestoneForm, setShowMilestoneForm] = useState(false)
-  const [milestoneForm, setMilestoneForm] = useState({ title: '', description: '', due_date: '' })
+  const [milestoneForm, setMilestoneForm] = useState({ title: '', description: '', due_date: '', status: 'NOT_STARTED' })
   const [editingMilestone, setEditingMilestone] = useState(null)
 
   // Edit role modal state
@@ -93,8 +98,8 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     api.getProject(id).then(setProject).catch((err) => setError(err.message))
-    api.getMembers(id).then(setMembers).catch(() => {})
-    api.getMilestones(id).then(setMilestoneData).catch(() => {})
+    api.getMembers(id).then(setMembers).catch(() => { })
+    api.getMilestones(id).then(setMilestoneData).catch(() => { })
   }, [id])
 
   const isOwner = user && project && project.owner?.id === user.id
@@ -127,8 +132,8 @@ export default function ProjectDetail() {
     }
   }, [isOwner, id])
 
-  const refreshMembers = () => api.getMembers(id).then(setMembers).catch(() => {})
-  const refreshMilestones = () => api.getMilestones(id).then(setMilestoneData).catch(() => {})
+  const refreshMembers = () => api.getMembers(id).then(setMembers).catch(() => { })
+  const refreshMilestones = () => api.getMilestones(id).then(setMilestoneData).catch(() => { })
 
   const handleApply = async (e) => {
     e.preventDefault()
@@ -175,27 +180,7 @@ export default function ProjectDetail() {
     }
   }
 
-  const startEditing = () => {
-    setProjectForm({
-      title: project.title,
-      description: project.description,
-      team_size_needed: project.team_size_needed,
-      skills: project.required_skills.map((s) => s.name),
-    })
-    setIsEditingProject(true)
-  }
 
-  const handleEditProject = async (e) => {
-    e.preventDefault()
-    setError('')
-    try {
-      const updated = await api.editProject(id, projectForm)
-      setProject(updated)
-      setIsEditingProject(false)
-    } catch (err) {
-      setError(err.message)
-    }
-  }
 
   const handleDeleteProject = async () => {
     if (!window.confirm('Are you sure you want to permanently delete this project? This cannot be undone.')) return
@@ -282,10 +267,28 @@ export default function ProjectDetail() {
         title: milestoneForm.title,
         description: milestoneForm.description || undefined,
         due_date: milestoneForm.due_date || undefined,
+        status: milestoneForm.status,
       })
       await refreshMilestones()
       setShowMilestoneForm(false)
-      setMilestoneForm({ title: '', description: '', due_date: '' })
+      setMilestoneForm({ title: '', description: '', due_date: '', status: 'NOT_STARTED' })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+
+  const handleUpdateMilestone = async (e) => {
+    e.preventDefault()
+    try {
+      await api.updateMilestone(id, editingMilestone.id, {
+        title: editingMilestone.title,
+        description: editingMilestone.description || undefined,
+        due_date: editingMilestone.due_date || undefined,
+        status: editingMilestone.status,
+      })
+      await refreshMilestones()
+      setEditingMilestone(null)
     } catch (err) {
       setError(err.message)
     }
@@ -329,9 +332,7 @@ export default function ProjectDetail() {
     <div className="max-w-3xl pb-16 pt-2">
       {/* ─── Project Header Card ─────────────────────────────── */}
       <div className="card p-6 sm:p-8">
-        {!isEditingProject ? (
-          <>
-            <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
               <div>
                 <h1 className="font-display text-2xl font-semibold text-slate-900">{project.title}</h1>
                 <p className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
@@ -350,7 +351,7 @@ export default function ProjectDetail() {
                 </span>
                 {isOwner && (
                   <div className="flex gap-2">
-                    <button onClick={startEditing} className="text-slate-400 hover:text-brand-600 p-1" title="Edit project">
+                    <button onClick={() => navigate(`/projects/${id}/edit`)} className="text-slate-400 hover:text-brand-600 p-1" title="Edit project">
                       <Pencil size={15} />
                     </button>
                     <button onClick={handleDeleteProject} className="text-slate-400 hover:text-red-600 p-1" title="Delete project">
@@ -372,31 +373,7 @@ export default function ProjectDetail() {
                 </span>
               ))}
             </div>
-          </>
-        ) : (
-          <form onSubmit={handleEditProject} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Project Title</label>
-              <input required className="input" value={projectForm.title} onChange={(e) => setProjectForm({...projectForm, title: e.target.value})} />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Description</label>
-              <textarea required rows={5} className="input" value={projectForm.description} onChange={(e) => setProjectForm({...projectForm, description: e.target.value})} />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Team Size Needed</label>
-              <input required type="number" min="1" className="input max-w-[150px]" value={projectForm.team_size_needed} onChange={(e) => setProjectForm({...projectForm, team_size_needed: parseInt(e.target.value) || 1})} />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Required Skills (comma separated)</label>
-              <input className="input" value={projectForm.skills.join(', ')} onChange={(e) => setProjectForm({...projectForm, skills: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} placeholder="e.g. React, Node, Figma" />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button className="btn-primary !px-5"><Check size={15} /> Save Changes</button>
-              <button type="button" onClick={() => setIsEditingProject(false)} className="btn-secondary !px-4"><XIcon size={15} /> Cancel</button>
-            </div>
-          </form>
-        )}
+
 
         {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
         {status && (
@@ -579,6 +556,19 @@ export default function ProjectDetail() {
                   onChange={(e) => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })}
                 />
               </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Status</label>
+                <select
+                  className="input !py-1.5 text-sm outline-none bg-white"
+                  value={milestoneForm.status}
+                  onChange={(e) => setMilestoneForm({ ...milestoneForm, status: e.target.value })}
+                >
+                  <option value="NOT_STARTED">Not Started</option>
+                  <option value="IN_PROGRESS">Working</option>
+                  <option value="COMPLETED">Done</option>
+                  <option value="BLOCKED">Blocked</option>
+                </select>
+              </div>
               <button className="btn-primary !py-1.5 !text-sm">Create Milestone</button>
               <button type="button" onClick={() => setShowMilestoneForm(false)} className="btn-secondary !py-1.5 !text-sm">Cancel</button>
             </div>
@@ -590,63 +580,115 @@ export default function ProjectDetail() {
         ) : (
           <div className="space-y-2">
             {milestones.map((m) => (
-              <div key={m.id} className="card p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <button
-                      onClick={() => isOwner && handleToggleMilestone(m)}
-                      className={`mt-0.5 shrink-0 ${isOwner ? 'cursor-pointer hover:scale-110 transition' : ''}`}
-                      disabled={!isOwner}
-                    >
-                      {MILESTONE_STATUS_ICONS[m.status]}
-                    </button>
-                    <div className="min-w-0">
-                      <p className={`font-medium text-sm ${m.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                        {m.title}
-                      </p>
-                      {m.description && (
-                        <p className="mt-1 text-xs text-slate-500 line-clamp-2">{m.description}</p>
-                      )}
-                      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-400">
-                        {m.due_date && (
-                          <span className="flex items-center gap-0.5">
-                            <Calendar size={10} /> {m.due_date}
-                          </span>
+              editingMilestone?.id === m.id ? (
+                <form key={m.id} onSubmit={handleUpdateMilestone} className="card p-4 space-y-3">
+                  <input
+                    required
+                    className="input"
+                    placeholder="Milestone title"
+                    value={editingMilestone.title}
+                    onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
+                  />
+                  <textarea
+                    className="input"
+                    placeholder="Description (optional)"
+                    rows={2}
+                    value={editingMilestone.description || ''}
+                    onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
+                  />
+                  <div className="flex gap-3 items-end">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Due date (optional)</label>
+                      <input
+                        type="date"
+                        className="input !py-1.5 text-sm"
+                        value={editingMilestone.due_date || ''}
+                        onChange={(e) => setEditingMilestone({ ...editingMilestone, due_date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Status</label>
+                      <select
+                        className="input !py-1.5 text-sm outline-none bg-white"
+                        value={editingMilestone.status}
+                        onChange={(e) => setEditingMilestone({ ...editingMilestone, status: e.target.value })}
+                      >
+                        <option value="NOT_STARTED">Not Started</option>
+                        <option value="IN_PROGRESS">Working</option>
+                        <option value="COMPLETED">Done</option>
+                        <option value="BLOCKED">Blocked</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="btn-primary !py-1.5 !text-sm">Update</button>
+                    <button type="button" onClick={() => setEditingMilestone(null)} className="btn-secondary !py-1.5 !text-sm">Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <div key={m.id} className="card p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <button
+                        onClick={() => isOwner && handleToggleMilestone(m)}
+                        className={`mt-0.5 shrink-0 ${isOwner ? 'cursor-pointer hover:scale-110 transition' : ''}`}
+                        disabled={!isOwner}
+                      >
+                        {MILESTONE_STATUS_ICONS[m.status]}
+                      </button>
+                      <div className="min-w-0">
+                        <p className={`font-medium text-sm ${m.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                          {m.title}
+                        </p>
+                        {m.description && (
+                          <p className="mt-1 text-xs text-slate-500 line-clamp-2">{m.description}</p>
                         )}
-                        {m.completed_at && (
-                          <span className="text-emerald-600">✓ Completed {new Date(m.completed_at).toLocaleDateString()}</span>
-                        )}
+                        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-400">
+                          {m.due_date && (
+                            <span className="flex items-center gap-0.5">
+                              <Calendar size={10} /> {m.due_date}
+                            </span>
+                          )}
+                          {m.completed_at && (
+                            <span className="text-emerald-600">✓ Completed {new Date(m.completed_at).toLocaleDateString()}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`pill text-[10px] ${MILESTONE_STATUS_PILLS[m.status]}`}>
-                      {m.status.replace('_', ' ')}
-                    </span>
-                    {isOwner && (
-                      <div className="flex gap-1">
-                        {/* Status cycle buttons */}
-                        {m.status !== 'IN_PROGRESS' && m.status !== 'COMPLETED' && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`pill text-[10px] ${MILESTONE_STATUS_PILLS[m.status]}`}>
+                        {MILESTONE_STATUS_LABELS[m.status] || m.status.replace('_', ' ')}
+                      </span>
+                      {isOwner && (
+                        <div className="flex gap-1">
+                          {/* Status cycle buttons */}
+                          {m.status !== 'IN_PROGRESS' && m.status !== 'COMPLETED' && (
+                            <button
+                              onClick={() => handleUpdateMilestoneStatus(m, 'IN_PROGRESS')}
+                              className="text-slate-400 hover:text-brand-600 p-0.5"
+                              title="Start"
+                            >
+                              <Loader2 size={12} />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleUpdateMilestoneStatus(m, 'IN_PROGRESS')}
+                            onClick={() => setEditingMilestone(m)}
                             className="text-slate-400 hover:text-brand-600 p-0.5"
-                            title="Start"
+                            title="Edit"
                           >
-                            <Loader2 size={12} />
+                            <Pencil size={12} />
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteMilestone(m.id)}
-                          className="text-slate-400 hover:text-red-600 p-0.5"
-                          title="Delete"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    )}
+                          <button
+                            onClick={() => handleDeleteMilestone(m.id)}
+                            className="text-slate-400 hover:text-red-600 p-0.5"
+                            title="Delete"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             ))}
           </div>
         )}

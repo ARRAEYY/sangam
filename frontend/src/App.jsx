@@ -11,6 +11,7 @@ import ResetPassword from './pages/ResetPassword.jsx'
 import Explore from './pages/Explore.jsx'
 import ProjectDetail from './pages/ProjectDetail.jsx'
 import CreateProject from './pages/CreateProject.jsx'
+import EditProject from './pages/EditProject.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Profile from './pages/Profile.jsx'
 import TalentSearch from './pages/TalentSearch.jsx'
@@ -28,18 +29,17 @@ export default function App() {
   return (
     <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
       {inAppShell && <Navbar />}
-      
+
       <div className="flex flex-1 w-full relative">
         {/* Fixed position sidebar */}
         {inAppShell && <Sidebar />}
-        
+
         {/* Main Content Area */}
         <main
-          className={`flex-1 min-w-0 ${
-            inAppShell
+          className={`flex-1 min-w-0 ${inAppShell
               ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 w-full'
               : 'w-full'
-          }`}
+            }`}
         >
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -49,6 +49,7 @@ export default function App() {
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
             <Route path="/talent" element={<ProtectedRoute><TalentSearch /></ProtectedRoute>} />
             <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+            <Route path="/projects/:id/edit" element={<ProtectedRoute><EditProject /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
