@@ -22,10 +22,6 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const [applyStatus, setApplyStatus] = useState('idle');
   const [applyError, setApplyError] = useState('');
 
-  // Editing state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ title: '', description: '', team_size_needed: '', looking_for: '', expectations: '' });
-  const [isSaving, setIsSaving] = useState(false);
 
   // Milestones state
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
@@ -53,12 +49,11 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       fetchProject().finally(() => setLoading(false));
     } else {
       setProject(null);
-      setIsEditing(false);
       setIsAddingMilestone(false);
     }
   }, [isOpen, projectPreview, user]);
 
-  const isOwner = user && project && project.owner_id === user.id;
+  const isOwner = user && project && project.owner?.id === user.id;
 
   const fetchProject = async () => {
     try {
@@ -66,7 +61,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       setProject(data);
       if (data.status !== 'OPEN') {
         setApplyStatus('closed');
-      } else if (user && (data.owner_id === user.id || data.members?.some(m => m.user_id === user.id))) {
+      } else if (user && (data.owner?.id === user.id || data.members?.some(m => m.user_id === user.id))) {
         setApplyStatus('already_member');
       }
     } catch (err) {
@@ -82,7 +77,6 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       fetchProject().finally(() => setLoading(false));
     } else {
       setProject(null);
-      setIsEditing(false);
       setIsAddingMilestone(false);
     }
   }, [isOpen, projectPreview, user]);
@@ -109,25 +103,6 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
     }
   };
 
-  const handleSaveEdit = async () => {
-    setIsSaving(true);
-    try {
-      await api.editProject(project.id, {
-        title: editForm.title,
-        description: editForm.description,
-        looking_for: editForm.looking_for,
-        expectations: editForm.expectations || null,
-        team_size_needed: Number(editForm.team_size_needed)
-      });
-      await fetchProject();
-      setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save project: ' + err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleAddMilestone = async () => {
     if (!newMilestone.title.trim()) return;
@@ -168,26 +143,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const renderActionButtons = (isDesktop) => {
     if (!project) return null;
     
-    if (isOwner) {
-      return (
-        <div className={`shrink-0 ${isDesktop ? 'hidden sm:block' : 'w-full sm:hidden'}`}>
-           <button
-            type="button"
-            className={`btn-secondary w-full flex items-center justify-center gap-2 ${isDesktop ? 'h-9 px-4 rounded-full text-xs font-semibold' : 'h-10 rounded-lg text-sm font-medium'}`}
-            onClick={() => {
-              if (isEditing) {
-                setIsEditing(false);
-              } else {
-                setEditForm({ title: project.title, description: project.description || '', team_size_needed: project.team_size_needed || 1, looking_for: project.looking_for || '', expectations: project.expectations || '' });
-                setIsEditing(true);
-              }
-            }}
-          >
-            <Edit2 size={16} /> {isEditing ? 'Cancel Edit' : 'Edit Project'}
-          </button>
-        </div>
-      );
-    }
+    if (isOwner) return null;
 
     return (
       <div className={`shrink-0 ${isDesktop ? 'hidden sm:block' : 'w-full sm:hidden'}`}>
@@ -231,6 +187,19 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
         {/* Top Right Actions */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+          {isOwner && (
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/projects/${project.id}/edit`);
+              }}
+              title="Edit project"
+              aria-label="Edit project"
+              className="p-2 text-slate-400 hover:text-[#7f1d3b] bg-slate-100 rounded-full shadow-sm transition-colors"
+            >
+              <Edit2 size={16} />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full shadow-sm transition-colors"
@@ -256,37 +225,9 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 pr-10">
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <div className="w-full">
-                    {isEditing ? (
-                      <input 
-                        type="text" 
-                        value={editForm.title}
-                        onChange={(e) => setEditForm({...editForm, title: e.target.value})}
-                        className="text-2xl font-display font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 w-full mb-2"
-                        placeholder="Project Title"
-                      />
-                    ) : (
-                      <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
-                    )}
+                    <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
                     <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
-                    {isEditing ? (
-                      <div className="mt-2 space-y-3">
-                        <input
-                          type="text"
-                          value={editForm.looking_for || ''}
-                          onChange={(e) => setEditForm({...editForm, looking_for: e.target.value})}
-                          className="text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-1 w-full"
-                          placeholder="Looking for (e.g. Frontend Developer)"
-                        />
-                        <textarea
-                          value={editForm.expectations || ''}
-                          onChange={(e) => setEditForm({...editForm, expectations: e.target.value})}
-                          className="text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-1 w-full"
-                          placeholder="Expectations from applicants (e.g. comfortable with React)"
-                          rows={2}
-                        />
-                      </div>
-                    ) : (
-                      project.looking_for && (
+                    {project.looking_for && (
                         <div className="mt-2">
                           <div className="text-sm">
                             <span className="font-bold text-slate-900 mr-1.5">Looking for:</span>
@@ -299,7 +240,6 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                             </div>
                           )}
                         </div>
-                      )
                     )}
                     {project.time_horizon && (
                       <p className="text-sm text-slate-500 mt-0.5">{project.time_horizon}</p>
@@ -322,40 +262,9 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                     {project.status.replace('_', ' ')}
                   </span>
                 </div>
-                {isEditing ? (
-                  <textarea 
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                    className="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700"
-                    placeholder="Describe your vision..."
-                  />
-                ) : (
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{project.description || project.short_description || 'No detailed description provided.'}</p>
-                )}
+                <p className="text-sm text-slate-700 whitespace-pre-wrap">{project.description || project.short_description || 'No detailed description provided.'}</p>
               </div>
 
-              {isEditing && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Team Size Needed</h3>
-                  <input 
-                    type="number" 
-                    min="1"
-                    value={editForm.team_size_needed}
-                    onChange={(e) => setEditForm({...editForm, team_size_needed: e.target.value})}
-                    className="w-24 bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm text-slate-700"
-                  />
-                </div>
-              )}
-
-              {isEditing && (
-                <div className="mb-8 flex justify-end gap-3">
-                  <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Cancel</button>
-                  <button onClick={handleSaveEdit} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-[#7f1d3b] rounded-lg hover:bg-[#6a1730] transition-colors flex items-center gap-2">
-                    {isSaving && <Loader2 size={14} className="animate-spin" />}
-                    {isSaving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              )}
               {/* Skills & Tech Stack */}
               {(project.required_skills?.length > 0 || project.tech_stack?.length > 0) && (
                 <div className="mb-8 space-y-4">
@@ -487,7 +396,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Members */}
                   {project.members?.map((m) => (
-                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div key={m.user_id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
                       <div className="w-10 h-10 rounded-full bg-[#7f1d3b]/10 text-[#7f1d3b] flex items-center justify-center text-sm font-medium overflow-hidden shrink-0">
                         {m.user?.avatar_url ? (
                           <img src={m.user.avatar_url} alt="" className="w-full h-full object-cover" />

@@ -45,7 +45,7 @@ function OwnerAvatar({ owner }) {
   )
 }
 
-export default function ProjectCard({ project }) {
+export default function ProjectCard({ project, onClick }) {
   const memberCount = project.member_count || 0
   const statusLabel = (project.status || 'OPEN').replace('_', ' ')
   const description = stripMarkdown(project.description)
@@ -53,6 +53,12 @@ export default function ProjectCard({ project }) {
   return (
     <Link
       to={`/projects/${project.id}`}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          onClick(project);
+        }
+      }}
       className="card min-w-0 flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card"
     >
       {/* Header row: title + badge */}
@@ -67,6 +73,11 @@ export default function ProjectCard({ project }) {
             <span className={`pill shrink-0 text-[11px] py-0.5 ${STATUS_STYLES[project.status] || 'bg-slate-100 text-slate-600'}`}>
               {statusLabel}
             </span>
+            {project.category && project.category !== 'Other' && (
+              <span className="pill shrink-0 text-[11px] py-0.5 bg-slate-50 text-slate-500 border border-slate-100">
+                {project.category.toUpperCase()}
+              </span>
+            )}
             {memberCount > 0 && (
               <span className="flex items-center gap-1 shrink-0 text-xs text-slate-500 font-medium">
                 <Users size={12} className="text-slate-400" /> {memberCount}

@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, Plus, Search, Check, SlidersHorizontal } from 'lucide-react';
 import { ProjectCard } from './Dashboard.jsx';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
+import { PROJECT_CATEGORIES } from '../utils/projectCategories.js';
 
 // Helpers (Same as Dashboard for consistency)
 function stripMarkdown(text) {
@@ -53,10 +54,9 @@ export function PageHeader({ eyebrow, title, description, index }) {
   );
 }
 
-export function SearchToolbar({ value, onChange, placeholder, filters = ["All projects", "My skills", "Recently added"], roleFilter, onRoleFilterChange }) {
-  const [activeFilter, setActiveFilter] = useState(filters[0]);
+export function SearchToolbar({ value, onChange, placeholder, roleFilter, onRoleFilterChange, children }) {
   return (
-    <div className="search-toolbar reveal-in delay-1">
+    <div className="search-toolbar reveal-in delay-1 relative z-40">
       <label className="search-field flex items-center gap-3 bg-white border border-slate-200 rounded-full h-[52px] px-5 shadow-sm flex-1 cursor-text focus-within:border-[#7f1d3b] focus-within:ring-1 focus-within:ring-[#7f1d3b] transition-all">
         <Search size={18} className="text-slate-400" />
         <input 
@@ -85,26 +85,7 @@ export function SearchToolbar({ value, onChange, placeholder, filters = ["All pr
         )}
         <kbd className="hidden md:flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-[10px] text-slate-400 font-mono border border-slate-200">/</kbd>
       </label>
-      
-      <div className="filter-row flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar" aria-label="Filters">
-        {filters.map((filter) => (
-          <button 
-            key={filter} 
-            className={`filter-chip h-[38px] px-4 rounded-full text-[12px] font-bold whitespace-nowrap flex items-center gap-2 border transition-all ${
-              activeFilter === filter 
-                ? "bg-[#fffaf7] border-[#f4e4e4] text-[#7f1d3b]" 
-                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`} 
-            onClick={() => setActiveFilter(filter)}
-          >
-            {activeFilter === filter && <Check size={14} />}
-            {filter}
-          </button>
-        ))}
-        <button className="filter-chip h-[38px] w-[38px] flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shrink-0">
-          <SlidersHorizontal size={15} />
-        </button>
-      </div>
+      {children}
     </div>
   );
 }
@@ -152,7 +133,11 @@ export function useFilteredItems(items, query) {
 
 // --- 2. Main Explore Page Component ---
 export default function Explore() {
-  const { token } = useAuth()
+  const { token } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCategories = searchParams.getAll("category");
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [projectsData, setProjectsData] = useState([]);
@@ -170,6 +155,7 @@ export default function Explore() {
           creator: p.owner?.full_name || 'Anonymous',
           initials: getInitials(p.owner?.full_name),
           status: p.status === 'OPEN' ? 'Open' : p.status === 'IN_PROGRESS' ? 'In progress' : 'Completed',
+          category: p.category || 'Other',
           looking_for: p.looking_for,
           team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
           time: timeAgo(p.created_at),
@@ -189,9 +175,15 @@ export default function Explore() {
 
   const baseFiltered = useFilteredItems(projectsData, query);
   const filtered = useMemo(() => {
-    if (!roleFilter) return baseFiltered;
-    return baseFiltered.filter(p => p.looking_for === roleFilter);
-  }, [baseFiltered, roleFilter]);
+    let result = baseFiltered;
+    if (roleFilter) {
+      result = result.filter(p => p.looking_for === roleFilter);
+    }
+    if (selectedCategories.length > 0) {
+      result = result.filter(p => selectedCategories.includes(p.category));
+    }
+    return result;
+  }, [baseFiltered, roleFilter, selectedCategories]);
 
   return (
     <div className="page-stack discovery-page w-full max-w-[1200px] mx-auto pb-20">
@@ -199,7 +191,7 @@ export default function Explore() {
       {/* Header */}
       <PageHeader 
         title="Open projects" 
-        description="Teams on campus looking for their next builder." 
+        description={<span className="text-[36px] md:text-[52px] font-display font-bold text-[#7f1d3b] leading-tight mt-2 block">We are Hiring</span>} 
       />
       
       {/* Intro Editorial Strip */}
@@ -220,7 +212,113 @@ export default function Explore() {
         roleFilter={roleFilter}
         onRoleFilterChange={setRoleFilter}
         placeholder="Search projects, skills, or people..." 
-      />
+      >
+        {/* Category Filter */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="filter-row flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar flex-1 md:flex-initial" aria-label="Categories">
+        <button
+          onClick={() => {
+            setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete("category"); return p; });
+            setIsPopoverOpen(false);
+          }}
+          className={`h-[38px] px-4 rounded-full text-[13px] font-medium whitespace-nowrap transition-all flex items-center border ${
+            selectedCategories.length === 0 
+              ? "bg-slate-800 text-white border-slate-800 shadow-sm" 
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+          }`}
+        >
+          All
+        </button>
+        
+        {['Software', 'Hardware'].map(cat => (
+          <button
+            key={cat}
+            onClick={() => {
+              setSearchParams(prev => { 
+                const p = new URLSearchParams(prev); 
+                if (p.getAll("category").includes(cat)) {
+                  const current = p.getAll("category").filter(c => c !== cat);
+                  p.delete("category");
+                  current.forEach(c => p.append("category", c));
+                } else {
+                  p.append("category", cat);
+                }
+                return p; 
+              });
+            }}
+            className={`h-[38px] px-4 rounded-full text-[13px] font-medium whitespace-nowrap transition-all flex items-center border ${
+              selectedCategories.includes(cat)
+                ? "bg-slate-800 text-white border-slate-800 shadow-sm" 
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+        </div>
+
+        <div className="relative ml-auto shrink-0">
+          <button
+            onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+            className={`h-[38px] px-4 rounded-full text-[13px] font-medium transition-all flex items-center gap-2 border ${
+              selectedCategories.filter(c => c !== 'Software' && c !== 'Hardware').length > 0 || isPopoverOpen
+                ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+            }`}
+          >
+            <SlidersHorizontal size={15} />
+            {selectedCategories.filter(c => c !== 'Software' && c !== 'Hardware').length > 0 && (
+              <span className="flex items-center justify-center bg-white/20 rounded-full h-5 min-w-[20px] px-1 text-[11px] font-bold">
+                {selectedCategories.filter(c => c !== 'Software' && c !== 'Hardware').length}
+              </span>
+            )}
+          </button>
+
+          {isPopoverOpen && (
+            <div className="absolute top-full mt-2 right-0 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-4">
+              <h3 className="text-sm font-bold text-slate-800 mb-3">Project categories</h3>
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+                {PROJECT_CATEGORIES.filter(c => c !== 'All' && c !== 'Software' && c !== 'Hardware').map(cat => (
+                  <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(cat)}
+                      onChange={() => {
+                        setSearchParams(prev => { 
+                          const p = new URLSearchParams(prev); 
+                          if (p.getAll("category").includes(cat)) {
+                            const current = p.getAll("category").filter(c => c !== cat);
+                            p.delete("category");
+                            current.forEach(c => p.append("category", c));
+                          } else {
+                            p.append("category", cat);
+                          }
+                          return p; 
+                        });
+                      }}
+                      className="w-4 h-4 rounded border-slate-300 text-[#7f1d3b] focus:ring-[#7f1d3b]"
+                    />
+                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">{cat}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedCategories.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete("category"); return p; });
+                    }}
+                    className="w-full py-2 text-sm text-slate-500 hover:text-slate-800 font-medium transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      </SearchToolbar>
 
       {/* Grid or Empty State */}
       {loading ? (
@@ -246,7 +344,7 @@ export default function Explore() {
         </section>
       ) : (
         <section className="reveal-in delay-2">
-          <EmptyState type="projects" onReset={() => setQuery("")} />
+          <EmptyState type="projects" onReset={() => { setQuery(""); setRoleFilter(""); setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete("category"); return p; }); }} />
         </section>
       )}
     </div>

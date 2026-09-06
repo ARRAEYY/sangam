@@ -25,6 +25,7 @@ import { api } from '../api'
 import { useAuth } from '../context/AuthContext.jsx'
 import SkillTagInput from '../components/SkillTagInput.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
+import { ProjectDetailModal } from '../components/ProjectDetailModal.jsx'
 import FormattedText from '../components/FormattedText.jsx'
 import { VALID_COURSES } from '../utils/courses'
 import { formatMonthYear } from '../utils/date'
@@ -47,6 +48,10 @@ export default function Profile() {
   const [error, setError] = useState('')
   const [pendingRequests, setPendingRequests] = useState([])
   const [connections, setConnections] = useState([])
+
+  // Project Modal State
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Work experience
   const [experiences, setExperiences] = useState([])
@@ -991,7 +996,7 @@ export default function Profile() {
               <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider">Active Projects</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
-                  <ProjectCard key={p.id} project={p} />
+                  <ProjectCard key={p.id} project={p} onClick={() => { setSelectedProject(p); setIsModalOpen(true); }} />
                 ))}
                 {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).length === 0 && (
                   <p className="text-sm text-slate-500 col-span-2">No active projects.</p>
@@ -1004,7 +1009,7 @@ export default function Profile() {
                 <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider mt-6">Past Projects</h3>
                 <div className="grid gap-4 sm:grid-cols-2 opacity-75">
                   {myProjects.filter(p => ['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
-                    <ProjectCard key={p.id} project={p} />
+                    <ProjectCard key={p.id} project={p} onClick={() => { setSelectedProject(p); setIsModalOpen(true); }} />
                   ))}
                 </div>
               </div>
@@ -1025,9 +1030,9 @@ export default function Profile() {
             {myApplications.map((app) => (
               <div key={app.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                 <div>
-                  <Link to={`/projects/${app.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600">
+                  <button onClick={() => { setSelectedProject({ id: app.project_id }); setIsModalOpen(true); }} className="font-semibold text-slate-900 hover:text-[#7f1d3b] text-left">
                     View project
-                  </Link>
+                  </button>
                   <p className="mt-0.5 text-xs text-slate-500">
                     Applied {new Date(app.applied_at).toLocaleDateString()}
                   </p>
@@ -1156,7 +1161,14 @@ export default function Profile() {
         )}
       </section>
 
-      
+      <ProjectDetailModal 
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedProject(null)
+        }}
+        projectPreview={selectedProject}
+      />
     </div>
   )
 }

@@ -25,6 +25,19 @@ const Project = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'Other',
+    },
+    looking_for: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    expectations: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     time_horizon: {
       type: DataTypes.STRING,
       allowNull: true,

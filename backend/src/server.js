@@ -236,6 +236,25 @@ async function start() {
           allowNull: true,
         })
       }
+      if (!projTableInfo.category) {
+        await queryInterface.addColumn('projects', 'category', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+          defaultValue: 'Other',
+        })
+      }
+      if (!projTableInfo.looking_for) {
+        await queryInterface.addColumn('projects', 'looking_for', {
+          type: sequelize.Sequelize.STRING,
+          allowNull: true,
+        })
+      }
+      if (!projTableInfo.expectations) {
+        await queryInterface.addColumn('projects', 'expectations', {
+          type: sequelize.Sequelize.TEXT,
+          allowNull: true,
+        })
+      }
     } catch (err) {
       console.warn('Projects column check warning:', err.message)
     }

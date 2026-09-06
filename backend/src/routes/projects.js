@@ -159,6 +159,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     const members = Array.isArray(payload.members) ? payload.members : []
     const milestones = Array.isArray(payload.milestones) ? payload.milestones : []
     const nextMilestone = payload.next_milestone || null
+    
+    const looking_for = payload.looking_for ? String(payload.looking_for).trim() : null
+    const expectations = payload.expectations ? String(payload.expectations).trim() : null
 
     if (!title) {
       return res.status(400).json({ detail: 'Title is required.' })
@@ -185,10 +188,13 @@ router.post('/', requireAuth, async (req, res, next) => {
           title,
           description,
           short_description,
+          looking_for,
+          expectations,
           time_horizon,
           tech_stack,
           open_roles,
           team_size_needed: teamSizeNeeded,
+          category: payload.category || 'Other',
           owner_id: req.user.id,
           status: 'OPEN',
         },
@@ -297,6 +303,27 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       const description = String(payload.description || '').trim()
       if (!description) return res.status(400).json({ detail: 'Description is required.' })
       project.description = description
+    }
+    if (payload.short_description !== undefined) {
+      project.short_description = payload.short_description ? String(payload.short_description).trim() : null
+    }
+    if (payload.looking_for !== undefined) {
+      project.looking_for = payload.looking_for ? String(payload.looking_for).trim() : null
+    }
+    if (payload.expectations !== undefined) {
+      project.expectations = payload.expectations ? String(payload.expectations).trim() : null
+    }
+    if (payload.time_horizon !== undefined) {
+      project.time_horizon = payload.time_horizon ? String(payload.time_horizon).trim() : null
+    }
+    if (payload.tech_stack !== undefined) {
+      project.tech_stack = Array.isArray(payload.tech_stack) ? payload.tech_stack : []
+    }
+    if (payload.open_roles !== undefined) {
+      project.open_roles = Array.isArray(payload.open_roles) ? payload.open_roles : []
+    }
+    if (payload.category !== undefined) {
+      project.category = payload.category ? String(payload.category).trim() : 'Other'
     }
     if (payload.team_size_needed !== undefined) {
       const teamSizeNeeded = Number(payload.team_size_needed)

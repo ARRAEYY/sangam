@@ -50,7 +50,8 @@ export default function App() {
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
             <Route path="/talent" element={<ProtectedRoute><TalentSearch /></ProtectedRoute>} />
             <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-            <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
+            <Route path="/projects/:id/edit" element={<ProtectedRoute><CreateProject mode="edit" /></ProtectedRoute>} />
+            <Route path="/create" element={<ProtectedRoute><CreateProject mode="create" /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

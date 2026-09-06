@@ -233,7 +233,7 @@ export default function Dashboard() {
       <section className="dashboard-hero reveal-in">
         <div className="hero-copy">
           <h1>Less searching.<br /><em>More making.</em></h1>
-          <p className="mb-6">Good things are already taking shape. Here's the signal worth following today.</p>
+          <p className="mb-6 font-bold"> Built For Better Together</p>
           <div className="hero-actions flex items-center gap-3 mt-5">
             <Link to="/explore" className="button button-primary">Explore the new <ArrowUpRight size={14} /></Link>
             <Link to="/create" className="button button-secondary">Start a build <Plus size={14} /></Link>

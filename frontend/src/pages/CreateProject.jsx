@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, ChevronLeft, Lightbulb, Plus, Sparkles, X, User, Trash2, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowRight, Check, ChevronLeft, Lightbulb, Plus, Sparkles, X, User, Users, Trash2, Search, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { SkillPickerModal } from '../components/SkillPickerModal.jsx';
 import { MemberPickerModal } from '../components/MemberPickerModal.jsx';
+import { PROJECT_CATEGORIES } from '../utils/projectCategories.js';
 
 const DEFAULT_SKILL_OPTIONS = ["Product", "Design", "Engineering", "Research", "Community", "Storytelling", "Climate", "Data"];
 const DEFAULT_TECH_OPTIONS = ["React", "Node.js", "Python", "TypeScript", "PostgreSQL", "MongoDB", "AWS", "Figma", "Tailwind CSS"];
@@ -14,9 +15,11 @@ function getInitials(name) {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 }
 
-export default function CreateProject() {
+export default function CreateProject({ mode = "create" }) {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(mode === 'edit');
 
   // Data State
   const [title, setTitle] = useState("");
@@ -24,11 +27,13 @@ export default function CreateProject() {
   const [detailedDescription, setDetailedDescription] = useState("");
   const [lookingFor, setLookingFor] = useState("");
   const [expectations, setExpectations] = useState("");
+  const [category, setCategory] = useState("Other");
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [techStack, setTechStack] = useState([]);
 
   const [teamMembers, setTeamMembers] = useState([]);
   const [milestones, setMilestones] = useState([]);
+  const [applicants, setApplicants] = useState([]);
 
   // UI State
   const [step, setStep] = useState(1);
@@ -39,6 +44,29 @@ export default function CreateProject() {
 
   const [newMilestone, setNewMilestone] = useState({ title: "", description: "", targetDate: "", status: 'NOT_STARTED' });
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+
+  useEffect(() => {
+    if (mode === 'edit' && id) {
+      setLoading(true);
+      api.getProject(id).then(data => {
+        setTitle(data.title || "");
+        setShortDescription(data.short_description || "");
+        setDetailedDescription(data.description || "");
+        setLookingFor(data.looking_for || "");
+        setExpectations(data.expectations || "");
+        setCategory(data.category || "Other");
+        setSelectedSkills(data.required_skills ? data.required_skills.map(s => s.name) : []);
+        setTechStack(data.tech_stack || []);
+        
+        api.getApplicants(id).then(setApplicants).catch(console.error);
+
+        setLoading(false);
+      }).catch(err => {
+        alert("Failed to load project.");
+        navigate(-1);
+      });
+    }
+  }, [mode, id, navigate]);
 
   // Quick toggles for predefined skills
   function toggleQuickSkill(skill) {
@@ -74,6 +102,7 @@ export default function CreateProject() {
         description: detailedDescription.trim(),
         looking_for: lookingFor.trim(),
         expectations: expectations.trim() || null,
+        category: category,
         skills: selectedSkills,
         tech_stack: techStack,
         team_size_needed: 3,
@@ -83,7 +112,12 @@ export default function CreateProject() {
         milestones: milestones
       };
 
-      const project = await api.createProject(payload);
+      let project;
+      if (mode === 'edit') {
+        project = await api.editProject(id, payload);
+      } else {
+        project = await api.createProject(payload);
+      }
 
       setStep(5);
       // Brief delay before redirect
@@ -96,6 +130,31 @@ export default function CreateProject() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  const handleDecideApplicant = async (appId, newStatus) => {
+    try {
+      await api.updateApplicationStatus(appId, newStatus, null, { role: 'Team Member', role_category: 'OTHER' });
+      const apps = await api.getApplicants(id);
+      setApplicants(apps);
+      // optionally refresh team members here if accepted, but it requires a reload or refetch.
+      if (newStatus === 'ACCEPTED') {
+        alert('Applicant accepted and added to the team!');
+      }
+    } catch (err) {
+      alert("Failed to update applicant: " + err.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4 text-slate-500">
+          <div className="animate-spin w-8 h-8 border-4 border-[#7f1d3b]/20 border-t-[#7f1d3b] rounded-full" />
+          <p className="font-medium">Loading project...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -151,6 +210,18 @@ export default function CreateProject() {
                 placeholder="Give the idea a working title"
               />
             </label>
+            <label className="field-label mt-4">
+              Project Category
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl text-[15px] bg-white outline-none focus:border-[#7f1d3b] focus:ring-1 focus:ring-[#7f1d3b]"
+              >
+                {PROJECT_CATEGORIES.filter(c => c !== 'All').map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </label>
             <label className="field-label">
               Short Description (Teaser)
               <textarea
@@ -201,7 +272,7 @@ export default function CreateProject() {
             </label>
 
             <label className="field-label mt-4">
-              Expectations from applicants
+              Requirements
               <textarea
                 value={expectations}
                 onChange={(e) => setExpectations(e.target.value)}
@@ -287,6 +358,41 @@ export default function CreateProject() {
                 <User size={18} /> Add Team Member
               </button>
             </div>
+
+            {mode === 'edit' && (
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <Users size={16} className="text-[#7f1d3b]" /> Applicants ({applicants.length})
+                </h4>
+                {applicants.length === 0 ? (
+                  <p className="text-xs text-slate-500">No pending applications.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {applicants.map(app => (
+                      <div key={app.id} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100">
+                            {app.user.avatar_url ? <img src={app.user.avatar_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">{getInitials(app.user.full_name)}</div>}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm text-slate-900">{app.user.full_name}</div>
+                            <div className="text-xs text-slate-500 line-clamp-1">{app.pitch_message || 'No pitch provided.'}</div>
+                          </div>
+                        </div>
+                        {app.status === 'PENDING' ? (
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => handleDecideApplicant(app.id, 'ACCEPTED')} className="text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded">Accept</button>
+                            <button type="button" onClick={() => handleDecideApplicant(app.id, 'REJECTED')} className="text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded">Reject</button>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-500">{app.status}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Section 04: The Plan */}
@@ -322,7 +428,7 @@ export default function CreateProject() {
                   <textarea placeholder="Brief description (optional)" rows={2} value={newMilestone.description} onChange={e => setNewMilestone({ ...newMilestone, description: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
                   <div className="grid grid-cols-2 gap-3">
                     <input type="date" value={newMilestone.targetDate} onChange={e => setNewMilestone({ ...newMilestone, targetDate: e.target.value })} className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a]" />
-                    <select 
+                    <select
                       value={newMilestone.status}
                       onChange={e => setNewMilestone({ ...newMilestone, status: e.target.value })}
                       className="w-full p-2 border border-slate-200 rounded text-sm text-[#2a2a2a] bg-white outline-none"
@@ -351,7 +457,7 @@ export default function CreateProject() {
               <Sparkles size={15} /> Save draft
             </button>
             <button type="submit" className="button button-primary" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Launch Project'} <ArrowRight size={16} />
+              {submitting ? (mode === 'edit' ? "Saving..." : "Publishing...") : (mode === 'edit' ? "Save Changes" : "Publish Project")} <ArrowRight size={18} />
             </button>
           </div>
         </form>
@@ -366,7 +472,7 @@ export default function CreateProject() {
           {/* Card matches standard Project Card UI intentionally minimal */}
           <div className="preview-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#7f1d3b]/5 to-transparent rounded-bl-full opacity-50" />
-            
+
             <h2 className="text-xl font-bold text-[#2a2a2a] leading-tight mt-1">{title || "Your project title"}</h2>
             <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">
               {shortDescription || "A one-sentence hook that captures attention. Discovery cards are kept intentionally clean and minimal."}
@@ -408,9 +514,9 @@ export default function CreateProject() {
             </div>
           </div>
 
-          <div className="preview-note mt-6 flex gap-3 text-sm text-slate-500 p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <Lightbulb size={20} className="text-[#7f1d3b] shrink-0" />
-            <p><strong>Pro tip:</strong> Keep the short description punchy. People can click the card to read your detailed description, view milestones, and see open roles in the Project Modal.</p>
+          <div className="preview-note mt-6 flex gap-3 text-sm text-slate-500 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <AlertTriangle size={20} className="text-amber-600 shrink-0" />
+            <p><strong>Caution:</strong> Be mindful about sharing sensitive or unique details of your idea. While we strive to provide a safe platform, we are not responsible if your idea is copied or reused by others.</p>
           </div>
         </aside>
 
