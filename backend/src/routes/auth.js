@@ -161,7 +161,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
     return res.status(201).json({
       message: 'Account created! Please check your campus email to verify your account before logging in.',
       requires_verification: true,
-      user: serializeUser(user),
+      user: serializeUser(user, {}, true),
     })
   } catch (error) {
     return next(error)
@@ -249,7 +249,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
     setAuthCookies(res, jwt, refreshStr)
 
-    return res.json({ user: serializeUser(user) })
+    return res.json({ user: serializeUser(user, {}, true) })
   } catch (error) {
     return next(error)
   }
@@ -602,7 +602,7 @@ router.post('/google', authLimiter, async (req, res, next) => {
 
     setAuthCookies(res, jwt, refreshStr)
 
-    return res.json({ user: serializeUser(user) })
+    return res.json({ user: serializeUser(user, {}, true) })
   } catch (error) {
     return next(error)
   }
@@ -665,7 +665,7 @@ router.post('/onboard', requireAuth, async (req, res, next) => {
       is_onboarded: true,
     })
 
-    return res.json({ message: 'Profile completed.', user: serializeUser(req.user) })
+    return res.json({ message: 'Profile completed.', user: serializeUser(req.user, {}, true) })
   } catch (error) {
     return next(error)
   }

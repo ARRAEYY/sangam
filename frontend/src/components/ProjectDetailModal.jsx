@@ -142,7 +142,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
   const renderActionButtons = (isDesktop) => {
     if (!project) return null;
-    
+
     if (isOwner) return null;
 
     return (
@@ -228,18 +228,18 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                     <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
                     <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
                     {project.looking_for && (
-                        <div className="mt-2">
-                          <div className="text-sm">
-                            <span className="font-bold text-slate-900 mr-1.5">Looking for:</span>
-                            <span className="font-bold text-[#7f1d3b]">{project.looking_for}</span>
-                          </div>
-                          {project.expectations && (
-                            <div className="mt-6 mb-2">
-                              <h3 className="text-sm font-semibold text-slate-900 mb-2">Expectations</h3>
-                              <p className="text-sm text-slate-700 whitespace-pre-wrap">{project.expectations}</p>
-                            </div>
-                          )}
+                      <div className="mt-2">
+                        <div className="text-sm">
+                          <span className="font-bold text-slate-900 mr-1.5">Looking for:</span>
+                          <span className="font-bold text-[#7f1d3b]">{project.looking_for}</span>
                         </div>
+                        {project.expectations && (
+                          <div className="mt-6 mb-2">
+                            <h3 className="text-sm font-semibold text-slate-900 mb-2">Requirements</h3>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{project.expectations}</p>
+                          </div>
+                        )}
+                      </div>
                     )}
                     {project.time_horizon && (
                       <p className="text-sm text-slate-500 mt-0.5">{project.time_horizon}</p>
@@ -292,92 +292,92 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               )}
 
               {(project.milestones?.length > 0 || isOwner) && (
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                    <Flag size={16} className="text-slate-400" /> Milestones
-                  </h3>
-                  {isOwner && !isAddingMilestone && (
-                    <button onClick={() => setIsAddingMilestone(true)} className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">
-                      <Plus size={14} /> Add Milestone
-                    </button>
-                  )}
-                </div>
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <Flag size={16} className="text-slate-400" /> Milestones
+                    </h3>
+                    {isOwner && !isAddingMilestone && (
+                      <button onClick={() => setIsAddingMilestone(true)} className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">
+                        <Plus size={14} /> Add Milestone
+                      </button>
+                    )}
+                  </div>
 
-                {isAddingMilestone && (
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-4">
-                    <input 
-                      type="text" 
-                      placeholder="Milestone Title" 
-                      value={newMilestone.title}
-                      onChange={(e) => setNewMilestone({...newMilestone, title: e.target.value})}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-slate-300"
-                    />
-                    <textarea 
-                      placeholder="Description (optional)"
-                      value={newMilestone.description}
-                      onChange={(e) => setNewMilestone({...newMilestone, description: e.target.value})}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 h-20 focus:outline-none focus:border-slate-300"
-                    />
-                    <div className="flex justify-between items-center mb-3 mt-3">
-                      <select 
-                        value={newMilestone.status}
-                        onChange={(e) => setNewMilestone({...newMilestone, status: e.target.value})}
-                        className="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 outline-none"
-                      >
-                        <option value="NOT_STARTED">Not Started</option>
-                        <option value="IN_PROGRESS">Working</option>
-                        <option value="COMPLETED">Done</option>
-                        <option value="BLOCKED">Blocked</option>
-                      </select>
-                      <div className="flex gap-2">
-                        <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
-                        <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
+                  {isAddingMilestone && (
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-4">
+                      <input
+                        type="text"
+                        placeholder="Milestone Title"
+                        value={newMilestone.title}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-slate-300"
+                      />
+                      <textarea
+                        placeholder="Description (optional)"
+                        value={newMilestone.description}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 h-20 focus:outline-none focus:border-slate-300"
+                      />
+                      <div className="flex justify-between items-center mb-3 mt-3">
+                        <select
+                          value={newMilestone.status}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, status: e.target.value })}
+                          className="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 outline-none"
+                        >
+                          <option value="NOT_STARTED">Not Started</option>
+                          <option value="IN_PROGRESS">Working</option>
+                          <option value="COMPLETED">Done</option>
+                          <option value="BLOCKED">Blocked</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
+                          <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {project.milestones?.length > 0 ? (
-                  <div className="space-y-3">
-                    {project.milestones.sort((a, b) => a.order_index - b.order_index).map(ms => (
-                      <div key={ms.id} className="flex gap-4 p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
-                        <div className="pt-0.5">
-                          {ms.status === 'COMPLETED' ? (
-                            <CheckCircle2 size={18} className="text-emerald-500" />
-                          ) : ms.status === 'IN_PROGRESS' ? (
-                            <Play size={18} className="text-amber-500" />
-                          ) : ms.status === 'BLOCKED' ? (
-                            <AlertCircle size={18} className="text-red-500" />
-                          ) : (
-                            <Clock size={18} className="text-slate-300" />
+                  {project.milestones?.length > 0 ? (
+                    <div className="space-y-3">
+                      {project.milestones.sort((a, b) => a.order_index - b.order_index).map(ms => (
+                        <div key={ms.id} className="flex gap-4 p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                          <div className="pt-0.5">
+                            {ms.status === 'COMPLETED' ? (
+                              <CheckCircle2 size={18} className="text-emerald-500" />
+                            ) : ms.status === 'IN_PROGRESS' ? (
+                              <Play size={18} className="text-amber-500" />
+                            ) : ms.status === 'BLOCKED' ? (
+                              <AlertCircle size={18} className="text-red-500" />
+                            ) : (
+                              <Clock size={18} className="text-slate-300" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className={`text-sm font-medium ${ms.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{ms.title}</h4>
+                            {ms.description && <p className="text-xs text-slate-500 mt-1">{ms.description}</p>}
+                          </div>
+                          {isOwner && (
+                            <div className="flex flex-col gap-1">
+                              <select
+                                value={ms.status}
+                                onChange={(e) => handleUpdateMilestoneStatus(ms.id, e.target.value)}
+                                className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-600 outline-none"
+                              >
+                                <option value="NOT_STARTED">Not Started</option>
+                                <option value="IN_PROGRESS">Working</option>
+                                <option value="COMPLETED">Done</option>
+                                <option value="BLOCKED">Blocked</option>
+                              </select>
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h4 className={`text-sm font-medium ${ms.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{ms.title}</h4>
-                          {ms.description && <p className="text-xs text-slate-500 mt-1">{ms.description}</p>}
-                        </div>
-                        {isOwner && (
-                          <div className="flex flex-col gap-1">
-                            <select 
-                              value={ms.status}
-                              onChange={(e) => handleUpdateMilestoneStatus(ms.id, e.target.value)}
-                              className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-600 outline-none"
-                            >
-                              <option value="NOT_STARTED">Not Started</option>
-                              <option value="IN_PROGRESS">Working</option>
-                              <option value="COMPLETED">Done</option>
-                              <option value="BLOCKED">Blocked</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl text-center border border-slate-100">No milestones set yet.</p>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl text-center border border-slate-100">No milestones set yet.</p>
+                  )}
+                </div>
 
               )}
               {/* Team Members */}
@@ -392,7 +392,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                     </button>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Members */}
                   {project.members?.map((m) => (
@@ -429,10 +429,10 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
           ) : null}
         </div>
       </div>
-      
+
       {/* Member Picker Modal */}
       {isOwner && (
-        <MemberPickerModal 
+        <MemberPickerModal
           isOpen={isAddingMember}
           onClose={() => setIsAddingMember(false)}
           onAddMember={handleAddMember}

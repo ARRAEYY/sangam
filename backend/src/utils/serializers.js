@@ -12,7 +12,7 @@ function serializeSkills(skills = []) {
   return skills.map(normalizeSkill).filter(Boolean)
 }
 
-function serializeUser(user, extra = {}) {
+function serializeUser(user, extra = {}, includePrivate = false) {
   if (!user) return null
 
   const plain = user.toJSON ? user.toJSON() : user
@@ -23,7 +23,7 @@ function serializeUser(user, extra = {}) {
   const userObj = {
     ...safeUser,
     id: safeUser.id,
-    email: safeUser.email,
+    email: includePrivate ? safeUser.email : undefined,
     full_name: safeUser.full_name,
     branch: safeUser.branch,
     graduation_year: safeUser.graduation_year,

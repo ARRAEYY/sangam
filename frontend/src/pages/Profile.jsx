@@ -44,7 +44,6 @@ export default function Profile() {
   const [profileDraft, setProfileDraft] = useState(null)
   const [error, setError] = useState('')
 
-  const [connections, setConnections] = useState([])
 
   // Project Modal State
   const [selectedProject, setSelectedProject] = useState(null)
@@ -115,10 +114,6 @@ export default function Profile() {
     }
   }
 
-  const loadConnections = () => {
-    if (!user) return
-    api.listConnections().then(setConnections).catch((err) => setError(err.message))
-  }
 
   const loadPortfolio = () => {
     if (!user) return
@@ -144,7 +139,7 @@ export default function Profile() {
       .then(setMyApplications)
       .catch((err) => setError(err.message))
     loadPortfolio()
-    loadConnections()
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -338,9 +333,6 @@ export default function Profile() {
                   <p className="text-xs sm:text-sm text-slate-500">
                     {user.branch} · Class of {user.graduation_year}
                   </p>
-                  <Link to="/connections" className="inline-block mt-0.5 mb-0.5 text-xs sm:text-sm font-semibold text-brand-700 hover:text-brand-800 hover:underline">
-                    {connections.length > 500 ? '500+' : connections.length} connections
-                  </Link>
                   {user.headline && <p className="mt-0.5 text-xs sm:text-sm text-slate-600">{user.headline}</p>}
                   {user.location && <p className="mt-0.5 text-xs text-slate-400">{user.location}</p>}
                 </div>
@@ -352,9 +344,9 @@ export default function Profile() {
 
             {(!user.bio || !user.skills || user.skills.length === 0) && (
               <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4">
-                <h3 className="text-sm font-semibold text-brand-800">Profile Strength: Missing information</h3>
+                <h3 className="text-sm font-semibold text-brand-800">Complete Your Profile</h3>
                 <p className="mt-1 text-xs text-brand-700">
-                  Your profile in Find Talent appears mostly empty. Please add a {!user.bio && (!user.skills || !user.skills.length) ? 'bio and some skills' : !user.bio ? 'bio' : 'few skills'} to help others connect with you!
+                  Please add a {!user.bio && (!user.skills || !user.skills.length) ? 'bio and some skills' : !user.bio ? 'bio' : 'few skills'} to help others connect with you!
                 </p>
               </div>
             )}
@@ -572,41 +564,6 @@ export default function Profile() {
         )}
       </section>
 
-      {/* Projects (LinkedIn-style history) */}
-      <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
-        {projectRoles.length === 0 ? (
-          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            No project team memberships yet. Apply to projects or create your own to build your team history!
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {projectRoles.map((pr, idx) => (
-              <div key={idx} className="card p-4 flex flex-col justify-between gap-3">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <Link to={`/projects/${pr.project_id}`} className="font-semibold text-slate-900 hover:text-brand-600 flex items-center gap-1.5">
-                      {pr.project_title}
-                      {pr.is_lead && <Crown size={13} className="text-amber-500" title="Project Lead" />}
-                    </Link>
-                    <span className="pill text-[10px] bg-slate-100 text-slate-600">
-                      {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-brand-700 font-medium">
-                    {pr.role}
-                  </p>
-                </div>
-                {pr.since && (
-                  <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
-                    Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       {/* Education */}
       <section id="section-education" className="mb-10">
@@ -962,31 +919,63 @@ export default function Profile() {
 
       {/* Projects */}
       <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Your posted projects</h2>
-        {myProjects.length === 0 ? (
+        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
+        {myProjects.length === 0 && projectRoles.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            You haven't posted a project yet.{' '}
+            You haven't posted any projects or joined any teams yet.{' '}
             <Link to="/create" className="font-semibold text-brand-600">
               Post one now →
             </Link>
           </p>
         ) : (
-          <div className="space-y-6">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider">Active Projects</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
-                  <ProjectCard key={p.id} project={p} onClick={() => { setSelectedProject(p); setIsModalOpen(true); }} />
-                ))}
-                {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).length === 0 && (
-                  <p className="text-sm text-slate-500 col-span-2">No active projects.</p>
-                )}
+          <div className="space-y-8">
+            {/* Active Posted Projects */}
+            {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).length > 0 && (
+              <div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {myProjects.filter(p => !['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
+                    <ProjectCard key={p.id} project={p} onClick={() => { setSelectedProject(p); setIsModalOpen(true); }} />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             
+            {/* Team Memberships */}
+            {projectRoles.filter(pr => pr.is_lead === false || pr.role !== 'Project Lead').length > 0 && (
+              <div>
+                <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wider">Team Memberships</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {projectRoles.filter(pr => pr.is_lead === false || pr.role !== 'Project Lead').map((pr, idx) => (
+                    <div key={idx} className="card p-4 flex flex-col justify-between gap-3">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <button onClick={() => { setSelectedProject({ id: pr.project_id }); setIsModalOpen(true); }} className="font-semibold text-slate-900 hover:text-brand-600 flex items-center gap-1.5 text-left">
+                            {pr.project_title}
+                            {pr.is_lead && <Crown size={13} className="text-amber-500" title="Project Lead" />}
+                          </button>
+                          <span className="pill text-[10px] bg-slate-100 text-slate-600">
+                            {pr.status === 'ACTIVE' ? pr.project_status : pr.status}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-brand-700 font-medium">
+                          {pr.role}
+                        </p>
+                      </div>
+                      {pr.since && (
+                        <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
+                          Member since {new Date(pr.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Past Posted Projects */}
             {myProjects.filter(p => ['COMPLETED', 'ARCHIVED'].includes(p.status)).length > 0 && (
               <div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-700 uppercase tracking-wider mt-6">Past Projects</h3>
+                <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wider">Your Past Projects</h3>
                 <div className="grid gap-4 sm:grid-cols-2 opacity-75">
                   {myProjects.filter(p => ['COMPLETED', 'ARCHIVED'].includes(p.status)).map((p) => (
                     <ProjectCard key={p.id} project={p} onClick={() => { setSelectedProject(p); setIsModalOpen(true); }} />
@@ -998,44 +987,7 @@ export default function Profile() {
         )}
       </section>
 
-      {/* Applications */}
-      <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Your applications</h2>
-        {myApplications.length === 0 ? (
-          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            You haven't applied to any projects yet.
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {myApplications.map((app) => (
-              <div key={app.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                <div>
-                  <button onClick={() => { setSelectedProject({ id: app.project_id }); setIsModalOpen(true); }} className="font-semibold text-slate-900 hover:text-[#7f1d3b] text-left">
-                    View project
-                  </button>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Applied {new Date(app.applied_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`pill ${STATUS_COLORS[app.status]}`}>{app.status}</span>
-                  {app.status === 'PENDING' && (
-                    <button
-                      onClick={() => withdrawApplication(app.id)}
-                      className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
-                    >
-                      Withdraw
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-
-
+      
       <ProjectDetailModal 
         isOpen={isModalOpen}
         onClose={() => {

@@ -78,6 +78,10 @@ const csrfCookieOptions = {
 }
 
 app.get('/api/csrf-token', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, private')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+  
   let token = req.cookies && req.cookies._csrf
   if (!token) {
     token = crypto.randomBytes(32).toString('hex')

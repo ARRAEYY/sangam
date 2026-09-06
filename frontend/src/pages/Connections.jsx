@@ -91,9 +91,9 @@ export default function Connections() {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-slate-900">Network</h1>
+          <h1 className="font-display text-2xl font-bold text-slate-900">Find Your People</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Manage your connections and network requests.
+            Connect, collaborate, and build together.
           </p>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default function Connections() {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Pending Sent ({sentRequests.length})
+          Requests({sentRequests.length})
         </button>
       </div>
 

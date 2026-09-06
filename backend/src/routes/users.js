@@ -55,7 +55,7 @@ router.get('/profile', requireAuth, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ detail: 'User not found.' })
     }
-    return res.json(serializeUser(user))
+    return res.json(serializeUser(user, {}, true))
   } catch (error) {
     return next(error)
   }
@@ -128,7 +128,7 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
     })
 
     const refreshed = await loadUserWithSkills(req.user.id)
-    return res.json(serializeUser(refreshed))
+    return res.json(serializeUser(refreshed, {}, true))
   } catch (error) {
     return next(error)
   }
