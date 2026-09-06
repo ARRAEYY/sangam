@@ -12,6 +12,10 @@ export default function TalentSearch() {
   const [error, setError] = useState('')
   const [connectState, setConnectState] = useState({}) // userId -> 'sent' | 'error message'
   
+  const [connectedUserIds, setConnectedUserIds] = useState(new Set())
+  const [sentReqUserIds, setSentReqUserIds] = useState(new Set())
+  const [receivedReqUserIds, setReceivedReqUserIds] = useState(new Set())
+
   const [connectingUserId, setConnectingUserId] = useState(null)
   const [connectionMessage, setConnectionMessage] = useState('')
 
@@ -22,8 +26,17 @@ export default function TalentSearch() {
     setLoading(true)
     setError('')
     try {
-      const data = await api.searchTalent({ skill: skillFilter })
+      const [data, conns, sent, received] = await Promise.all([
+        api.searchTalent({ skill: skillFilter }),
+        api.listConnections().catch(() => []),
+        api.listConnectionRequests('sent').catch(() => []),
+        api.listConnectionRequests('received').catch(() => [])
+      ])
+      
       setTalent(data)
+      setConnectedUserIds(new Set((conns || []).map(c => c.user?.id).filter(Boolean)))
+      setSentReqUserIds(new Set((sent || []).filter(r => r.status === 'PENDING').map(r => r.recipient?.id).filter(Boolean)))
+      setReceivedReqUserIds(new Set((received || []).filter(r => r.status === 'PENDING').map(r => r.requester?.id).filter(Boolean)))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -47,6 +60,7 @@ export default function TalentSearch() {
     try {
       await api.sendConnectionRequest(personId, connectionMessage)
       setConnectState((prev) => ({ ...prev, [personId]: 'sent' }))
+      setSentReqUserIds((prev) => new Set([...prev, personId]))
       setConnectingUserId(null)
       setConnectionMessage('')
     } catch (err) {
@@ -67,6 +81,85 @@ export default function TalentSearch() {
     } finally {
       setProfileLoading(false)
     }
+  }
+
+  const renderCardConnectionAction = (personId) => {
+    if (!user || user.id === personId) return null
+
+    if (connectedUserIds.has(personId)) {
+      return (
+        <span className="flex w-full items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition">
+          <Check size={13} /> Connected
+        </span>
+      )
+    }
+
+    if (sentReqUserIds.has(personId) || connectState[personId] === 'sent') {
+      return (
+        <button disabled className="flex w-full items-center justify-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 transition cursor-default">
+          <Check size={13} /> Request sent
+        </button>
+      )
+    }
+
+    if (receivedReqUserIds.has(personId)) {
+      return (
+        <span className="flex w-full items-center justify-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition">
+          Pending Invitation
+        </span>
+      )
+    }
+
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); setConnectingUserId(personId); }}
+        className="flex w-full items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition"
+      >
+        <UserPlus size={13} /> Connect
+      </button>
+    )
+  }
+
+  const renderModalConnectionAction = (personId) => {
+    if (!user || user.id === personId) return null
+
+    if (connectedUserIds.has(personId)) {
+      return (
+        <span className="flex items-center justify-center gap-2 h-10 px-5 text-sm font-semibold text-emerald-700 bg-emerald-50 rounded-lg">
+          <Check size={16} /> Connected
+        </span>
+      )
+    }
+
+    if (sentReqUserIds.has(personId) || connectState[personId] === 'sent') {
+      return (
+        <span className="flex items-center justify-center gap-2 h-10 px-5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg">
+          <Check size={16} /> Request sent
+        </span>
+      )
+    }
+
+    if (receivedReqUserIds.has(personId)) {
+      return (
+        <span className="flex items-center justify-center gap-2 h-10 px-5 text-sm font-semibold text-amber-800 bg-amber-50 rounded-lg">
+          Pending Invitation
+        </span>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        className="btn-primary w-full !px-5"
+        onClick={() => {
+          setSelectedUser(null);
+          setConnectingUserId(personId);
+        }}
+      >
+        <UserPlus size={16} className="inline-block mr-2 -mt-0.5" />
+        Connect
+      </button>
+    )
   }
 
   return (
@@ -177,18 +270,7 @@ export default function TalentSearch() {
 
               {user && user.id !== person.id && (
                 <div className={`${(person.github_url || person.linkedin_url || person.portfolio_url) ? '' : 'border-t border-slate-100 pt-3'} mt-auto`}>
-                  {connectState[person.id] === 'sent' ? (
-                    <button disabled className="flex w-full items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition">
-                      <Check size={13} /> Request sent
-                    </button>
-                  ) : (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConnectingUserId(person.id); }}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 outline-none transition"
-                    >
-                      <UserPlus size={13} /> Connect
-                    </button>
-                  )}
+                  {renderCardConnectionAction(person.id)}
                   {connectState[person.id] && connectState[person.id] !== 'sent' && (
                     <p className="mt-1.5 text-center text-xs text-slate-400">{connectState[person.id]}</p>
                   )}
@@ -250,23 +332,7 @@ export default function TalentSearch() {
                 </div>
                 {user && user.id !== selectedUser.id && (
                   <div className="shrink-0 w-full sm:w-auto">
-                    {connectState[selectedUser.id] === 'sent' ? (
-                      <span className="flex items-center justify-center gap-2 h-10 px-5 text-sm font-semibold text-emerald-600 bg-emerald-50 rounded-lg">
-                        <Check size={16} /> Request sent
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-primary w-full !px-5"
-                        onClick={() => {
-                          setSelectedUser(null);
-                          setConnectingUserId(selectedUser.id);
-                        }}
-                      >
-                        <UserPlus size={16} className="inline-block mr-2 -mt-0.5" />
-                        Connect
-                      </button>
-                    )}
+                    {renderModalConnectionAction(selectedUser.id)}
                   </div>
                 )}
               </div>
@@ -281,10 +347,10 @@ export default function TalentSearch() {
               <div className="mb-8">
                 <h3 className="text-sm font-semibold text-slate-900 mb-2">Skills</h3>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedUser.skills.map((s) => (
-                    <span key={s.id} className="pill bg-slate-100 text-slate-600">{s.name}</span>
+                  {(selectedUser.skills || []).map((s) => (
+                    <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600">{s.name}</span>
                   ))}
-                  {selectedUser.skills.length === 0 && <span className="text-sm text-slate-500">No skills listed.</span>}
+                  {(!selectedUser.skills || selectedUser.skills.length === 0) && <span className="text-sm text-slate-500">No skills listed.</span>}
                 </div>
               </div>
 

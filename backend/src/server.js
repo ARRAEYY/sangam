@@ -45,7 +45,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         callback(null, true)
         return
       }
@@ -133,6 +133,11 @@ app.use(errorHandler)
 
 async function start() {
   try {
+    app.listen(port, '127.0.0.1', () => {
+      logger.info(`Campus Platform API running on port ${port}`)
+      console.log(`Campus Platform API running on port ${port}`)
+    })
+
     await sequelize.authenticate()
 
     // Sync creates any tables that don't yet exist
@@ -323,10 +328,6 @@ async function start() {
       } else {
         logger.warn(`[SMTP WARN] ${smtpStatus.status}`)
       }
-    })
-
-    app.listen(port, '0.0.0.0', () => {
-      logger.info(`Campus Platform API running on port ${port}`)
     })
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`, error)

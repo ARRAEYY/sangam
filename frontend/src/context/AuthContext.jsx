@@ -34,7 +34,6 @@ export function AuthProvider({ children }) {
 
   const register = async (payload) => {
     const result = await api.register(payload)
-    // Register might return a user if email verification is bypassed, but we made it mandatory
     return result
   }
 

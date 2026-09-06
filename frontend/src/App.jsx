@@ -16,6 +16,8 @@ import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
 import TalentSearch from './pages/TalentSearch.jsx'
 import Notifications from './pages/Notifications.jsx'
+import Applications from './pages/Applications.jsx'
+import Connections from './pages/Connections.jsx'
 
 // Landing, Auth, and ResetPassword are full-bleed marketing/entry screens; every other
 // route lives inside the app shell with the floating icon sidebar on desktop
@@ -56,6 +58,8 @@ export default function App() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/applications" element={<ProtectedRoute><Applications /></ProtectedRoute>} />
+            <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

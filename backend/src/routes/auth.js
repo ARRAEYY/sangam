@@ -235,13 +235,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ detail: 'Invalid email or password.' })
     }
 
-    // Unconditionally require email verification
-    if (!user.email_verified) {
-      return res.status(403).json({
-        detail: 'Please verify your email before logging in. Check your inbox for the verification link.',
-        email_unverified: true,
-      })
-    }
+    // Email verification check removed as requested by user
 
     const jwt = signToken(user)
     const refreshStr = generateRefreshToken()

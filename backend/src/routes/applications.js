@@ -8,8 +8,20 @@ const router = express.Router()
 
 router.get('/mine', requireAuth, async (req, res, next) => {
   try {
+    const userId = req.user.id
+    
     const applications = await Application.findAll({
-      where: { user_id: req.user.id },
+      where: { user_id: userId },
+      include: [
+        {
+          model: Project,
+          as: 'project',
+          attributes: ['id', 'title', 'short_description', 'description', 'owner_id'],
+          include: [
+            { model: User, as: 'owner', attributes: ['id', 'full_name'] },
+          ],
+        },
+      ],
       order: [['created_at', 'DESC']],
     })
 
@@ -19,6 +31,20 @@ router.get('/mine', requireAuth, async (req, res, next) => {
         project_id: application.project_id,
         status: application.status,
         applied_at: application.created_at || application.createdAt,
+        project: application.project
+          ? {
+              id: application.project.id,
+              title: application.project.title,
+              description: application.project.description,
+              short_description: application.project.short_description,
+              owner: application.project.owner
+                ? {
+                    id: application.project.owner.id,
+                    full_name: application.project.owner.full_name,
+                  }
+                : null,
+            }
+          : null,
       }))
     )
   } catch (error) {
