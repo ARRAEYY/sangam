@@ -137,8 +137,8 @@ app.use(errorHandler)
 
 async function start() {
   try {
-    app.listen(port, '127.0.0.1', () => {
-      logger.info(`Campus Platform API running on port ${port}`)
+    app.listen(port, '0.0.0.0', () => {
+      logger.info(`Server running on port ${port}`)
       console.log(`Campus Platform API running on port ${port}`)
     })
 

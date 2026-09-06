@@ -246,7 +246,6 @@ router.get('/search', requireAuth, async (req, res, next) => {
       users.map((u) => ({
         id: u.id,
         full_name: u.full_name,
-        email: u.email,
         avatar_url: u.avatar_url || null,
         headline: u.headline || null,
         branch: u.branch,
