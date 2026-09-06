@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Users2, PlusCircle, User, Bell } from 'lucide-react'
+import { Users2, PlusCircle, User, Network } from 'lucide-react'
 import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
@@ -42,11 +42,10 @@ export default function MobileBottomNav() {
     { key: 'talent', to: '/talent', label: 'Talent', icon: Users2 },
     { key: 'create', to: '/create', label: 'Post', icon: PlusCircle, isAction: true },
     {
-      key: 'alerts',
-      to: user ? '/notifications' : '/auth',
-      label: 'Alerts',
-      icon: Bell,
-      badge: unreadCount,
+      key: 'connections',
+      to: user ? '/connections' : '/auth',
+      label: 'Network',
+      icon: Network,
     },
     {
       key: 'profile',

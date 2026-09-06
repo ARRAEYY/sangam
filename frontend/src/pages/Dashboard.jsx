@@ -255,11 +255,11 @@ export default function Dashboard() {
           <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.builds.toString().padStart(2, '0')}</strong>
           <span className="stat-caption block text-[11px] text-slate-400">Projects you are working on</span>
         </div>
-        <div className="stat-block">
+        <Link to="/connections" className="stat-block block hover:bg-slate-50 transition-colors rounded-xl -mx-2 px-2 py-1">
           <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Worker network</span>
           <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.network.toString().padStart(2, '0')}</strong>
           <span className="stat-caption block text-[11px] text-slate-400">Accepted connections</span>
-        </div>
+        </Link>
         <div className="stat-block profile-stat flex flex-col justify-center px-6">
           <div className="stat-line mb-2">
             <span className="eyebrow text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile signal</span>

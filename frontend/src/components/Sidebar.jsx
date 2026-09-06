@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutGrid, Users2, PlusCircle, User, LogOut, Bell, LayoutDashboard, ClipboardCheck } from 'lucide-react'
+import { LayoutGrid, Users2, PlusCircle, User, LogOut, Bell, LayoutDashboard, ClipboardCheck, Network } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api'
 
@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { to: '/talent', label: 'Find talent', icon: Users2 },
   { to: '/applications', label: 'Applications', icon: ClipboardCheck, requiresAuth: true },
   { to: '/create', label: 'Post a project', icon: PlusCircle, requiresAuth: true },
-  { to: '/notifications', label: 'Notifications', icon: Bell, requiresAuth: true },
+  { to: '/connections', label: 'Connections', icon: Network, requiresAuth: true },
   { to: '/profile', label: 'Your profile', icon: User, requiresAuth: true },
 ]
 

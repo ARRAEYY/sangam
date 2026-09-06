@@ -22,7 +22,11 @@ module.exports = {
       created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
     })
-    await queryInterface.addIndex('connection_requests', ['requester_id', 'recipient_id'])
+    try {
+      await queryInterface.addIndex('connection_requests', ['requester_id', 'recipient_id'])
+    } catch (e) {
+      // Index may already exist in SQLite
+    }
   },
   async down(queryInterface) {
     await queryInterface.dropTable('connection_requests')

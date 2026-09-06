@@ -18,7 +18,7 @@ const TYPE_META = {
 }
 
 function destinationFor(notification) {
-  if (notification.type === 'CONNECTION_REQUEST') return '/dashboard?tab=connections'
+  if (notification.type === 'CONNECTION_REQUEST') return '/connections'
   if (notification.project) return `/projects/${notification.project.id}`
   return null
 }

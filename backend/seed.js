@@ -21,7 +21,9 @@ async function seed() {
       full_name: 'Ananya Sharma',
       branch: 'Computer Science',
       graduation_year: 2026,
+      headline: 'Software Engineer at Campus Platform',
       bio: 'Building campus tools with a product mindset and a love for polished UX.',
+      avatar_url: 'https://i.pravatar.cc/150?u=ananya',
       github_url: 'https://github.com/ananya',
       linkedin_url: 'https://linkedin.com/in/ananya',
       portfolio_url: 'https://ananya.dev',
@@ -32,7 +34,9 @@ async function seed() {
       full_name: 'Vikram Singh',
       branch: 'Electronics',
       graduation_year: 2027,
+      headline: 'Product Designer | Design Systems',
       bio: 'I enjoy systems thinking, prototypes, and shipping tools that students actually use.',
+      avatar_url: 'https://i.pravatar.cc/150?u=vikram',
       github_url: 'https://github.com/vikram',
       linkedin_url: 'https://linkedin.com/in/vikram',
       portfolio_url: 'https://vikram.design',
@@ -43,7 +47,9 @@ async function seed() {
       full_name: 'Meher Khan',
       branch: 'Data Science',
       graduation_year: 2025,
+      headline: 'Data Scientist | Machine Learning',
       bio: 'Interested in AI workflows, product analytics, and collaborative problem solving.',
+      avatar_url: 'https://i.pravatar.cc/150?u=meher',
       github_url: 'https://github.com/meher',
       linkedin_url: 'https://linkedin.com/in/meher',
       portfolio_url: 'https://meher.ai',
@@ -54,10 +60,32 @@ async function seed() {
       full_name: 'Aditi Rao',
       branch: 'Interaction Design',
       graduation_year: 2026,
+      headline: 'UX Researcher | HCI',
       bio: 'Designing experiences for communities, education, and social impact.',
+      avatar_url: 'https://i.pravatar.cc/150?u=aditi',
       github_url: 'https://github.com/aditi',
       linkedin_url: 'https://linkedin.com/in/aditi',
       portfolio_url: 'https://aditi.design',
+    },
+    {
+      email: 'rohan@nst.rishihood.edu.in',
+      password: 'Password123',
+      full_name: 'Rohan Gupta',
+      branch: 'Computer Science',
+      graduation_year: 2026,
+      headline: 'Backend Developer | Go Enthusiast',
+      bio: 'Building scalable microservices and robust APIs.',
+      avatar_url: 'https://i.pravatar.cc/150?u=rohan',
+    },
+    {
+      email: 'priya@nst.rishihood.edu.in',
+      password: 'Password123',
+      full_name: 'Priya Desai',
+      branch: 'Business Analytics',
+      graduation_year: 2025,
+      headline: 'Product Manager | Strategy',
+      bio: 'Connecting tech with business goals.',
+      avatar_url: 'https://i.pravatar.cc/150?u=priya',
     },
   ]
 
@@ -139,6 +167,22 @@ async function seed() {
       status: 'ACCEPTED',
     },
   })
+
+  // Dummy Connections
+  const { Connection, ConnectionRequest } = require('./src/models')
+  const [rohan] = users.slice(4)
+  const [priya] = users.slice(5)
+
+  // Connections (Ananya <-> Vikram, Ananya <-> Meher)
+  await Connection.findOrCreate({ where: { user_a_id: ananya.id < vikram.id ? ananya.id : vikram.id, user_b_id: ananya.id < vikram.id ? vikram.id : ananya.id } })
+  await Connection.findOrCreate({ where: { user_a_id: ananya.id < meher.id ? ananya.id : meher.id, user_b_id: ananya.id < meher.id ? meher.id : ananya.id } })
+
+  // Received Requests for Ananya (Aditi -> Ananya, Rohan -> Ananya)
+  await ConnectionRequest.findOrCreate({ where: { requester_id: aditi.id, recipient_id: ananya.id, status: 'PENDING' } })
+  await ConnectionRequest.findOrCreate({ where: { requester_id: rohan.id, recipient_id: ananya.id, status: 'PENDING' } })
+
+  // Sent Requests from Ananya (Ananya -> Priya)
+  await ConnectionRequest.findOrCreate({ where: { requester_id: ananya.id, recipient_id: priya.id, status: 'PENDING' } })
 
   console.log('Seed completed successfully.')
   await sequelize.close()

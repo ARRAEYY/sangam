@@ -7,9 +7,6 @@ import {
   Pencil,
   Check,
   X as XIcon,
-  UserCheck,
-  UserX,
-  UserMinus,
   Code2,
   Plus,
   Briefcase,
@@ -45,7 +42,7 @@ export default function Profile() {
   const [editingProfile, setEditingProfile] = useState(false)
   const [profileDraft, setProfileDraft] = useState(null)
   const [error, setError] = useState('')
-  const [pendingRequests, setPendingRequests] = useState([])
+
   const [connections, setConnections] = useState([])
 
   // Work experience
@@ -115,9 +112,6 @@ export default function Profile() {
 
   const loadConnections = () => {
     if (!user) return
-    api.listConnectionRequests('received').then((all) =>
-      setPendingRequests(all.filter((r) => r.status === 'PENDING'))
-    ).catch((err) => setError(err.message))
     api.listConnections().then(setConnections).catch((err) => setError(err.message))
   }
 
@@ -149,24 +143,7 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  const respondToRequest = async (id, status) => {
-    try {
-      await api.respondToConnectionRequest(id, status)
-      loadConnections()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
 
-  const handleRemoveConnection = async (connectionId) => {
-    if (!window.confirm('Are you sure you want to remove this connection?')) return
-    try {
-      await api.removeConnection(connectionId)
-      loadConnections()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
 
   const withdrawApplication = async (id) => {
     try {
@@ -356,6 +333,9 @@ export default function Profile() {
                   <p className="text-xs sm:text-sm text-slate-500">
                     {user.branch} · Class of {user.graduation_year}
                   </p>
+                  <Link to="/connections" className="inline-block mt-0.5 mb-0.5 text-xs sm:text-sm font-semibold text-brand-700 hover:text-brand-800 hover:underline">
+                    {connections.length > 500 ? '500+' : connections.length} connections
+                  </Link>
                   {user.headline && <p className="mt-0.5 text-xs sm:text-sm text-slate-600">{user.headline}</p>}
                   {user.location && <p className="mt-0.5 text-xs text-slate-400">{user.location}</p>}
                 </div>
@@ -365,11 +345,11 @@ export default function Profile() {
               </button>
             </div>
 
-            {(!user.bio || user.skills.length === 0) && (
+            {(!user.bio || !user.skills || user.skills.length === 0) && (
               <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4">
                 <h3 className="text-sm font-semibold text-brand-800">Profile Strength: Missing information</h3>
                 <p className="mt-1 text-xs text-brand-700">
-                  Your profile in Find Talent appears mostly empty. Please add a {!user.bio && !user.skills.length ? 'bio and some skills' : !user.bio ? 'bio' : 'few skills'} to help others connect with you!
+                  Your profile in Find Talent appears mostly empty. Please add a {!user.bio && (!user.skills || !user.skills.length) ? 'bio and some skills' : !user.bio ? 'bio' : 'few skills'} to help others connect with you!
                 </p>
               </div>
             )}
@@ -405,12 +385,12 @@ export default function Profile() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {user.skills.map((s) => (
-                <span key={s.id} className="pill bg-brand-50 text-brand-700">
+              {(user.skills || []).map((s) => (
+                <span key={s.id || s.name} className="pill bg-brand-50 text-brand-700">
                   {s.name}
                 </span>
               ))}
-              {user.skills.length === 0 && (
+              {(!user.skills || user.skills.length === 0) && (
                 <span className="text-xs text-slate-400">No skills added yet.</span>
               )}
             </div>
@@ -1049,112 +1029,7 @@ export default function Profile() {
         )}
       </section>
 
-      {/* Connection Requests */}
-      <section id="connections" className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">
-          Connection requests
-          {pendingRequests.length > 0 && (
-            <span className="ml-2 pill bg-amber-50 text-amber-700">{pendingRequests.length} pending</span>
-          )}
-        </h2>
-        {pendingRequests.length === 0 ? (
-          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            No pending connection requests right now.
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {pendingRequests.map((req) => (
-              <div key={req.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="font-semibold text-slate-900">
-                    {req.requester ? req.requester.full_name : 'Deleted User'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {req.requester ? `${req.requester.branch} · Class of ${req.requester.graduation_year}` : 'Account no longer exists'}
-                  </p>
-                  {req.message && (
-                    <p className="mt-2 text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 italic">
-                      "{req.message}"
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => respondToRequest(req.id, 'ACCEPTED')}
-                    className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-                  >
-                    <UserCheck size={13} /> Accept
-                  </button>
-                  <button
-                    onClick={() => respondToRequest(req.id, 'DECLINED')}
-                    className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
-                  >
-                    <UserX size={13} /> Decline
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
-      {/* Your Connections */}
-      <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">
-          Your connections {connections.length > 0 && `(${connections.length})`}
-        </h2>
-        {connections.length === 0 ? (
-          <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
-            You haven't connected with anyone yet. Visit{' '}
-            <Link to="/talent" className="font-semibold text-brand-600">
-              Find talent
-            </Link>{' '}
-            to send a connection request.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {connections.map((c) => (
-              <div key={c.connection_id} className="card flex items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  {c.user?.avatar_url ? (
-                    <img
-                      src={c.user.avatar_url}
-                      alt={c.user.full_name || 'Deleted User'}
-                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-200"
-                    />
-                  ) : (
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
-                      {c.user && c.user.full_name
-                        ? c.user.full_name
-                            .split(' ')
-                            .map((p) => p[0])
-                            .slice(0, 2)
-                            .join('')
-                            .toUpperCase()
-                        : '?'}
-                    </span>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">
-                      {c.user ? c.user.full_name : 'Deleted User'}
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      {c.user ? `${c.user.branch} · Class of ${c.user.graduation_year}` : 'Account no longer exists'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRemoveConnection(c.connection_id)}
-                  title="Remove connection"
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-                >
-                  <UserMinus size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       
     </div>

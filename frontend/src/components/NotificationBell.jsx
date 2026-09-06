@@ -7,11 +7,11 @@ import { api } from '../api'
 const POLL_INTERVAL_MS = 15000
 
 export default function NotificationBell() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    if (!user || !token) {
+    if (!user) {
       setCount(0)
       return
     }
@@ -20,11 +20,10 @@ export default function NotificationBell() {
 
     const fetchCount = async () => {
       try {
-        const { count: unread } = await api.unreadNotificationCount(token)
-        if (!cancelled) setCount(unread)
+        const res = await api.unreadNotificationCount()
+        if (!cancelled && res) setCount(res.count || 0)
       } catch {
-        // Silently ignore transient polling errors - the bell just won't
-        // update this cycle rather than surfacing a disruptive error.
+        // Silently ignore transient polling errors
       }
     }
 
@@ -34,7 +33,7 @@ export default function NotificationBell() {
       cancelled = true
       clearInterval(interval)
     }
-  }, [user, token])
+  }, [user])
 
   if (!user) return null
 

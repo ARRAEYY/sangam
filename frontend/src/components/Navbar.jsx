@@ -12,6 +12,7 @@ import {
   Bell,
   LogIn,
   Settings,
+  Network,
 } from 'lucide-react'
 import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -101,11 +102,10 @@ export default function Navbar() {
     { to: '/explore', label: 'Explore projects', icon: ExploreIcon },
     { to: '/talent', label: 'Find talent', icon: Users2 },
     {
-      to: '/notifications',
-      label: 'Notifications',
-      icon: Bell,
+      to: '/connections',
+      label: 'Connections',
+      icon: Network,
       requiresAuth: true,
-      badge: unreadCount,
     },
     { to: '/dashboard', label: 'Your dashboard', icon: User, requiresAuth: true },
   ]
@@ -187,7 +187,8 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Header Toggle */}
-        <div className="flex items-center gap-1.5 md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
+          {user && <NotificationBell />}
           <button
             onClick={() => setMobileMenuOpen((open) => !open)}
             aria-label="Toggle navigation menu"
