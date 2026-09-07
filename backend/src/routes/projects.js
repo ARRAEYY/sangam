@@ -458,6 +458,7 @@ router.get('/:id/apps', requireAuth, async (req, res, next) => {
               id: application.applicant.id,
               full_name: application.applicant.full_name,
               email: application.applicant.email,
+              avatar_url: application.applicant.avatar_url || null,
               github_url: application.applicant.github_url,
             }
           : null,
