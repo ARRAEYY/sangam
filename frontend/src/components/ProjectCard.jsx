@@ -2,12 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Users, Clock } from 'lucide-react'
 
-const STATUS_STYLES = {
-  OPEN: 'bg-emerald-50 text-emerald-700',
-  IN_PROGRESS: 'bg-brand-50 text-brand-600',
-  COMPLETED: 'bg-slate-100 text-slate-500',
-}
-
+// Helpers
 function formatDate(dateString) {
   if (!dateString) return 'Recently'
   const date = new Date(dateString)
@@ -15,40 +10,74 @@ function formatDate(dateString) {
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-/** Strip basic markdown so it doesn't show as raw symbols in the card preview */
+function timeAgo(dateString) {
+  if (!dateString) return 'Recently'
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 'Recently'
+  const seconds = Math.floor((new Date() - date) / 1000)
+  if (seconds < 60) return 'Just now'
+  let interval = seconds / 86400
+  if (interval >= 1) return Math.floor(interval) + 'd ago'
+  interval = seconds / 3600
+  if (interval >= 1) return Math.floor(interval) + 'h ago'
+  interval = seconds / 60
+  if (interval >= 1) return Math.floor(interval) + 'm ago'
+  return 'Just now'
+}
+
 function stripMarkdown(text) {
   if (!text) return ''
   return text
-    .replace(/#{1,6}\s+/g, '')          // headings
-    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')  // bold / italic
-    .replace(/__([^_]+)__/g, '$1')       // bold underscores
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // links
-    .replace(/`{1,3}[^`]*`{1,3}/g, '')  // code
-    .replace(/^\s*[-*+]\s+/gm, '')      // list bullets
-    .replace(/\n{2,}/g, ' ')            // collapse blank lines
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/\n{2,}/g, ' ')
     .trim()
 }
 
-function OwnerAvatar({ owner }) {
-  if (!owner) return null
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-slate-500 truncate min-w-0">
-      {owner.avatar_url ? (
-        <img src={owner.avatar_url} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
-      ) : (
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[9px] font-bold text-brand-700">
-          {(owner.full_name || '?')[0].toUpperCase()}
-        </span>
-      )}
-      <span className="truncate">by {owner.full_name}</span>
-    </span>
-  )
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 }
 
-export default function ProjectCard({ project, onClick }) {
-  const memberCount = project.member_count || 0
-  const statusLabel = (project.status || 'OPEN').replace('_', ' ')
-  const description = stripMarkdown(project.description)
+function getAccent(idStr) {
+  if (!idStr) return 'maroon';
+  const accents = ['maroon', 'blue', 'sand'];
+  // simple deterministic hash based on string length and first char code
+  const hash = idStr.length + (idStr.charCodeAt(0) || 0);
+  return accents[hash % accents.length];
+}
+
+export default function ProjectCard({ project, onClick, featured }) {
+  // Extract values from raw API object to match the preview UI structure
+  const memberCount = project.member_count || 0;
+  const statusRaw = project.status || 'OPEN';
+  const statusFormatted = statusRaw === 'OPEN' ? 'Open' : statusRaw === 'IN_PROGRESS' ? 'In progress' : 'Completed';
+  
+  const summary = stripMarkdown(project.description || project.short_description || '');
+  const skills = (project.required_skills || []).map(s => s.name || s);
+  
+  const creator = project.owner?.full_name || 'Anonymous';
+  const initials = getInitials(creator);
+  const time = timeAgo(project.created_at);
+  
+  const team = memberCount > 0 ? `${memberCount} member${memberCount > 1 ? 's' : ''}` : 'Seeking members';
+  const accent = getAccent(project.id);
+  
+  const statusPillClass = statusRaw === 'OPEN' 
+    ? 'bg-emerald-50 text-emerald-700' 
+    : statusRaw === 'IN_PROGRESS' 
+      ? 'bg-[#eef3f5] text-[#30536d]' 
+      : 'bg-[#fdf5ea] text-[#8f5b36]';
+      
+  const statusDotClass = statusRaw === 'OPEN' 
+    ? 'bg-emerald-500' 
+    : statusRaw === 'IN_PROGRESS' 
+      ? 'bg-[#30536d]' 
+      : 'bg-[#8f5b36]';
 
   return (
     <Link
@@ -59,65 +88,60 @@ export default function ProjectCard({ project, onClick }) {
           onClick(project);
         }
       }}
-      className="card min-w-0 flex flex-col gap-3 p-4 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-card"
+      className={`project-card text-left accent-${accent} ${featured ? 'featured' : ''} block`}
     >
-      {/* Header row: title + badge */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className="font-display font-semibold text-slate-900 leading-snug line-clamp-2 text-sm sm:text-base">
-              {project.title}
-            </h3>
-          </div>
-          <div className="mt-1 flex items-center gap-2 flex-wrap">
-            <span className={`pill shrink-0 text-[11px] py-0.5 ${STATUS_STYLES[project.status] || 'bg-slate-100 text-slate-600'}`}>
-              {statusLabel}
+      <div className="project-card-topline">
+        <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+          {featured ? 'FEATURED BUILD' : (project.category && project.category !== 'Other' ? project.category.toUpperCase() : 'PROJECT')}
+          {project.matchCount > 0 && (
+            <span className="bg-[#7f1d3b]/10 text-[#7f1d3b] px-1.5 py-0.5 rounded-sm lowercase text-[9px] font-semibold">
+              {project.matchCount} skill match{project.matchCount > 1 ? 'es' : ''}
             </span>
-            {project.category && project.category !== 'Other' && (
-              <span className="pill shrink-0 text-[11px] py-0.5 bg-slate-50 text-slate-500 border border-slate-100">
-                {project.category.toUpperCase()}
-              </span>
-            )}
-            {memberCount > 0 && (
-              <span className="flex items-center gap-1 shrink-0 text-xs text-slate-500 font-medium">
-                <Users size={12} className="text-slate-400" /> {memberCount}
-              </span>
-            )}
-          </div>
+          )}
+        </span>
+        <div className={`status-pill ${statusPillClass}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
+          {statusFormatted}
         </div>
       </div>
 
-      {/* Description — strip markdown, clamp to 2 lines on mobile */}
-      {description && (
-        <p className="line-clamp-2 sm:line-clamp-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
-          {description}
-        </p>
-      )}
+      <div className="project-card-body">
+        {project.looking_for && (
+          <div className="mb-2 text-[15px] font-bold tracking-[0.1em] uppercase">
+            <span className="text-black font-medium mr-1.5">LOOKING FOR:</span>
+            <span className="text-[#7f1d3b] font-bold">{project.looking_for}</span>
+          </div>
+        )}
 
-      {/* Skill pills */}
-      {(project.required_skills || []).length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {(project.required_skills || []).slice(0, 4).map((s) => (
-            <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600 text-[11px] py-0.5">
-              {s.name}
+        <h3>{project.title}</h3>
+
+        <p className="line-clamp-2">{summary}</p>
+
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {skills.map(s => (
+            <span key={s} className="px-2.5 py-1 rounded-md bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100">
+              {s}
             </span>
           ))}
-          {(project.required_skills || []).length > 4 && (
-            <span className="pill bg-slate-50 text-slate-400 text-[11px] py-0.5">
-              +{(project.required_skills || []).length - 4}
-            </span>
-          )}
         </div>
-      )}
+      </div>
 
-      {/* Footer: owner + date */}
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-slate-100 pt-2.5 text-xs text-slate-500">
-        <OwnerAvatar owner={project.owner} />
-        <span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <Clock size={12} /> {formatDate(project.created_at)}
-        </span>
+      <div className="project-card-footer mt-auto">
+        <div className="flex items-center gap-3">
+          <span className={`avatar avatar-${accent}`}>
+            {project.owner?.avatar_url ? (
+              <img src={project.owner.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              initials
+            )}
+          </span>
+          <div className="flex flex-col">
+            <span className="text-[12px] font-bold text-slate-800">{creator}</span>
+            <span className="text-[10px] text-slate-400">{time}</span>
+          </div>
+        </div>
+        <span className="text-[10px] font-medium text-slate-500">{team}</span>
       </div>
     </Link>
   )
 }
-
