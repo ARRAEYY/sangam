@@ -11,11 +11,14 @@ export function AuthProvider({ children }) {
     // Attempt to fetch profile on mount using HttpOnly cookie
     api
       .getProfile()
-      .then(setUser)
+      .then((profile) => {
+        setUser(profile)
+        setLoading(false)
+      })
       .catch(() => {
         setUser(null)
+        setLoading(false)
       })
-      .finally(() => setLoading(false))
   }, [])
 
   const login = async (email, password) => {

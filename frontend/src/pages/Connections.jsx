@@ -87,7 +87,7 @@ export default function Connections() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-16 pt-2">
+    <div className="max-w-4xl ml-3 pb-16 pt-2">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -142,7 +142,7 @@ export default function Connections() {
         <div>
           {/* CONNECTIONS TAB (LinkedIn Style Row List) */}
           {activeTab === 'connections' && (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-xl border border-slate-200  shadow-sm">
               {/* Filter / Search Control Bar matching LinkedIn UI */}
               <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 font-medium">
@@ -220,13 +220,6 @@ export default function Connections() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 shrink-0 relative">
-                          <button
-                            onClick={() => alert(`Messaging with ${person.full_name} coming soon!`)}
-                            className="px-3.5 py-1.5 rounded-full border border-brand-700 text-brand-700 hover:bg-brand-50 transition text-xs sm:text-sm font-semibold flex items-center gap-1.5"
-                          >
-                            <MessageSquare size={14} /> Message
-                          </button>
-
                           <div className="relative">
                             <button
                               onClick={() => setOpenDropdownId(openDropdownId === c.connection_id ? null : c.connection_id)}
@@ -293,11 +286,6 @@ export default function Connections() {
                             <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mt-0.5">
                               {person.headline ? person.headline : `${person.branch || 'Student'} · Class of ${person.graduation_year || '2026'}`}
                             </p>
-                            {req.message && (
-                              <p className="mt-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200 italic">
-                                "{req.message}"
-                              </p>
-                            )}
                           </div>
                         </div>
 

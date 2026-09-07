@@ -307,7 +307,7 @@ export default function Profile() {
     .toUpperCase()
 
   return (
-    <div className="max-w-4xl mx-auto pb-16 pt-2">
+    <div className="max-w-4xl ml-3 pb-16 pt-2">
       {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       <section className="card mb-10 p-5 sm:p-7">

@@ -56,7 +56,7 @@ export default function Auth() {
         navigate(target, { replace: true })
       }
     }
-  }, [user, navigate, searchParams])
+  }, [user, navigate, searchParams, login])
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const loginEmailDomainValid = isCampusEmail(loginForm.email)
