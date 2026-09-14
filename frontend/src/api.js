@@ -212,4 +212,8 @@ export const api = {
   listConnections: (token) => request('/api/connections', { token }),
   removeConnection: (id, token) =>
     request(`/api/connections/${id}`, { method: 'DELETE', token }),
+
+  // Founder Suite
+  getFounderProjects: (token) => request('/api/founder/projects', { token }),
+  getProjectAttention: (projectId, token) => request(`/api/founder/projects/${projectId}/attention`, { token }),
 }
