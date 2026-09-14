@@ -223,4 +223,7 @@ export const api = {
       body: { action },
       token
     }),
+  getTasks: (projectId, token) => request(`/api/projects/${projectId}/tasks`, { token }),
+  updateTask: (projectId, taskId, payload, token) =>
+    request(`/api/projects/${projectId}/tasks/${taskId}`, { method: 'PATCH', body: payload, token }),
 }
