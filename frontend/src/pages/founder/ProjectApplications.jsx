@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FounderGuard from '../../components/auth/FounderGuard';
 import ApplicantCard from '../../components/founder/ApplicantCard';
 import { api } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { Sparkles } from 'lucide-react';
 
 const ProjectApplications = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -19,9 +21,7 @@ const ProjectApplications = () => {
     const fetchApplicants = async () => {
       try {
         setLoading(true);
-        // The token is handled by the HttpOnly cookie in the api.js request,
-        // but we might need a dummy token if the api.js requires one.
-        const data = await api.getFounderApplicants(projectId, 'dummy-token');
+        const data = await api.getFounderApplicants(projectId, user?.token);
         setApplicants(data);
       } catch (err) {
         console.error('Failed to fetch applicants:', err);
@@ -31,7 +31,7 @@ const ProjectApplications = () => {
     };
 
     fetchApplicants();
-  }, [projectId]);
+  }, [projectId, user?.token]);
 
   const handleAction = async (action, applicantId) => {
     try {
@@ -43,7 +43,7 @@ const ProjectApplications = () => {
         setTimeout(() => setShowWelcome(false), 2000);
       }
 
-      await api.applicantAction(projectId, applicantId, action, 'dummy-token');
+      await api.applicantAction(projectId, applicantId, action, user?.token);
 
       // Move to next card after a short delay to allow animation
       setTimeout(() => {

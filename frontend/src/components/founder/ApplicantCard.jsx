@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Check, X, Bookmark } from 'lucide-react';
 
 const ApplicantCard = ({ applicant, onAction, index, exitAnimation }) => {
@@ -13,6 +13,21 @@ const ApplicantCard = ({ applicant, onAction, index, exitAnimation }) => {
     exitShortlist: { y: -500, rotate: 0, opacity: 0, scale: 0.8, transition: { duration: 0.4 } },
   };
 
+  const handleDragEnd = (event, info) => {
+    const { x, y } = info.offset;
+
+    // Thresholds for swiping
+    const THRESHOLD = 150;
+
+    if (x > THRESHOLD) {
+      onAction('ACCEPT', applicant.id);
+    } else if (x < -THRESHOLD) {
+      onAction('REJECT', applicant.id);
+    } else if (y < -THRESHOLD) {
+      onAction('SHORTLIST', applicant.id);
+    }
+  };
+
   return (
     <motion.div
       className="absolute w-full max-w-md aspect-[3/4] bg-indigo-50 border-2 border-yellow-400 rounded-3xl shadow-xl overflow-hidden cursor-grab active:cursor-grabbing select-none"
@@ -20,6 +35,10 @@ const ApplicantCard = ({ applicant, onAction, index, exitAnimation }) => {
       initial="initial"
       animate={exitAnimation ? `exit${exitAnimation}` : "initial"}
       style={{ zIndex: 100 - index }}
+      drag
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      onDragEnd={handleDragEnd}
+      whileDrag={{ scale: 1.05, rotate: (info) => info.offset.x / 20 }}
     >
       <div className="h-full flex flex-col">
         {/* Header / Image Section */}
