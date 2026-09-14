@@ -37,7 +37,7 @@ export default function FounderGuard({ children }) {
         <p className="text-indigo-900 font-medium animate-pulse">
           Loading Command Center...
         </p>
-      </div>
+      </div>>
     )
   }
 
