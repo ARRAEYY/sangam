@@ -18,7 +18,7 @@ export default function FounderGuard({ children }) {
       }
 
       try {
-        const context = await api.getProjectContext(projectId)
+        const context = await api.getProjectContext(projectId, user.token)
         setIsLead(context.is_lead)
       } catch (err) {
         console.error('Error checking lead status:', err)
@@ -32,7 +32,13 @@ export default function FounderGuard({ children }) {
   }, [user, projectId])
 
   if (authLoading || loading) {
-    return <p className="mx-auto max-w-3xl px-4 py-10 text-slate-500">Loading…</p>
+    return (
+      <div className="flex items-center justify-center min-h-[60dvh]">
+        <p className="text-indigo-900 font-medium animate-pulse">
+          Loading Command Center...
+        </p>
+      </div>
+    )
   }
 
   if (!user) {
