@@ -145,6 +145,7 @@ export const api = {
   getTeaserProjects: () => request('/api/projects/teaser'),
   listProjects: (params, token) => request('/api/projects', { params, token }),
   getProject: (id, token) => request(`/api/projects/${id}`, { token }),
+  getProjectContext: (id, token) => request(`/api/projects/${id}/context`, { token }),
   createProject: (payload, token) =>
     request('/api/projects', { method: 'POST', body: payload, token }),
   editProject: (id, payload, token) =>
