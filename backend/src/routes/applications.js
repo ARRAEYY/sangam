@@ -165,8 +165,8 @@ router.post('/founder/projects/:projectId/applicants/:appId/action', requireAuth
       return res.status(400).json({ detail: 'Invalid action. Must be ACCEPT, REJECT, or SHORTLIST.' });
     }
 
-    const application = await Application.findByPk(appId, {
-      where: { project_id: projectId }
+    const application = await Application.findOne({
+      where: { id: appId, project_id: projectId }
     });
 
     if (!application) {
@@ -207,7 +207,6 @@ router.post('/founder/projects/:projectId/applicants/:appId/action', requireAuth
       });
 
       // Notify the user
-      const { createNotification } = require('../services/notificationService');
       await createNotification({
         recipientId: application.user_id,
         actorId: req.user.id,
