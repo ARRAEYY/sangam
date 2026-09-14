@@ -110,9 +110,6 @@ export default function KanbanBoard({ tasks, onTaskMove, isLoading, error }) {
                           )}
                         </Draggable>
                       ))}
-                    {provided.droppableProps.style && (
-                      <div ref={provided.innerRef}></div> // This is not quite right, but provided.placeholder is what we need
-                    )}
                   </div>
                   {provided.placeholder}
                 </div>
