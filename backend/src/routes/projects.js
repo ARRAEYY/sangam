@@ -147,6 +147,59 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
 // ─── Founder Suite: Attention API ──────────────────────────────────
 
+router.post('/founder/projects/:projectId/tasks', requireAuth, checkProjectLead, async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const { title, description, priority } = req.body || {};
+
+    const project = await Project.findByPk(projectId);
+    if (!project) {
+      return res.status(404).json({ detail: 'Project not found.' });
+    }
+
+    const trimmedTitle = String(title || '').trim();
+    if (!trimmedTitle) {
+      return res.status(400).json({ detail: 'Task title is required.' });
+    }
+
+    const trimmedPriority = String(priority || '').trim().toUpperCase();
+    if (trimmedPriority && !Milestone.STATUSES.includes(trimmedPriority) && !['LOW', 'MEDIUM', 'HIGH'].includes(trimmedPriority)) {
+       // Wait, Milestone.STATUSES is for status, not priority.
+    }
+    // Correct priority validation:
+    if (trimmedPriority && !['LOW', 'MEDIUM', 'HIGH'].includes(trimmedPriority)) {
+      return res.status(400).json({ detail: 'Priority must be LOW, MEDIUM, or HIGH.' });
+    }
+
+    // Auto-increment order_index
+    const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId } });
+    const nextOrder = (maxOrder ?? -1) + 1;
+
+    const milestone = await Milestone.create({
+      project_id: projectId,
+      title: trimmedTitle,
+      description: description ? String(description).trim() : null,
+      priority: trimmedPriority || 'MEDIUM',
+      order_index: nextOrder,
+      created_by: req.user.id,
+      status: 'NOT_STARTED',
+    });
+
+    return res.status(201).json({
+      id: milestone.id,
+      title: milestone.title,
+      description: milestone.description,
+      priority: milestone.priority,
+      status: milestone.status,
+      order_index: milestone.order_index,
+      created_by: req.user.id,
+      created_at: milestone.created_at || milestone.createdAt,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId, taskId } = req.params;

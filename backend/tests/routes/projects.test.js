@@ -154,6 +154,123 @@ describe('GET /api/projects/founder/projects/:projectId/attention', () => {
   });
 });
 
+describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
+  let project;
+  let lead;
+  let member;
+
+  beforeAll(async () => {
+    await sequelize.sync({ force: true });
+
+    const owner = await User.create({
+      id: 'user-owner',
+      email: 'owner@test.com',
+      password: 'password',
+      full_name: 'Project Owner',
+      branch: 'CS',
+      graduation_year: '2024'
+    });
+    lead = await User.create({
+      id: 'user-lead',
+      email: 'lead@test.com',
+      password: 'password',
+      full_name: 'Project Lead',
+      branch: 'CS',
+      graduation_year: '2024'
+    });
+    member = await User.create({
+      id: 'user-non-lead',
+      email: 'member@test.com',
+      password: 'password',
+      full_name: 'Project Member',
+      branch: 'CS',
+      graduation_year: '2024'
+    });
+
+    project = await Project.create({
+      id: 'proj-1',
+      title: 'Test Project',
+      description: 'Test Description',
+      owner_id: owner.id,
+      team_size_needed: 1,
+    });
+
+    await ProjectMember.create({
+      project_id: project.id,
+      user_id: lead.id,
+      role: 'Lead',
+      role_category: 'LEAD',
+      is_lead: true,
+      status: 'ACTIVE',
+    });
+
+    await ProjectMember.create({
+      project_id: project.id,
+      user_id: member.id,
+      role: 'Member',
+      role_category: 'OTHER',
+      is_lead: false,
+      status: 'ACTIVE',
+    });
+  });
+
+  it('should allow project lead to create a task', async () => {
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .send({
+        title: 'New Admin Task',
+        description: 'Created by founder',
+        priority: 'HIGH'
+      })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.title).toBe('New Admin Task');
+    expect(res.body.priority).toBe('HIGH');
+  });
+
+  it('should return 400 if title is missing', async () => {
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .send({
+        description: 'Missing title',
+        priority: 'MEDIUM'
+      })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toMatch(/title/i);
+  });
+
+  it('should return 400 if priority is invalid', async () => {
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .send({
+        title: 'Invalid Priority Task',
+        description: 'Testing priority validation',
+        priority: 'URGENT'
+      })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toMatch(/priority/i);
+  });
+
+  it('should return 403 if user is not project lead', async () => {
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .send({
+        title: 'Unauthorized Task',
+        description: 'Should fail',
+        priority: 'LOW'
+      })
+      .set('Authorization', 'Bearer non-lead-token');
+
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', () => {
   let project;
   let lead;

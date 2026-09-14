@@ -42,6 +42,11 @@ const Milestone = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    priority: {
+      type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH'),
+      allowNull: true,
+      defaultValue: 'MEDIUM',
+    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: true,
