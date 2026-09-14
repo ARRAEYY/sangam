@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { X as XIcon, Calendar, Users, Briefcase, CheckCircle2, Loader2, Sparkles, AlertCircle, Edit2, Plus, Flag, Trash2, Check, Clock, Play } from 'lucide-react';
+import { X as XIcon, Calendar, Users, Briefcase, CheckCircle2, Loader2, Sparkles, AlertCircle, Edit2, Plus, Flag, Trash2, Check, Clock, Play, Zap } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MemberPickerModal } from './MemberPickerModal.jsx';
@@ -16,6 +16,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const navigate = useNavigate();
 
   const [project, setProject] = useState(null);
+  const [context, setContext] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -54,14 +55,20 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   }, [isOpen, projectPreview, user]);
 
   const isOwner = user && project && project.owner?.id === user.id;
+  const isLead = context?.is_lead === true || isOwner;
+  const canManage = isLead;
 
   const fetchProject = async () => {
     try {
-      const data = await api.getProject(projectPreview.id);
-      setProject(data);
-      if (data.status !== 'OPEN') {
+      const [projectData, contextData] = await Promise.all([
+        api.getProject(projectPreview.id),
+        api.getProjectContext(projectPreview.id)
+      ]);
+      setProject(projectData);
+      setContext(contextData);
+      if (projectData.status !== 'OPEN') {
         setApplyStatus('closed');
-      } else if (user && (data.owner?.id === user.id || data.members?.some(m => m.user_id === user.id))) {
+      } else if (user && (projectData.owner?.id === user.id || projectData.members?.some(m => m.user_id === user.id))) {
         setApplyStatus('already_member');
       }
     } catch (err) {
@@ -187,6 +194,19 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
         {/* Top Right Actions */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+          {canManage && (
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/founder/projects/${project.id}/overview`);
+              }}
+              title="Manage Project"
+              aria-label="Manage Project"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white bg-indigo-900 rounded-full shadow-sm hover:bg-indigo-800 transition-colors border border-yellow-500/50"
+            >
+              <Zap size={14} className="text-yellow-400 fill-yellow-400" /> Manage Project
+            </button>
+          )}
           {isOwner && (
             <button
               onClick={() => {
