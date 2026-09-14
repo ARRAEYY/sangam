@@ -9,7 +9,7 @@ const COLUMNS = [
   { id: 'Completed', icon: <CheckCircle2 size={16} />, color: 'bg-green-100 text-green-600' },
 ]
 
-export default function KanbanBoard({ tasks, onTaskMove, isLoading, error }) {
+export default function KanbanBoard({ tasks, onTaskMove, isLoading, error, onTaskClick }) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-500">
@@ -77,11 +77,12 @@ export default function KanbanBoard({ tasks, onTaskMove, isLoading, error }) {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
+                              onClick={() => col.id === 'Ready for Review' && onTaskClick && onTaskClick(task)}
                               className={`group p-4 bg-white rounded-xl border-l-4 shadow-sm transition-all duration-200 ${
                                 snapshot.isDragging
                                   ? 'shadow-xl ring-2 ring-indigo-400 border-indigo-600 scale-105'
                                   : 'border-transparent hover:border-yellow-400 hover:shadow-md'
-                              }`}
+                              } ${col.id === 'Ready for Review' ? 'cursor-pointer' : ''}`}
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1">

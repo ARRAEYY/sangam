@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, ListTodo, AlertCircle, X } from 'lucide-react'
 import { api } from '../../api'
 import KanbanBoard from '../../components/founder/KanbanBoard'
+import ReviewDrawer from '../../components/founder/ReviewDrawer'
 
 export default function ProjectTasks() {
   const { id: projectId } = useParams()
@@ -10,6 +11,7 @@ export default function ProjectTasks() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(null)
 
   useEffect(() => {
     async function fetchTasks() {
@@ -48,6 +50,15 @@ export default function ProjectTasks() {
       // Auto-clear toast after 5 seconds
       setTimeout(() => setToast(null), 5000)
     }
+  }
+
+  const handleTaskClick = (task) => {
+    setSelectedTask(task)
+  }
+
+  const handleReviewComplete = (taskId, decision) => {
+    const destinationStatus = decision === 'APPROVE' ? 'Completed' : 'In Progress'
+    handleTaskMove(taskId, 'Ready for Review', destinationStatus)
   }
 
   if (error) {
@@ -107,8 +118,18 @@ export default function ProjectTasks() {
           onTaskMove={handleTaskMove}
           isLoading={loading}
           error={error}
+          onTaskClick={handleTaskClick}
         />
       </div>
+
+      {selectedTask && (
+        <ReviewDrawer
+          task={selectedTask}
+          projectId={projectId}
+          onClose={() => setSelectedTask(null)}
+          onReviewComplete={handleReviewComplete}
+        />
+      )}
     </div>
   )
 }
