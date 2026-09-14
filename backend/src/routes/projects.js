@@ -2,6 +2,7 @@ const express = require('express')
 const { Op, Sequelize } = require('sequelize')
 const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone, Notification } = require('../models')
 const { requireAuth } = require('../middleware/auth')
+const { checkProjectLead } = require('../middleware/founderAuth')
 const { generalLimiter } = require('../middleware/rateLimit')
 const { serializeProject, serializeApplication } = require('../utils/serializers')
 const { notifyProjectApplication } = require('../services/notificationService')
@@ -143,6 +144,62 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     return next(error)
   }
 })
+
+// ─── Founder Suite: Attention API ──────────────────────────────────
+
+router.get('/founder/projects/:projectId/attention', requireAuth, checkProjectLead, async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+
+    // 1. Pending Applications
+    const pendingApps = await Application.findAll({
+      where: {
+        project_id: projectId,
+        status: 'PENDING',
+      },
+      include: [{ model: User, as: 'applicant', attributes: ['id', 'full_name', 'avatar_url'] }],
+    });
+
+    // 2. Blocked Tasks (Milestones)
+    const blockedTasks = await Milestone.findAll({
+      where: {
+        project_id: projectId,
+        status: 'BLOCKED',
+      },
+    });
+
+    // 3. Review Requests (Milestones)
+    const reviewTasks = await Milestone.findAll({
+      where: {
+        project_id: projectId,
+        status: 'READY_FOR_REVIEW',
+      },
+    });
+
+    return res.json({
+      alerts: {
+        pending_applications: pendingApps.map(app => ({
+          id: app.id,
+          applicant: app.applicant,
+          applied_at: app.created_at || app.createdAt,
+        })),
+        blocked_tasks: blockedTasks.map(task => ({
+          id: task.id,
+          title: task.title,
+        })),
+        review_requests: reviewTasks.map(task => ({
+          id: task.id,
+          title: task.title,
+        })),
+      },
+      summary: {
+        total_urgent: pendingApps.length + blockedTasks.length + reviewTasks.length,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.post('/', requireAuth, async (req, res, next) => {
   try {
