@@ -216,4 +216,11 @@ export const api = {
   // Founder Suite
   getFounderProjects: (token) => request('/api/founder/projects', { token }),
   getProjectAttention: (projectId, token) => request(`/api/founder/projects/${projectId}/attention`, { token }),
+  getFounderApplicants: (projectId, token) => request(`/api/founder/projects/${projectId}/applicants`, { token }),
+  applicantAction: (projectId, applicantId, action, token) =>
+    request(`/api/founder/projects/${projectId}/applicants/${applicantId}/action`, {
+      method: 'POST',
+      body: { action },
+      token
+    }),
 }
