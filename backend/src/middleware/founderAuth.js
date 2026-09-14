@@ -1,6 +1,46 @@
 const { Project, ProjectMember } = require('../models');
 
 /**
+ * Middleware to verify if the authenticated user is a founder (owns at least one project).
+ */
+async function FounderGuard(req, res, next) {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ detail: 'Authentication required.' });
+  }
+
+  try {
+    // Check if user is an owner of any project
+    const isOwner = await Project.findOne({
+      where: { owner_id: userId },
+    });
+
+    if (isOwner) {
+      return next();
+    }
+
+    // Check if user is a lead of any project
+    const isLead = await ProjectMember.findOne({
+      where: {
+        user_id: userId,
+        is_lead: true,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (isLead) {
+      return next();
+    }
+
+    return res.status(403).json({ detail: 'Access denied. Only founders can access this resource.' });
+  } catch (error) {
+    console.error(`[FounderGuard Error]: ${error.message}`);
+    return res.status(500).json({ detail: 'Internal server error while verifying founder status.' });
+  }
+}
+
+/**
  * Middleware to verify if the authenticated user is the project owner or a project lead.
  * Expected to be used on routes that include a projectId parameter.
  */
@@ -46,5 +86,6 @@ async function checkProjectLead(req, res, next) {
 }
 
 module.exports = {
+  FounderGuard,
   checkProjectLead,
 };

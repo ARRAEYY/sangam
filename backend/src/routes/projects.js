@@ -2,7 +2,7 @@ const express = require('express')
 const { Op, Sequelize } = require('sequelize')
 const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone, Notification } = require('../models')
 const { requireAuth } = require('../middleware/auth')
-const { checkProjectLead } = require('../middleware/founderAuth')
+const { FounderGuard, checkProjectLead } = require('../middleware/founderAuth')
 const { generalLimiter } = require('../middleware/rateLimit')
 const { serializeProject, serializeApplication } = require('../utils/serializers')
 const { notifyProjectApplication } = require('../services/notificationService')
@@ -147,7 +147,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
 // ─── Founder Suite: Attention API ──────────────────────────────────
 
-router.post('/founder/projects/:projectId/tasks', requireAuth, checkProjectLead, async (req, res, next) => {
+router.post('/founder/projects/:projectId/tasks', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const { title, description, priority } = req.body || {};
@@ -163,10 +163,6 @@ router.post('/founder/projects/:projectId/tasks', requireAuth, checkProjectLead,
     }
 
     const trimmedPriority = String(priority || '').trim().toUpperCase();
-    if (trimmedPriority && !Milestone.STATUSES.includes(trimmedPriority) && !['LOW', 'MEDIUM', 'HIGH'].includes(trimmedPriority)) {
-       // Wait, Milestone.STATUSES is for status, not priority.
-    }
-    // Correct priority validation:
     if (trimmedPriority && !['LOW', 'MEDIUM', 'HIGH'].includes(trimmedPriority)) {
       return res.status(400).json({ detail: 'Priority must be LOW, MEDIUM, or HIGH.' });
     }
@@ -200,7 +196,7 @@ router.post('/founder/projects/:projectId/tasks', requireAuth, checkProjectLead,
   }
 });
 
-router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, checkProjectLead, async (req, res, next) => {
+router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId, taskId } = req.params;
     const { decision, feedback } = req.body || {};
@@ -252,7 +248,7 @@ router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, ch
   }
 });
 
-router.get('/founder/projects/:projectId/attention', requireAuth, checkProjectLead, async (req, res, next) => {
+router.get('/founder/projects/:projectId/attention', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId } = req.params;
 
