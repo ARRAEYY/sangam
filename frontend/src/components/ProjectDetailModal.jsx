@@ -5,6 +5,7 @@ import { X as XIcon, Calendar, Users, Briefcase, CheckCircle2, Loader2, Sparkles
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MemberPickerModal } from './MemberPickerModal.jsx';
+import { ProjectNavigation } from './ProjectNavigation.jsx';
 
 function getInitials(name) {
   if (!name) return '?';
@@ -243,7 +244,8 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
             <>
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 pr-10">
-                <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="flex flex-col gap-3 w-full sm:w-auto">
+                  <ProjectNavigation projectId={project.id} isLead={isLead} />
                   <div className="w-full">
                     <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
                     <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
