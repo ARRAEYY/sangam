@@ -93,7 +93,7 @@ describe('GET /api/projects/founder/projects/:projectId/attention', () => {
   });
 
   afterAll(async () => {
-    await sequelize.close();
+    // Removed sequelize.close() from individual blocks
   });
 
   it('should return aggregated alerts for project lead', async () => {
@@ -152,4 +152,132 @@ describe('GET /api/projects/founder/projects/:projectId/attention', () => {
 
     expect(res.status).toBe(403);
   });
+});
+
+describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', () => {
+  let project;
+  let lead;
+  let milestone;
+
+  beforeAll(async () => {
+    await sequelize.sync({ force: true });
+
+    const owner = await User.create({
+      id: 'user-owner',
+      email: 'owner@test.com',
+      password: 'password',
+      full_name: 'Project Owner',
+      branch: 'CS',
+      graduation_year: '2024'
+    });
+
+    lead = await User.create({
+      id: 'user-lead',
+      email: 'lead@test.com',
+      password: 'password',
+      full_name: 'Project Lead',
+      branch: 'CS',
+      graduation_year: '2024'
+    });
+
+    project = await Project.create({
+      id: 'proj-1',
+      title: 'Test Project',
+      description: 'Test Description',
+      owner_id: owner.id,
+      team_size_needed: 1,
+    });
+
+    await ProjectMember.create({
+      project_id: project.id,
+      user_id: lead.id,
+      role: 'Lead',
+      role_category: 'LEAD',
+      is_lead: true,
+      status: 'ACTIVE',
+    });
+
+    milestone = await Milestone.create({
+      id: 'ms-1',
+      project_id: project.id,
+      title: 'Review Task',
+      status: 'READY_FOR_REVIEW',
+    });
+  });
+
+  afterAll(async () => {
+    // Removed sequelize.close() from individual blocks
+  });
+
+  it('should mark task as COMPLETED on approval', async () => {
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .send({ decision: 'APPROVE' })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(200);
+
+    const updatedMilestone = await Milestone.findByPk(milestone.id);
+    expect(updatedMilestone.status).toBe('COMPLETED');
+  });
+
+  it('should mark task as IN_PROGRESS and create comment on request changes', async () => {
+    // Reset milestone status to READY_FOR_REVIEW since previous test completed it
+    await Milestone.update({ status: 'READY_FOR_REVIEW' }, { where: { id: milestone.id } });
+
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .send({ decision: 'REQUEST_CHANGES', feedback: 'Please fix the bugs.' })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(200);
+
+    const updatedMilestone = await Milestone.findByPk(milestone.id);
+    expect(updatedMilestone.status).toBe('IN_PROGRESS');
+
+    const { TaskComment } = require('../../src/models');
+    const comment = await TaskComment.findOne({ where: { milestone_id: milestone.id } });
+    expect(comment).toBeDefined();
+    expect(comment.content).toBe('Please fix the bugs.');
+    expect(comment.type).toBe('comment');
+  });
+
+  it('should return 400 if feedback is missing for REQUEST_CHANGES', async () => {
+    await Milestone.update({ status: 'READY_FOR_REVIEW' }, { where: { id: milestone.id } });
+
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .send({ decision: 'REQUEST_CHANGES' })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toBe('Feedback is required when requesting changes.');
+  });
+
+  it('should return 400 if task is not READY_FOR_REVIEW', async () => {
+    await Milestone.update({ status: 'IN_PROGRESS' }, { where: { id: milestone.id } });
+
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .send({ decision: 'APPROVE' })
+      .set('Authorization', 'Bearer lead-token');
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toBe('Only tasks ready for review can be reviewed.');
+  });
+
+  it('should return 403 if user is not project lead', async () => {
+    await milestone.update({ status: 'READY_FOR_REVIEW' });
+
+    const res = await request(app)
+      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .send({ decision: 'APPROVE' })
+      .set('Authorization', 'Bearer non-lead-token');
+
+    expect(res.status).toBe(403);
+  });
+});
+
+afterAll(async () => {
+  await sequelize.close();
 });

@@ -147,6 +147,58 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
 // ─── Founder Suite: Attention API ──────────────────────────────────
 
+router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, checkProjectLead, async (req, res, next) => {
+  try {
+    const { projectId, taskId } = req.params;
+    const { decision, feedback } = req.body || {};
+
+    if (!decision || !['APPROVE', 'REQUEST_CHANGES'].includes(decision)) {
+      return res.status(400).json({ detail: 'Decision must be either APPROVE or REQUEST_CHANGES.' });
+    }
+
+    const milestone = await Milestone.findOne({
+      where: { id: taskId, project_id: projectId },
+    });
+
+    if (!milestone) {
+      return res.status(404).json({ detail: 'Task not found in this project.' });
+    }
+
+    if (milestone.status !== 'READY_FOR_REVIEW') {
+      return res.status(400).json({ detail: 'Only tasks ready for review can be reviewed.' });
+    }
+
+    await sequelize.transaction(async (t) => {
+      if (decision === 'APPROVE') {
+        await milestone.update({
+          status: 'COMPLETED',
+          completed_at: new Date(),
+        }, { transaction: t });
+      } else if (decision === 'REQUEST_CHANGES') {
+        if (!feedback) {
+          throw new Error('Feedback is required when requesting changes.');
+        }
+        await milestone.update({ status: 'IN_PROGRESS' }, { transaction: t });
+
+        const { TaskComment } = require('../models');
+        await TaskComment.create({
+          milestone_id: milestone.id,
+          user_id: req.user.id,
+          content: feedback,
+          type: 'comment',
+        }, { transaction: t });
+      }
+    });
+
+    return res.json({ message: `Task ${decision === 'APPROVE' ? 'approved' : 'returned for changes'}.` });
+  } catch (error) {
+    if (error.message === 'Feedback is required when requesting changes.') {
+      return res.status(400).json({ detail: error.message });
+    }
+    return next(error);
+  }
+});
+
 router.get('/founder/projects/:projectId/attention', requireAuth, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId } = req.params;

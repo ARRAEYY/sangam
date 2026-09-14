@@ -34,3 +34,4 @@ dist/
 *master.jsx
 audit_results.json
 package-lock 2.json
+.superpowers/
