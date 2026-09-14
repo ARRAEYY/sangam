@@ -1,6 +1,7 @@
 const express = require('express')
-const { Application, Project, User, Skill, ProjectMember } = require('../models')
+const { Application, Project, User, Skill, ProjectMember, sequelize } = require('../models')
 const { requireAuth } = require('../middleware/auth')
+const { checkProjectLead } = require('../middleware/founderAuth')
 const { serializeApplication } = require('../utils/serializers')
 const { notifyApplicationDecision, createNotification } = require('../services/notificationService')
 
@@ -154,5 +155,81 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     return next(error)
   }
 })
+
+router.post('/founder/projects/:projectId/applicants/:appId/action', requireAuth, checkProjectLead, async (req, res, next) => {
+  try {
+    const { projectId, appId } = req.params;
+    const { action, role } = req.body;
+
+    if (!['ACCEPT', 'REJECT', 'SHORTLIST'].includes(action)) {
+      return res.status(400).json({ detail: 'Invalid action. Must be ACCEPT, REJECT, or SHORTLIST.' });
+    }
+
+    const application = await Application.findByPk(appId, {
+      where: { project_id: projectId }
+    });
+
+    if (!application) {
+      return res.status(404).json({ detail: 'Application not found for this project.' });
+    }
+
+    if (application.status !== 'PENDING' && application.status !== 'SHORTLISTED') {
+      return res.status(409).json({ detail: 'Only pending or shortlisted applications can be processed.' });
+    }
+
+    if (action === 'ACCEPT') {
+      const roleTitle = String(role || 'Team Member').trim();
+
+      await sequelize.transaction(async (t) => {
+        // 1. Update Application status
+        await application.update({ status: 'ACCEPTED' }, { transaction: t });
+
+        // 2. Create ProjectMember
+        await ProjectMember.create({
+          project_id: projectId,
+          user_id: application.user_id,
+          role: roleTitle,
+          role_category: 'OTHER', // Default to OTHER, can be refined
+          is_lead: false,
+          status: 'ACTIVE',
+        }, { transaction: t });
+
+        // 3. Increment filled_count in Project.open_roles
+        const project = await Project.findByPk(projectId, { transaction: t });
+        if (project && project.open_roles) {
+          const roles = project.open_roles.map(r => ({ ...r }));
+          const roleIdx = roles.findIndex(r => r.role === roleTitle);
+          if (roleIdx !== -1) {
+            roles[roleIdx].filled_count = (roles[roleIdx].filled_count || 0) + 1;
+            await project.update({ open_roles: roles }, { transaction: t });
+          }
+        }
+      });
+
+      // Notify the user
+      const { createNotification } = require('../services/notificationService');
+      await createNotification({
+        recipientId: application.user_id,
+        actorId: req.user.id,
+        type: 'MEMBER_ROLE_ASSIGNED',
+        message: `You've been accepted to the project as ${roleTitle}!`,
+        projectId: projectId,
+      }).catch(() => {});
+
+    } else if (action === 'REJECT') {
+      await application.update({ status: 'REJECTED' });
+    } else if (action === 'SHORTLIST') {
+      await application.update({ status: 'SHORTLISTED' });
+    }
+
+    return res.json({
+      message: `Applicant ${action === 'ACCEPT' ? 'accepted' : action === 'REJECT' ? 'rejected' : 'shortlisted'} successfully.`,
+      status: application.status
+    });
+
+  } catch (error) {
+    return next(error);
+  }
+});
 
 module.exports = router
