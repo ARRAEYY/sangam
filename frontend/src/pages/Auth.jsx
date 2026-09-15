@@ -234,6 +234,7 @@ export default function Auth() {
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         className="w-full h-[46px] px-4 rounded-full border border-slate-200 bg-white text-[13px] outline-none focus:border-[#7f1d3b] focus:ring-1 focus:ring-[#7f1d3b] transition-all"
+                        autoComplete="current-password"
                       />
                     </Field>
 
