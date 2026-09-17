@@ -2,6 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const { Project, User, Application, ProjectMember, sequelize } = require('../../src/models');
 const applicationRoutes = require('../../src/routes/applications');
+const adminRoutes = require('../../src/routes/admin');
 
 jest.mock('../../src/middleware/auth', () => ({
   requireAuth: (req, res, next) => {
@@ -28,8 +29,9 @@ app.use((req, res, next) => {
 
 // Mount the applications router at /api/applications
 app.use('/api/applications', applicationRoutes);
+app.use('/api/projects/:id/manage', adminRoutes);
 
-describe('POST /api/applications/founder/projects/:id/applicants/:appId/action', () => {
+describe('POST /api/projects/:id/manage/applicants/:appId/action', () => {
   let project;
   let owner;
   let lead;
@@ -112,7 +114,7 @@ describe('POST /api/applications/founder/projects/:id/applicants/:appId/action',
 
   it('should atomically accept applicant and create member', async () => {
     const res = await request(app)
-      .post(`/api/applications/founder/projects/${project.id}/applicants/${application.id}/action`)
+      .post(`/api/projects/${project.id}/manage/applicants/${application.id}/action`)
       .send({
         action: 'ACCEPT',
         role: 'Frontend'
@@ -140,7 +142,7 @@ describe('POST /api/applications/founder/projects/:id/applicants/:appId/action',
 
   it('should shortlist an applicant', async () => {
     const res = await request(app)
-      .post(`/api/applications/founder/projects/${project.id}/applicants/${application.id}/action`)
+      .post(`/api/projects/${project.id}/manage/applicants/${application.id}/action`)
       .send({ action: 'SHORTLIST' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -152,7 +154,7 @@ describe('POST /api/applications/founder/projects/:id/applicants/:appId/action',
 
   it('should reject an applicant', async () => {
     const res = await request(app)
-      .post(`/api/applications/founder/projects/${project.id}/applicants/${application.id}/action`)
+      .post(`/api/projects/${project.id}/manage/applicants/${application.id}/action`)
       .send({ action: 'REJECT' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -164,7 +166,7 @@ describe('POST /api/applications/founder/projects/:id/applicants/:appId/action',
 
   it('should return 403 if user is not project lead', async () => {
     const res = await request(app)
-      .post(`/api/applications/founder/projects/${project.id}/applicants/${application.id}/action`)
+      .post(`/api/projects/${project.id}/manage/applicants/${application.id}/action`)
       .send({ action: 'ACCEPT' })
       .set('Authorization', 'Bearer non-lead-token');
 

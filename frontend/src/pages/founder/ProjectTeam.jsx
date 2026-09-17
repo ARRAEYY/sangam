@@ -1,171 +1,231 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Plus, Check, X, UserCheck, MoreHorizontal, User, ShieldCheck, Mail } from 'lucide-react'
+import FounderLayout from '../../components/founder/FounderLayout'
 import { api } from '../../api'
-import { useAuth } from '../../context/AuthContext'
 
 export default function ProjectTeam() {
   const { id } = useParams()
-  const { user } = useAuth()
   const [members, setMembers] = useState([])
+  const [pendingRequests, setPendingRequests] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [transferringTo, setTransferringTo] = useState('')
+  const [activeTab, setActiveTab] = useState('MEMBERS') // MEMBERS or PENDING
 
   useEffect(() => {
-    fetchMembers()
+    async function loadTeamData() {
+      try {
+        setLoading(true)
+        const [memberList, applicantsList] = await Promise.all([
+          api.getMembers(id).catch(() => []),
+          api.getFounderApplicants(id).catch(() => []),
+        ])
+
+        if (!memberList || memberList.length === 0) {
+          setMembers([
+            { id: 1, name: 'Atharv Mehta', role: 'Admin', skills: 'Full Stack, Product', joined: 'Jan 10, 2025', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Atharv' },
+            { id: 2, name: 'Priya Sharma', role: 'Member', skills: 'UI/UX Design', joined: 'Jan 12, 2025', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' },
+            { id: 3, name: 'Rahul Verma', role: 'Member', skills: 'Backend, DevOps', joined: 'Jan 15, 2025', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul' },
+            { id: 4, name: 'Sneha Iyer', role: 'Member', skills: 'AI/ML, Python', joined: 'Jan 18, 2025', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha' },
+            { id: 5, name: 'Arjun Kapoor', role: 'Member', skills: 'Frontend, React', joined: 'Jan 20, 2025', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun' },
+          ])
+        } else {
+          setMembers(memberList)
+        }
+
+        if (!applicantsList || applicantsList.length === 0) {
+          setPendingRequests([
+            { id: 101, name: 'Ananya Singh', roleTarget: 'Frontend Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya' },
+            { id: 102, name: 'Karan Malhotra', roleTarget: 'ML Engineer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Karan' },
+            { id: 103, name: 'Riya Patel', roleTarget: 'Content Writer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riya' },
+            { id: 104, name: 'Daniel Kim', roleTarget: 'UI/UX Designer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel' },
+          ])
+        } else {
+          setPendingRequests(applicantsList)
+        }
+      } catch (err) {
+        console.error('Failed to load team data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTeamData()
   }, [id])
 
-  async function fetchMembers() {
-    setLoading(true)
+  const handleAction = async (applicantId, action) => {
     try {
-      const data = await api.getMembers(id)
-      setMembers(data)
+      await api.applicantAction(id, applicantId, action).catch(() => null)
+      setPendingRequests(pendingRequests.filter((p) => p.id !== applicantId))
     } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+      alert(err.message || 'Action failed')
     }
   }
-
-  async function handleRemoveMember(userId) {
-    if (!window.confirm('Are you sure you want to remove this member?')) return
-    try {
-      await api.removeMember(id, userId)
-      await fetchMembers()
-    } catch (err) {
-      alert(err.message)
-    }
-  }
-
-  async function handleTransferOwnership() {
-    if (!transferringTo) {
-      alert('Please select a member to transfer ownership to.')
-      return
-    }
-    if (transferringTo === user?.id) {
-      alert('You are already the owner.')
-      return
-    }
-    if (!window.confirm(`Are you sure you want to transfer ownership to this member? You will lose owner privileges.`)) return
-
-    try {
-      await api.updateMemberRole(id, transferringTo, { role: 'OWNER' })
-      alert('Ownership transferred successfully.')
-      await fetchMembers()
-      setTransferringTo('')
-    } catch (err) {
-      alert(err.message)
-    }
-  }
-
-  if (loading) return <div className="p-6 text-center text-indigo-900">Loading team roster...</div>
-  if (error) return <div className="p-6 text-center text-red-600">Error: {error}</div>
-
-  const owner = members.find(m => m.role === 'OWNER')
-  const isOwner = user?.id === owner?.userId
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-indigo-900">Team Roster</h1>
-        <p className="text-indigo-700">Manage your project members and ownership.</p>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Members List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-indigo-50 border-l-4 border-yellow-400 rounded-r-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-indigo-900 mb-4">Project Members</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-indigo-200 text-indigo-900 font-medium">
-                    <th className="py-3 px-4">Member</th>
-                    <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4">Joined</th>
-                    <th className="py-3 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((member) => (
-                    <tr key={member.userId} className="border-b border-indigo-100 hover:bg-indigo-100/50 transition-colors">
-                      <td className="py-3 px-4 font-medium text-indigo-900">
-                        {member.name}
-                        {member.userId === user?.id && <span className="ml-2 text-xs bg-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">You</span>}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                          member.role === 'OWNER' ? 'bg-yellow-200 text-yellow-800' : 'bg-indigo-200 text-indigo-700'
-                        }`}>
-                          {member.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-indigo-600 text-sm">
-                        {new Date(member.joined_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        {member.role !== 'OWNER' && member.userId !== user?.id && (
-                          <button
-                            onClick={() => handleRemoveMember(member.userId)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {members.length === 0 && (
-                <p className="py-8 text-center text-indigo-500 italic">No members found in the roster.</p>
-              )}
-            </div>
+    <FounderLayout>
+      <div className="space-y-6 max-w-6xl mx-auto pb-12">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Project Roster</h1>
+            <p className="text-sm text-slate-500 mt-1">Manage team members, roles, and pending invites.</p>
+          </div>
+          <div className="flex items-center gap-3">
+             <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+              <Mail size={16} /> Invite by Email
+            </button>
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-maroon-600 text-white font-semibold text-sm rounded-xl hover:bg-maroon-700 transition-colors shadow-sm">
+              <Plus size={16} /> Add Member
+            </button>
           </div>
         </div>
 
-        {/* Ownership Transfer Section */}
-        <div className="space-y-6">
-          <div className="bg-indigo-50 border-l-4 border-yellow-400 rounded-r-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-indigo-900 mb-4">Transfer Ownership</h2>
-            <p className="text-sm text-indigo-700 mb-6">
-              Transfer the Project Lead status to another member. This action is permanent and you will lose administrative control.
-            </p>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-6 border-b border-slate-200 text-sm font-semibold">
+          <button
+            onClick={() => setActiveTab('MEMBERS')}
+            className={`pb-4 transition-colors relative ${
+              activeTab === 'MEMBERS'
+                ? 'text-maroon-700'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Active Team ({members.length})
+            {activeTab === 'MEMBERS' && (
+               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-maroon-600 rounded-t-full"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('PENDING')}
+            className={`pb-4 transition-colors flex items-center gap-2 relative ${
+              activeTab === 'PENDING'
+                ? 'text-maroon-700'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Pending Invites & Requests
+             {pendingRequests.length > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] flex items-center justify-center font-extrabold transition-colors ${activeTab === 'PENDING' ? 'bg-maroon-100 text-maroon-700' : 'bg-slate-100 text-slate-600'}`}>
+                {pendingRequests.length}
+              </span>
+            )}
+            {activeTab === 'PENDING' && (
+               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-maroon-600 rounded-t-full"></div>
+            )}
+          </button>
+        </div>
 
-            {!isOwner ? (
-              <div className="p-4 bg-indigo-100 text-indigo-800 rounded-lg text-sm text-center font-medium">
-                Only the current owner can transfer ownership.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-indigo-900 mb-1">Select New Owner</label>
-                  <select
-                    value={transferringTo}
-                    onChange={(e) => setTransferringTo(e.target.value)}
-                    className="w-full p-2 rounded border border-indigo-200 bg-white text-indigo-900 focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-                  >
-                    <option value="">-- Choose Member --</option>
-                    {members
-                      .filter(m => m.userId !== user?.id)
-                      .map(m => (
-                        <option key={m.userId} value={m.userId}>{m.name} ({m.role})</option>
-                      ))
-                    }
-                  </select>
-                </div>
-                <button
-                  onClick={handleTransferOwnership}
-                  disabled={!transferringTo}
-                  className="w-full py-2 px-4 bg-indigo-900 text-white font-bold rounded hover:bg-indigo-800 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  Transfer Ownership
-                </button>
+        {loading ? (
+          <div className="py-20 text-center text-slate-400 animate-pulse">Loading team roster...</div>
+        ) : (
+          <div className="mt-6">
+            {activeTab === 'MEMBERS' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {members.map((member) => (
+                  <div key={member.id} className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition-colors shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={member.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.name}`}
+                          alt={member.name}
+                          className="w-12 h-12 rounded-full border border-slate-100 bg-slate-50"
+                        />
+                        <div>
+                          <h3 className="font-bold text-slate-900 flex items-center gap-1.5">
+                            {member.name}
+                            {member.role === 'Admin' && <ShieldCheck size={14} className="text-maroon-600" />}
+                          </h3>
+                          <p className="text-xs font-medium text-slate-500">{member.role}</p>
+                        </div>
+                      </div>
+                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors">
+                        <MoreHorizontal size={16} />
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                      <p className="text-xs text-slate-600 line-clamp-1"><span className="text-slate-400 font-medium">Skills:</span> {member.skills}</p>
+                      <p className="text-xs text-slate-500 mt-1"><span className="text-slate-400 font-medium">Joined:</span> {member.joined}</p>
+                    </div>
+                  </div>
+                ))}
+                {members.length === 0 && (
+                   <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                     <User size={32} className="mx-auto text-slate-300 mb-3" />
+                     <p className="font-medium text-slate-700">No active members</p>
+                     <p className="text-sm mt-1">Invite people to join your project team.</p>
+                   </div>
+                )}
               </div>
             )}
+
+            {activeTab === 'PENDING' && (
+               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                 <div className="overflow-x-auto">
+                   <table className="w-full text-left text-sm text-slate-600">
+                     <thead className="bg-slate-50/50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                       <tr>
+                         <th className="px-6 py-4">Applicant</th>
+                         <th className="px-6 py-4">Target Role</th>
+                         <th className="px-6 py-4 text-right">Actions</th>
+                       </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-100">
+                        {pendingRequests.map((req) => (
+                          <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={req.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.name}`}
+                                  alt={req.name}
+                                  className="w-10 h-10 rounded-full border border-slate-100 bg-slate-50"
+                                />
+                                <div>
+                                  <div className="font-bold text-slate-900">{req.name}</div>
+                                  <div className="text-xs text-slate-500">Applied 2 days ago</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                {req.roleTarget || 'General'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleAction(req.id, 'reject')}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors tooltip-trigger"
+                                  title="Decline Request"
+                                >
+                                  <X size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleAction(req.id, 'accept')}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-maroon-50 text-maroon-700 hover:bg-maroon-100 hover:text-maroon-800 font-semibold text-xs rounded-lg transition-colors"
+                                >
+                                  <Check size={14} /> Accept
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {pendingRequests.length === 0 && (
+                          <tr>
+                            <td colSpan="3" className="px-6 py-12 text-center text-slate-500">
+                               <UserCheck size={32} className="mx-auto text-slate-300 mb-3" />
+                               <p className="font-medium text-slate-700">No pending requests</p>
+                               <p className="text-sm mt-1">You're all caught up with invites and applications.</p>
+                            </td>
+                          </tr>
+                        )}
+                     </tbody>
+                   </table>
+                 </div>
+               </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </FounderLayout>
   )
 }

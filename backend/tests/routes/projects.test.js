@@ -2,6 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const { Project, User, Application, ProjectMember, Milestone } = require('../../src/models');
 const projectRoutes = require('../../src/routes/projects');
+const adminRoutes = require('../../src/routes/admin');
 const sequelize = require('../../src/config/database');
 
 jest.mock('../../src/middleware/auth', () => ({
@@ -30,8 +31,9 @@ app.use((req, res, next) => {
 
 // Mount the projects router at /api/projects
 app.use('/api/projects', projectRoutes);
+app.use('/api/projects/:id/manage', adminRoutes);
 
-describe('GET /api/projects/founder/projects/:projectId/attention', () => {
+describe('GET /api/projects/:projectId/manage/attention', () => {
   let project;
   let owner;
   let lead;
@@ -126,20 +128,19 @@ describe('GET /api/projects/founder/projects/:projectId/attention', () => {
     });
 
     const res = await request(app)
-      .get(`/api/projects/founder/projects/${project.id}/attention`)
+      .get(`/api/projects/${project.id}/manage/attention`)
       .set('Authorization', 'Bearer lead-token');
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('alerts');
-    expect(res.body.alerts.pending_applications).toHaveLength(1);
-    expect(res.body.alerts.blocked_tasks).toHaveLength(1);
-    expect(res.body.alerts.review_requests).toHaveLength(1);
+    expect(Array.isArray(res.body.alerts)).toBe(true);
+    expect(res.body.alerts).toHaveLength(3);
     expect(res.body.summary.total_urgent).toBe(3);
   });
 
   it('should return 403 if user is not owner or lead', async () => {
     const res = await request(app)
-      .get(`/api/projects/founder/projects/${project.id}/attention`)
+      .get(`/api/projects/${project.id}/manage/attention`)
       .set('Authorization', 'Bearer non-lead-token');
 
     expect(res.status).toBe(403);
@@ -147,14 +148,14 @@ describe('GET /api/projects/founder/projects/:projectId/attention', () => {
 
   it('should return 403 if project does not exist', async () => {
     const res = await request(app)
-      .get('/api/projects/founder/projects/non-existent-id/attention')
+      .get('/api/projects/non-existent-id/manage/attention')
       .set('Authorization', 'Bearer lead-token');
 
     expect(res.status).toBe(403);
   });
 });
 
-describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
+describe('POST /api/projects/:projectId/manage/tasks', () => {
   let project;
   let lead;
   let member;
@@ -216,7 +217,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
 
   it('should allow project lead to create a task', async () => {
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .post(`/api/projects/${project.id}/manage/tasks`)
       .send({
         title: 'New Admin Task',
         description: 'Created by founder',
@@ -232,7 +233,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
 
   it('should return 400 if title is missing', async () => {
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .post(`/api/projects/${project.id}/manage/tasks`)
       .send({
         description: 'Missing title',
         priority: 'MEDIUM'
@@ -245,7 +246,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
 
   it('should return 400 if priority is invalid', async () => {
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .post(`/api/projects/${project.id}/manage/tasks`)
       .send({
         title: 'Invalid Priority Task',
         description: 'Testing priority validation',
@@ -259,7 +260,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
 
   it('should return 403 if user is not project lead', async () => {
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks`)
+      .post(`/api/projects/${project.id}/manage/tasks`)
       .send({
         title: 'Unauthorized Task',
         description: 'Should fail',
@@ -271,7 +272,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks', () => {
   });
 });
 
-describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', () => {
+describe('POST /api/projects/:projectId/manage/tasks/:taskId/review', () => {
   let project;
   let lead;
   let milestone;
@@ -328,7 +329,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', 
 
   it('should mark task as COMPLETED on approval', async () => {
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .post(`/api/projects/${project.id}/manage/tasks/${milestone.id}/review`)
       .send({ decision: 'APPROVE' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -343,7 +344,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', 
     await Milestone.update({ status: 'READY_FOR_REVIEW' }, { where: { id: milestone.id } });
 
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .post(`/api/projects/${project.id}/manage/tasks/${milestone.id}/review`)
       .send({ decision: 'REQUEST_CHANGES', feedback: 'Please fix the bugs.' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -363,7 +364,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', 
     await Milestone.update({ status: 'READY_FOR_REVIEW' }, { where: { id: milestone.id } });
 
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .post(`/api/projects/${project.id}/manage/tasks/${milestone.id}/review`)
       .send({ decision: 'REQUEST_CHANGES' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -375,7 +376,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', 
     await Milestone.update({ status: 'IN_PROGRESS' }, { where: { id: milestone.id } });
 
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .post(`/api/projects/${project.id}/manage/tasks/${milestone.id}/review`)
       .send({ decision: 'APPROVE' })
       .set('Authorization', 'Bearer lead-token');
 
@@ -387,7 +388,7 @@ describe('POST /api/projects/founder/projects/:projectId/tasks/:taskId/review', 
     await milestone.update({ status: 'READY_FOR_REVIEW' });
 
     const res = await request(app)
-      .post(`/api/projects/founder/projects/${project.id}/tasks/${milestone.id}/review`)
+      .post(`/api/projects/${project.id}/manage/tasks/${milestone.id}/review`)
       .send({ decision: 'APPROVE' })
       .set('Authorization', 'Bearer non-lead-token');
 

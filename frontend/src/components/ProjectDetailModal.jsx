@@ -57,7 +57,11 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
 
   const isOwner = user && project && project.owner?.id === user.id;
   const isLead = context?.is_lead === true || isOwner;
+  const isMember = isOwner || project?.members?.some(m => m.user_id === user?.id);
   const canManage = isLead;
+
+  const actualMilestones = project?.milestones?.filter(m => !m.custom_properties?.type || m.custom_properties?.type === 'milestone') || [];
+  const userTasks = project?.milestones?.filter(m => m.custom_properties?.type === 'task' && m.custom_properties?.assignee_id === user?.id) || [];
 
   const fetchProject = async () => {
     try {
@@ -130,6 +134,15 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       fetchProject();
     } catch (err) {
       alert('Failed to update milestone: ' + err.message);
+    }
+  };
+
+  const handleUpdateTaskStatus = async (tid, newStatus) => {
+    try {
+      await api.updateTask(project.id, tid, { status: newStatus });
+      fetchProject();
+    } catch (err) {
+      alert('Failed to update task: ' + err.message);
     }
   };
 
@@ -313,94 +326,143 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
                 </div>
               )}
 
-              {(project.milestones?.length > 0 || isOwner) && (
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                      <Flag size={16} className="text-slate-400" /> Milestones
-                    </h3>
-                    {isOwner && !isAddingMilestone && (
-                      <button onClick={() => setIsAddingMilestone(true)} className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">
-                        <Plus size={14} /> Add Milestone
-                      </button>
+              {isMember && (
+                <>
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <Flag size={16} className="text-slate-400" /> Milestones
+                      </h3>
+                      {isLead && !isAddingMilestone && (
+                        <button onClick={() => setIsAddingMilestone(true)} className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">
+                          <Plus size={14} /> Add Milestone
+                        </button>
+                      )}
+                    </div>
+
+                    {isAddingMilestone && (
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-4">
+                        <input
+                          type="text"
+                          placeholder="Milestone Title"
+                          value={newMilestone.title}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-slate-300"
+                        />
+                        <textarea
+                          placeholder="Description (optional)"
+                          value={newMilestone.description}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 h-20 focus:outline-none focus:border-slate-300"
+                        />
+                        <div className="flex justify-between items-center mb-3 mt-3">
+                          <select
+                            value={newMilestone.status}
+                            onChange={(e) => setNewMilestone({ ...newMilestone, status: e.target.value })}
+                            className="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 outline-none"
+                          >
+                            <option value="NOT_STARTED">Not Started</option>
+                            <option value="IN_PROGRESS">Working</option>
+                            <option value="COMPLETED">Done</option>
+                            <option value="BLOCKED">Blocked</option>
+                          </select>
+                          <div className="flex gap-2">
+                            <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
+                            <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {actualMilestones.length > 0 ? (
+                      <div className="space-y-3">
+                        {actualMilestones.sort((a, b) => a.order_index - b.order_index).map(ms => (
+                          <div key={ms.id} className="flex gap-4 p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                            <div className="pt-0.5">
+                              {ms.status === 'COMPLETED' ? (
+                                <CheckCircle2 size={18} className="text-emerald-500" />
+                              ) : ms.status === 'IN_PROGRESS' ? (
+                                <Play size={18} className="text-amber-500" />
+                              ) : ms.status === 'BLOCKED' ? (
+                                <AlertCircle size={18} className="text-red-500" />
+                              ) : (
+                                <Clock size={18} className="text-slate-300" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className={`text-sm font-medium ${ms.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{ms.title}</h4>
+                              {ms.description && <p className="text-xs text-slate-500 mt-1">{ms.description}</p>}
+                            </div>
+                            {isLead && (
+                              <div className="flex flex-col gap-1">
+                                <select
+                                  value={ms.status}
+                                  onChange={(e) => handleUpdateMilestoneStatus(ms.id, e.target.value)}
+                                  className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-600 outline-none"
+                                >
+                                  <option value="NOT_STARTED">Not Started</option>
+                                  <option value="IN_PROGRESS">Working</option>
+                                  <option value="COMPLETED">Done</option>
+                                  <option value="BLOCKED">Blocked</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl text-center border border-slate-100">No milestones set yet.</p>
                     )}
                   </div>
 
-                  {isAddingMilestone && (
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-4">
-                      <input
-                        type="text"
-                        placeholder="Milestone Title"
-                        value={newMilestone.title}
-                        onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-slate-300"
-                      />
-                      <textarea
-                        placeholder="Description (optional)"
-                        value={newMilestone.description}
-                        onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 h-20 focus:outline-none focus:border-slate-300"
-                      />
-                      <div className="flex justify-between items-center mb-3 mt-3">
-                        <select
-                          value={newMilestone.status}
-                          onChange={(e) => setNewMilestone({ ...newMilestone, status: e.target.value })}
-                          className="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 outline-none"
-                        >
-                          <option value="NOT_STARTED">Not Started</option>
-                          <option value="IN_PROGRESS">Working</option>
-                          <option value="COMPLETED">Done</option>
-                          <option value="BLOCKED">Blocked</option>
-                        </select>
-                        <div className="flex gap-2">
-                          <button onClick={() => setIsAddingMilestone(false)} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-200 rounded-md hover:bg-slate-300">Cancel</button>
-                          <button onClick={handleAddMilestone} disabled={!newMilestone.title.trim()} className="px-3 py-1.5 text-xs font-medium text-white bg-slate-800 rounded-md hover:bg-slate-700 disabled:opacity-50">Save Milestone</button>
-                        </div>
+                  {userTasks.length > 0 && (
+                    <div className="mb-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <CheckCircle2 size={16} className="text-[#7f1d3b]" /> Your Assigned Tasks
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {userTasks.sort((a, b) => a.order_index - b.order_index).map(task => (
+                          <div key={task.id} className="flex gap-4 p-3 rounded-xl border border-rose-50 bg-rose-50/20 shadow-sm">
+                            <div className="pt-0.5">
+                              {task.status === 'COMPLETED' ? (
+                                <CheckCircle2 size={18} className="text-emerald-500" />
+                              ) : task.status === 'READY_FOR_REVIEW' ? (
+                                <Check size={18} className="text-indigo-500" />
+                              ) : task.status === 'IN_PROGRESS' ? (
+                                <Play size={18} className="text-amber-500" />
+                              ) : (
+                                <Clock size={18} className="text-slate-300" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className={`text-sm font-medium ${task.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{task.title}</h4>
+                              {task.description && <p className="text-xs text-slate-500 mt-1">{task.description}</p>}
+                              {task.due_date && <p className="text-[10px] font-medium text-rose-600 mt-1">Due: {task.due_date}</p>}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <select
+                                value={
+                                  task.status === 'NOT_STARTED' ? 'Todo' :
+                                  task.status === 'IN_PROGRESS' || task.status === 'BLOCKED' ? 'In Progress' :
+                                  task.status === 'READY_FOR_REVIEW' ? 'Ready for Review' : 'Completed'
+                                }
+                                onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
+                                className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-700 outline-none shadow-sm cursor-pointer hover:border-slate-300"
+                              >
+                                <option value="Todo">To Do</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Ready for Review">Ready for Review</option>
+                                <option value="Completed" disabled>Completed</option>
+                              </select>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
-
-                  {project.milestones?.length > 0 ? (
-                    <div className="space-y-3">
-                      {project.milestones.sort((a, b) => a.order_index - b.order_index).map(ms => (
-                        <div key={ms.id} className="flex gap-4 p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
-                          <div className="pt-0.5">
-                            {ms.status === 'COMPLETED' ? (
-                              <CheckCircle2 size={18} className="text-emerald-500" />
-                            ) : ms.status === 'IN_PROGRESS' ? (
-                              <Play size={18} className="text-amber-500" />
-                            ) : ms.status === 'BLOCKED' ? (
-                              <AlertCircle size={18} className="text-red-500" />
-                            ) : (
-                              <Clock size={18} className="text-slate-300" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className={`text-sm font-medium ${ms.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{ms.title}</h4>
-                            {ms.description && <p className="text-xs text-slate-500 mt-1">{ms.description}</p>}
-                          </div>
-                          {isOwner && (
-                            <div className="flex flex-col gap-1">
-                              <select
-                                value={ms.status}
-                                onChange={(e) => handleUpdateMilestoneStatus(ms.id, e.target.value)}
-                                className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-600 outline-none"
-                              >
-                                <option value="NOT_STARTED">Not Started</option>
-                                <option value="IN_PROGRESS">Working</option>
-                                <option value="COMPLETED">Done</option>
-                                <option value="BLOCKED">Blocked</option>
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl text-center border border-slate-100">No milestones set yet.</p>
-                  )}
-                </div>
-
+                </>
               )}
               {/* Team Members */}
               <div>

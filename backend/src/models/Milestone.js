@@ -47,6 +47,11 @@ const Milestone = sequelize.define(
       allowNull: true,
       defaultValue: 'MEDIUM',
     },
+    custom_properties: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
+    },
     created_by: {
       type: DataTypes.UUID,
       allowNull: true,

@@ -145,163 +145,36 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   }
 })
 
-// ─── Founder Suite: Attention API ──────────────────────────────────
-
-router.post('/founder/projects/:projectId/tasks', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
+router.get('/:id/context', requireAuth, async (req, res, next) => {
   try {
-    const { projectId } = req.params;
-    const { title, description, priority } = req.body || {};
+    const { id } = req.params;
+    const userId = req.user.id;
 
-    const project = await Project.findByPk(projectId);
+    const project = await Project.findByPk(id);
     if (!project) {
       return res.status(404).json({ detail: 'Project not found.' });
     }
 
-    const trimmedTitle = String(title || '').trim();
-    if (!trimmedTitle) {
-      return res.status(400).json({ detail: 'Task title is required.' });
-    }
-
-    const trimmedPriority = String(priority || '').trim().toUpperCase();
-    if (trimmedPriority && !['LOW', 'MEDIUM', 'HIGH'].includes(trimmedPriority)) {
-      return res.status(400).json({ detail: 'Priority must be LOW, MEDIUM, or HIGH.' });
-    }
-
-    // Auto-increment order_index
-    const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId } });
-    const nextOrder = (maxOrder ?? -1) + 1;
-
-    const milestone = await Milestone.create({
-      project_id: projectId,
-      title: trimmedTitle,
-      description: description ? String(description).trim() : null,
-      priority: trimmedPriority || 'MEDIUM',
-      order_index: nextOrder,
-      created_by: req.user.id,
-      status: 'NOT_STARTED',
-    });
-
-    return res.status(201).json({
-      id: milestone.id,
-      title: milestone.title,
-      description: milestone.description,
-      priority: milestone.priority,
-      status: milestone.status,
-      order_index: milestone.order_index,
-      created_by: req.user.id,
-      created_at: milestone.created_at || milestone.createdAt,
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
-
-router.post('/founder/projects/:projectId/tasks/:taskId/review', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
-  try {
-    const { projectId, taskId } = req.params;
-    const { decision, feedback } = req.body || {};
-
-    if (!decision || !['APPROVE', 'REQUEST_CHANGES'].includes(decision)) {
-      return res.status(400).json({ detail: 'Decision must be either APPROVE or REQUEST_CHANGES.' });
-    }
-
-    const milestone = await Milestone.findOne({
-      where: { id: taskId, project_id: projectId },
-    });
-
-    if (!milestone) {
-      return res.status(404).json({ detail: 'Task not found in this project.' });
-    }
-
-    if (milestone.status !== 'READY_FOR_REVIEW') {
-      return res.status(400).json({ detail: 'Only tasks ready for review can be reviewed.' });
-    }
-
-    await sequelize.transaction(async (t) => {
-      if (decision === 'APPROVE') {
-        await milestone.update({
-          status: 'COMPLETED',
-          completed_at: new Date(),
-        }, { transaction: t });
-      } else if (decision === 'REQUEST_CHANGES') {
-        if (!feedback) {
-          throw new Error('Feedback is required when requesting changes.');
-        }
-        await milestone.update({ status: 'IN_PROGRESS' }, { transaction: t });
-
-        const { TaskComment } = require('../models');
-        await TaskComment.create({
-          milestone_id: milestone.id,
-          user_id: req.user.id,
-          content: feedback,
-          type: 'comment',
-        }, { transaction: t });
-      }
-    });
-
-    return res.json({ message: `Task ${decision === 'APPROVE' ? 'approved' : 'returned for changes'}.` });
-  } catch (error) {
-    if (error.message === 'Feedback is required when requesting changes.') {
-      return res.status(400).json({ detail: error.message });
-    }
-    return next(error);
-  }
-});
-
-router.get('/founder/projects/:projectId/attention', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
-  try {
-    const { projectId } = req.params;
-
-    // 1. Pending Applications
-    const pendingApps = await Application.findAll({
+    const isOwner = project.owner_id === userId;
+    const member = await ProjectMember.findOne({
       where: {
-        project_id: projectId,
-        status: 'PENDING',
-      },
-      include: [{ model: User, as: 'applicant', attributes: ['id', 'full_name', 'avatar_url'] }],
-    });
-
-    // 2. Blocked Tasks (Milestones)
-    const blockedTasks = await Milestone.findAll({
-      where: {
-        project_id: projectId,
-        status: 'BLOCKED',
-      },
-    });
-
-    // 3. Review Requests (Milestones)
-    const reviewTasks = await Milestone.findAll({
-      where: {
-        project_id: projectId,
-        status: 'READY_FOR_REVIEW',
+        project_id: id,
+        user_id: userId,
+        is_lead: true,
+        status: 'ACTIVE',
       },
     });
 
     return res.json({
-      alerts: {
-        pending_applications: pendingApps.map(app => ({
-          id: app.id,
-          applicant: app.applicant,
-          applied_at: app.created_at || app.createdAt,
-        })),
-        blocked_tasks: blockedTasks.map(task => ({
-          id: task.id,
-          title: task.title,
-        })),
-        review_requests: reviewTasks.map(task => ({
-          id: task.id,
-          title: task.title,
-        })),
-      },
-      summary: {
-        total_urgent: pendingApps.length + blockedTasks.length + reviewTasks.length,
-      },
+      is_lead: isOwner || !!member,
+      role: isOwner ? 'Owner' : (member ? member.role : 'Member'),
     });
   } catch (error) {
     return next(error);
   }
-});
+})
 
+// ─── Project Teaser (Gated App Social Proof) ───────────────────────────
 router.post('/', requireAuth, async (req, res, next) => {
   try {
     const payload = req.body || {}
@@ -853,11 +726,14 @@ router.get('/:id/milestones', requireAuth, async (req, res, next) => {
     const project = await Project.findByPk(req.params.id)
     if (!project) return res.status(404).json({ detail: 'Project not found.' })
 
-    const milestones = await Milestone.findAll({
+    const allMilestones = await Milestone.findAll({
       where: { project_id: project.id },
       order: [['order_index', 'ASC'], ['created_at', 'ASC']],
       include: [{ model: User, as: 'creator', attributes: ['id', 'full_name'] }],
     })
+    
+    // Filter to only show actual milestones (exclude tasks)
+    const milestones = allMilestones.filter(m => !m.custom_properties?.type || m.custom_properties.type === 'milestone')
 
     const total = milestones.length
     const completed = milestones.filter((m) => m.status === 'COMPLETED').length
@@ -906,6 +782,7 @@ router.post('/:id/milestones', requireAuth, async (req, res, next) => {
       due_date: due_date || null,
       order_index: nextOrder,
       created_by: req.user.id,
+      custom_properties: { type: 'milestone' },
     }
     
     if (status && Milestone.STATUSES.includes(status)) {
@@ -937,8 +814,21 @@ router.patch('/:id/milestones/:mid', requireAuth, async (req, res, next) => {
   try {
     const project = await Project.findByPk(req.params.id)
     if (!project) return res.status(404).json({ detail: 'Project not found.' })
-    if (project.owner_id !== req.user.id) {
-      return res.status(403).json({ detail: 'Only the project lead can update milestones.' })
+    const isOwner = project.owner_id === req.user.id;
+    let isLead = isOwner;
+    let isMember = false;
+    if (!isOwner) {
+      const member = await ProjectMember.findOne({
+        where: { project_id: project.id, user_id: req.user.id, status: 'ACTIVE' },
+      });
+      if (member) {
+        isMember = true;
+        if (member.is_lead) isLead = true;
+      }
+    }
+
+    if (!isLead && !isMember) {
+      return res.status(403).json({ detail: 'You do not have permission to update milestones.' })
     }
 
     const milestone = await Milestone.findOne({
@@ -947,9 +837,19 @@ router.patch('/:id/milestones/:mid', requireAuth, async (req, res, next) => {
     if (!milestone) return res.status(404).json({ detail: 'Milestone not found.' })
 
     const { title, description, status, due_date } = req.body || {}
-    if (title !== undefined) milestone.title = String(title).trim()
-    if (description !== undefined) milestone.description = description ? String(description).trim() : null
-    if (due_date !== undefined) milestone.due_date = due_date || null
+    
+    if (title !== undefined) {
+      if (!isLead) return res.status(403).json({ detail: 'Only leads can edit title.' })
+      milestone.title = String(title).trim()
+    }
+    if (description !== undefined) {
+      if (!isLead) return res.status(403).json({ detail: 'Only leads can edit description.' })
+      milestone.description = description ? String(description).trim() : null
+    }
+    if (due_date !== undefined) {
+      if (!isLead) return res.status(403).json({ detail: 'Only leads can edit due date.' })
+      milestone.due_date = due_date || null
+    }
 
     if (status && Milestone.STATUSES.includes(status)) {
       const wasCompleted = milestone.status === 'COMPLETED'
@@ -998,7 +898,16 @@ router.delete('/:id/milestones/:mid', requireAuth, async (req, res, next) => {
   try {
     const project = await Project.findByPk(req.params.id)
     if (!project) return res.status(404).json({ detail: 'Project not found.' })
-    if (project.owner_id !== req.user.id) {
+    const isOwner = project.owner_id === req.user.id;
+    let isLead = isOwner;
+    if (!isOwner) {
+      const member = await ProjectMember.findOne({
+        where: { project_id: project.id, user_id: req.user.id, status: 'ACTIVE', is_lead: true },
+      });
+      if (member) isLead = true;
+    }
+
+    if (!isLead) {
       return res.status(403).json({ detail: 'Only the project lead can delete milestones.' })
     }
 
@@ -1044,6 +953,123 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
     })
 
     return res.json({ message: 'Project deleted successfully.' })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// ─── Task Endpoints (Kanban board support) ───────────────────────
+
+router.get('/:id/tasks', requireAuth, async (req, res, next) => {
+  try {
+    const project = await Project.findByPk(req.params.id)
+    if (!project) return res.status(404).json({ detail: 'Project not found.' })
+
+    const allMilestones = await Milestone.findAll({
+      where: { project_id: project.id },
+      order: [['order_index', 'ASC'], ['created_at', 'ASC']],
+    })
+    
+    // Filter to only show actual tasks (exclude milestones)
+    const milestones = allMilestones.filter(m => m.custom_properties?.type === 'task')
+
+    const statusMap = {
+      'NOT_STARTED': 'TODO',
+      'IN_PROGRESS': 'IN_PROGRESS',
+      'READY_FOR_REVIEW': 'READY_FOR_REVIEW',
+      'COMPLETED': 'COMPLETED',
+      'BLOCKED': 'IN_PROGRESS',
+    }
+
+    const userIds = milestones
+      .map(m => m.custom_properties?.assignee_id)
+      .filter(id => id && id !== 'undefined' && id !== 'null');
+      
+    let userMap = {};
+    if (userIds.length > 0) {
+      const users = await User.findAll({ 
+        where: { id: { [Op.in]: userIds } }, 
+        attributes: ['id', 'full_name', 'avatar_url'] 
+      });
+      userMap = users.reduce((acc, user) => {
+        acc[user.id] = { name: user.full_name, avatar: user.avatar_url };
+        return acc;
+      }, {});
+    }
+
+    const tasks = milestones.map((m) => {
+      const assigneeId = m.custom_properties?.assignee_id;
+      return {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        status: statusMap[m.status] || m.status,
+        priority: m.priority || 'MEDIUM',
+        order_index: m.order_index,
+        due_date: m.due_date,
+        completed_at: m.completed_at,
+        created_at: m.created_at || m.createdAt,
+        assignee_id: assigneeId,
+        assignee: assigneeId && userMap[assigneeId] ? userMap[assigneeId] : null,
+      };
+    });
+
+    return res.json(tasks)
+  } catch (error) {
+    return next(error)
+  }
+})
+
+router.patch('/:id/tasks/:tid', requireAuth, async (req, res, next) => {
+  try {
+    const { status } = req.body || {}
+    const project = await Project.findByPk(req.params.id)
+    if (!project) return res.status(404).json({ detail: 'Project not found.' })
+
+    const isOwner = project.owner_id === req.user.id;
+    let isLead = isOwner;
+    let isMember = false;
+    if (!isOwner) {
+      const member = await ProjectMember.findOne({
+        where: { project_id: project.id, user_id: req.user.id, status: 'ACTIVE' },
+      });
+      if (member) {
+        isMember = true;
+        if (member.is_lead) isLead = true;
+      }
+    }
+
+    if (!isLead && !isMember) {
+      return res.status(403).json({ detail: 'You do not have permission to update tasks.' })
+    }
+
+    const milestone = await Milestone.findOne({
+      where: { id: req.params.tid, project_id: req.params.id },
+    })
+
+    if (!milestone) return res.status(404).json({ detail: 'Task not found.' })
+    
+    if (!isLead && milestone.custom_properties?.assignee_id !== req.user.id) {
+       return res.status(403).json({ detail: 'You can only update tasks assigned to you.' })
+    }
+
+    const reverseStatusMap = {
+      'Todo': 'NOT_STARTED',
+      'In Progress': 'IN_PROGRESS',
+      'Ready for Review': 'READY_FOR_REVIEW',
+      'Completed': 'COMPLETED',
+    }
+
+    const dbStatus = reverseStatusMap[status] || status
+    milestone.status = dbStatus
+    if (dbStatus === 'COMPLETED') {
+      milestone.completed_at = new Date()
+    } else {
+      milestone.completed_at = null
+    }
+
+    await milestone.save()
+    return res.json(milestone)
   } catch (error) {
     return next(error)
   }
