@@ -1,5 +1,4 @@
-// Use relative paths to leverage the Vite proxy in development and Vercel rewrites in production
-const API_BASE = ''
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 let cachedCsrfToken = null
 
@@ -146,6 +145,7 @@ export const api = {
   getTeaserProjects: () => request('/api/projects/teaser'),
   listProjects: (params, token) => request('/api/projects', { params, token }),
   getProject: (id, token) => request(`/api/projects/${id}`, { token }),
+  getProjectContext: (id, token) => request(`/api/projects/${id}/context`, { token }),
   createProject: (payload, token) =>
     request('/api/projects', { method: 'POST', body: payload, token }),
   editProject: (id, payload, token) =>
@@ -212,4 +212,30 @@ export const api = {
   listConnections: (token) => request('/api/connections', { token }),
   removeConnection: (id, token) =>
     request(`/api/connections/${id}`, { method: 'DELETE', token }),
+
+  // Founder Suite
+  getFounderProjects: (token) => request('/api/founder/projects', { token }),
+  getProjectAttention: (projectId, token) => request(`/api/founder/projects/${projectId}/attention`, { token }),
+  getFounderApplicants: (projectId, token) => request(`/api/founder/projects/${projectId}/applicants`, { token }),
+  applicantAction: (projectId, applicantId, action, token, role) =>
+    request(`/api/founder/projects/${projectId}/applicants/${applicantId}/action`, {
+      method: 'POST',
+      body: { action, role },
+      token
+    }),
+  getTasks: (projectId, token) => request(`/api/projects/${projectId}/tasks`, { token }),
+  createFounderTask: (projectId, payload, token) =>
+    request(`/api/founder/projects/${projectId}/tasks`, { method: 'POST', body: payload, token }),
+  updateFounderTask: (projectId, taskId, payload, token) =>
+    request(`/api/founder/projects/${projectId}/tasks/${taskId}`, { method: 'PATCH', body: payload, token }),
+  deleteFounderTask: (projectId, taskId, token) =>
+    request(`/api/founder/projects/${projectId}/tasks/${taskId}`, { method: 'DELETE', token }),
+  updateTask: (projectId, taskId, payload, token) =>
+    request(`/api/projects/${projectId}/tasks/${taskId}`, { method: 'PATCH', body: payload, token }),
+  reviewTask: (projectId, taskId, payload, token) =>
+    request(`/api/founder/projects/${projectId}/tasks/${taskId}/review`, { method: 'POST', body: payload, token }),
+  getProjectAnalytics: (projectId, token) =>
+    request(`/api/founder/projects/${projectId}/analytics`, { token }),
+  updateProjectSettings: (projectId, payload, token) =>
+    request(`/api/founder/projects/${projectId}/settings`, { method: 'PATCH', body: payload, token }),
 }

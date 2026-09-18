@@ -46,6 +46,11 @@ const Project = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    property_schema: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
+    },
     team_size_needed: {
       type: DataTypes.INTEGER,
       allowNull: false,

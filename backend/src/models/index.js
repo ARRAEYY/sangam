@@ -13,6 +13,7 @@ const Education = require('./Education')
 const Achievement = require('./Achievement')
 const ProjectMember = require('./ProjectMember')
 const Milestone = require('./Milestone')
+const TaskComment = require('./TaskComment')
 const RefreshToken = require('./RefreshToken')
 
 User.belongsToMany(Skill, {
@@ -118,6 +119,12 @@ Milestone.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
 User.hasMany(Milestone, { foreignKey: 'created_by', as: 'created_milestones' })
 Milestone.belongsTo(User, { foreignKey: 'created_by', as: 'creator' })
 
+Milestone.hasMany(TaskComment, { foreignKey: 'milestone_id', as: 'comments' })
+TaskComment.belongsTo(Milestone, { foreignKey: 'milestone_id', as: 'milestone' })
+
+User.hasMany(TaskComment, { foreignKey: 'user_id', as: 'task_comments' })
+TaskComment.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+
 module.exports = {
   sequelize,
   User,
@@ -134,5 +141,6 @@ module.exports = {
   Achievement,
   ProjectMember,
   Milestone,
+  TaskComment,
   RefreshToken,
 }

@@ -1,6 +1,7 @@
 const express = require('express')
-const { Application, Project, User, Skill, ProjectMember } = require('../models')
+const { Application, Project, User, Skill, ProjectMember, sequelize } = require('../models')
 const { requireAuth } = require('../middleware/auth')
+const { checkProjectLead } = require('../middleware/founderAuth')
 const { serializeApplication } = require('../utils/serializers')
 const { notifyApplicationDecision, createNotification } = require('../services/notificationService')
 
@@ -9,7 +10,7 @@ const router = express.Router()
 router.get('/mine', requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id
-    
+
     const applications = await Application.findAll({
       where: { user_id: userId },
       include: [
