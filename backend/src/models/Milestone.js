@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../config/database')
 
-const MILESTONE_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED']
+const MILESTONE_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'COMPLETED', 'BLOCKED']
 
 const Milestone = sequelize.define(
   'Milestone',
@@ -41,6 +41,16 @@ const Milestone = sequelize.define(
     completed_at: {
       type: DataTypes.DATE,
       allowNull: true,
+    },
+    priority: {
+      type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH'),
+      allowNull: true,
+      defaultValue: 'MEDIUM',
+    },
+    custom_properties: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
     },
     created_by: {
       type: DataTypes.UUID,

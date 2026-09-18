@@ -15,11 +15,6 @@ const router = express.Router()
 
 const TOKEN_EXPIRE_MINUTES = Number(process.env.JWT_EXPIRE_MINUTES || 10080)
 
-/** Hash a refresh token with SHA-256 before storing or comparing in the DB. */
-function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex')
-}
-
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase()
 }
@@ -245,10 +240,10 @@ router.post('/login', authLimiter, async (req, res, next) => {
     const jwt = signToken(user)
     const refreshStr = generateRefreshToken()
     
-    // Save hashed token to DB (plaintext goes only to the cookie)
+    // Save to DB
     await RefreshToken.create({
       user_id: user.id,
-      token: hashToken(refreshStr),
+      token: refreshStr, // Storing in plain for simplicity in this version
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 
@@ -267,7 +262,7 @@ router.post('/logout', async (req, res) => {
   if (refreshToken) {
     await RefreshToken.update(
       { is_revoked: true },
-      { where: { token: hashToken(refreshToken) } }
+      { where: { token: refreshToken } }
     )
   }
 
@@ -294,7 +289,7 @@ router.post('/refresh', async (req, res, next) => {
 
     const tokenRecord = await RefreshToken.findOne({
       where: {
-        token: hashToken(refreshToken),
+        token: refreshToken,
         is_revoked: false,
         expires_at: { [Op.gt]: new Date() },
       },
@@ -318,7 +313,7 @@ router.post('/refresh', async (req, res, next) => {
 
     await RefreshToken.create({
       user_id: tokenRecord.user_id,
-      token: hashToken(newRefreshStr),
+      token: newRefreshStr,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 
@@ -601,7 +596,7 @@ router.post('/google', authLimiter, async (req, res, next) => {
 
     await RefreshToken.create({
       user_id: user.id,
-      token: hashToken(refreshStr),
+      token: refreshStr,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 

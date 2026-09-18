@@ -4,6 +4,7 @@ import Navbar from './components/Navbar.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import MobileBottomNav from './components/MobileBottomNav.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import FounderGuard from './components/auth/FounderGuard.jsx'
 import Landing from './pages/Landing.jsx'
 import Auth from './pages/Auth.jsx'
 import Onboarding from './pages/Onboarding.jsx'
@@ -18,15 +19,25 @@ import TalentSearch from './pages/TalentSearch.jsx'
 import Notifications from './pages/Notifications.jsx'
 import Applications from './pages/Applications.jsx'
 import Connections from './pages/Connections.jsx'
+import FounderHub from './pages/founder/FounderHub.jsx'
+import ProjectOverview from './pages/founder/ProjectOverview.jsx'
+import ProjectTasks from './pages/founder/ProjectTasks.jsx'
+import ProjectApplications from './pages/founder/ProjectApplications.jsx'
+import ProjectTeam from './pages/founder/ProjectTeam.jsx'
+import ProjectSettings from './pages/founder/ProjectSettings.jsx'
+import ProjectMilestones from './pages/founder/ProjectMilestones.jsx'
+import ProjectHiring from './pages/founder/ProjectHiring.jsx'
+import ProjectAnalytics from './pages/founder/ProjectAnalytics.jsx'
 
 // Landing, Auth, and ResetPassword are full-bleed marketing/entry screens; every other
 // route lives inside the app shell with the floating icon sidebar on desktop
-// and bottom navigation on mobile.
+// and bottom navigation on mobile. Founder workspace pages handle their own layout.
 const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
 
 export default function App() {
   const location = useLocation()
-  const inAppShell = !NO_SHELL_PATHS.includes(location.pathname)
+  const isFounderWorkspace = location.pathname.startsWith('/founder/projects/')
+  const inAppShell = !NO_SHELL_PATHS.includes(location.pathname) && !isFounderWorkspace
 
   return (
     <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
@@ -60,6 +71,15 @@ export default function App() {
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/applications" element={<ProtectedRoute><Applications /></ProtectedRoute>} />
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+            <Route path="/founder" element={<FounderGuard><FounderHub /></FounderGuard>} />
+            <Route path="/founder/projects/:id/overview" element={<FounderGuard><ProjectOverview /></FounderGuard>} />
+            <Route path="/founder/projects/:id/tasks" element={<FounderGuard><ProjectTasks /></FounderGuard>} />
+            <Route path="/founder/projects/:id/milestones" element={<FounderGuard><ProjectMilestones /></FounderGuard>} />
+            <Route path="/founder/projects/:id/team" element={<FounderGuard><ProjectTeam /></FounderGuard>} />
+            <Route path="/founder/projects/:id/hiring" element={<FounderGuard><ProjectHiring /></FounderGuard>} />
+            <Route path="/founder/projects/:id/applications" element={<FounderGuard><ProjectApplications /></FounderGuard>} />
+            <Route path="/founder/projects/:id/settings" element={<FounderGuard><ProjectSettings /></FounderGuard>} />
+            <Route path="/founder/projects/:id/analytics" element={<FounderGuard><ProjectAnalytics /></FounderGuard>} />
           </Routes>
         </main>
       </div>
