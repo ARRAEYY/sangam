@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutGrid, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react'
 import { api } from '../../api'
+import { useAuth } from '../../context/AuthContext'
 
 export default function FounderHub() {
+  const { user } = useAuth()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -45,70 +47,102 @@ export default function FounderHub() {
   }
 
   return (
-    <div className="page-stack max-w-6xl mx-auto w-full">
-      <header className="mb-10 reveal-in">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-brand-900 text-white rounded-[14px] shadow-sm">
-            <LayoutGrid size={24} />
+    <div className="page-stack max-w-[1200px] mx-auto w-full px-4 md:px-0 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 py-8 border-b border-slate-100 mb-8 reveal-in">
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <Link to="/dashboard" className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors" title="Back to Dashboard">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </Link>
+            <span className="inline-block px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold tracking-widest uppercase rounded-full">
+              Founder Hub
+            </span>
           </div>
-          <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Founder Hub</h1>
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-slate-900 mb-2">
+            Your Builds.
+          </h1>
+          <p className="text-lg text-slate-600">
+            Manage your builds and track overall project health.
+          </p>
         </div>
-        <p className="text-slate-500 text-[15px] max-w-2xl">Manage your builds and track overall project health.</p>
-      </header>
+        <Link to="/create" className="flex-shrink-0 inline-flex items-center justify-center px-6 py-2.5 bg-maroon text-white font-semibold text-sm rounded-lg hover:bg-maroon/90 transition-colors whitespace-nowrap h-fit shadow-sm">
+           Start a Build
+        </Link>
+      </div>
 
       {projects.length === 0 ? (
-        <div className="py-20 text-center bg-[#faf9f5] rounded-[24px] border-2 border-dashed border-slate-200 reveal-in delay-1">
-          <div className="mb-4 flex justify-center text-slate-300">
+        <div className="py-20 flex flex-col items-center gap-4 text-center bg-[#faf9f5] rounded-[24px] border-2 border-dashed border-slate-200 reveal-in delay-1">
+          <div className="text-slate-300">
             <TrendingUp size={48} />
           </div>
-          <h2 className="text-[18px] font-display font-semibold text-slate-900 mb-2">No projects found</h2>
-          <p className="text-slate-500 text-[14px] mb-8">You haven't created any builds yet.</p>
-          <Link to="/create" className="button button-primary">
-            Start Your First Build <ArrowRight size={16} className="ml-1" />
-          </Link>
+          <div>
+            <p className="text-slate-900 text-lg font-bold font-display mb-2">
+              No projects found
+            </p>
+            <p className="text-slate-500 mb-6">
+              You haven't created any builds yet.
+            </p>
+            <Link to="/create" className="btn-primary inline-flex items-center gap-2">
+              Start Your First Build <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 dashboard-section reveal-in delay-1">
+        <div className="flex flex-col gap-4 md:gap-6 reveal-in delay-1">
           {projects.map((project) => (
             <div
               key={project.id}
-              className="group relative p-6 bg-white rounded-[20px] border border-slate-200 hover:border-brand-200 hover:shadow-md transition-all duration-300 shadow-sm flex flex-col h-full"
+              className="bg-white border border-slate-100 rounded-2xl p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col"
             >
-              {/* Gold accent for high-priority alerts */}
-              {project.has_alerts && (
-                <div className="absolute -top-2 -right-2 w-5 h-5 bg-amber-400 rounded-full border-[3px] border-white shadow-sm" title="Action Required" />
-              )}
-
-              <div className="flex justify-between items-start mb-4 gap-4">
-                <h3 className="text-[17px] font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1">
-                  {project.title}
-                </h3>
-                <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-600 rounded-sm shrink-0">
-                  {project.status}
+              {/* Top Right Status Badge */}
+              <div className="absolute top-5 right-6">
+                <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200 uppercase tracking-wide shadow-sm">
+                  {project.status || 'OPEN'}
                 </span>
               </div>
 
-              <p className="text-slate-500 text-[13px] mb-6 line-clamp-2 flex-1">
-                {project.description || 'No description provided.'}
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="p-3 bg-slate-50 rounded-[14px] border border-slate-100 group-hover:bg-brand-50/50 group-hover:border-brand-100 transition-colors">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Applicants</span>
-                  <span className="text-[18px] font-bold text-slate-900">{project.applicant_count || 0}</span>
+              {/* Gold accent for high-priority alerts */}
+              {project.has_alerts && (
+                <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none overflow-hidden">
+                  <div className="absolute top-2 -right-2 bg-amber-400 text-amber-900 text-[9px] font-bold tracking-wider uppercase py-1 px-8 rotate-45 shadow-sm text-center z-10">
+                     Alert
+                  </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-[14px] border border-slate-100 group-hover:bg-brand-50/50 group-hover:border-brand-100 transition-colors">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Team Size</span>
-                  <span className="text-[18px] font-bold text-slate-900">{project.member_count || 0}</span>
+              )}
+
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mt-2 mb-2">
+                <div className="flex-1 min-w-0 pr-0 md:pr-24">
+                  <h3 className="text-xl font-bold text-slate-900 leading-tight break-words mb-3">
+                    {project.title}
+                  </h3>
+
+                  <div className="flex flex-col gap-2 text-sm text-slate-600 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">Project Lead:</span>
+                      <span className="font-medium text-slate-900">
+                        {project.owner?.full_name || user?.full_name || 'Meher Khan'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">Decision Queue:</span>
+                      <span className="font-medium text-slate-900">
+                        {project.applicant_count || 0} pending
+                      </span>
+                    </div>
+                  </div>
+                  
+                </div>
+
+                {/* Attention Center Button Bottom Right */}
+                <div className="flex-shrink-0 flex items-center justify-end pl-0 pt-4 md:pt-0">
+                  <Link
+                    to={`/founder/projects/${project.id}/overview`}
+                    className="inline-flex items-center justify-center px-6 py-2.5 bg-maroon text-white font-semibold text-sm rounded-lg hover:bg-maroon/90 transition-colors whitespace-nowrap shadow-sm"
+                  >
+                    Attention Center <ArrowRight size={16} className="ml-2" />
+                  </Link>
                 </div>
               </div>
-
-              <Link
-                to={`/founder/projects/${project.id}/overview`}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-700 font-semibold text-[13px] rounded-xl border border-slate-200 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-600 transition-all duration-300 shadow-sm"
-              >
-                Attention Center <ArrowRight size={14} />
-              </Link>
             </div>
           ))}
         </div>

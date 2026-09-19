@@ -97,13 +97,13 @@ export default function FounderLayout({ children }) {
   const SidebarContent = () => (
     <div className="flex h-full w-full flex-col items-start gap-[11px] pt-[30px] pb-6 px-4 overflow-hidden">
       
-      <Link to={`/projects/${id}`} className="flex w-full items-center focus-visible:outline-none mb-4">
+      <Link to="/founder" className="flex w-full items-center focus-visible:outline-none mb-4">
         <div className="icon-nav-btn shrink-0 bg-brand-50 text-brand-700">
           <ChevronLeft size={18} strokeWidth={1.75} />
         </div>
         <div className="opacity-0 w-0 -translate-x-3 group-hover:w-auto group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out ml-[15px] whitespace-nowrap overflow-hidden pointer-events-none group-hover:pointer-events-auto">
           <p className="text-[13px] font-bold text-slate-900 truncate max-w-[120px]">{project?.title || 'Project'}</p>
-          <p className="text-[10px] text-slate-500 font-medium">Public View</p>
+          <p className="text-[10px] text-slate-500 font-medium">Founder Hub</p>
         </div>
       </Link>
 
@@ -142,7 +142,7 @@ export default function FounderLayout({ children }) {
   return (
     <div className="flex flex-1 w-full relative">
       {/* Desktop Sidebar */}
-      <aside className="app-rail group hidden md:block bg-paper shrink-0" style={{ position: 'sticky', top: '74px', height: 'calc(100vh - 74px)' }}>
+      <aside className="app-rail group hidden md:block bg-paper">
         <SidebarContent />
       </aside>
 
@@ -210,12 +210,12 @@ export default function FounderLayout({ children }) {
             
             <div className="flex-1 overflow-y-auto pb-4 space-y-1">
                <Link
-                to={`/projects/${id}`}
+                to="/founder"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-[15px] font-medium transition text-slate-700 hover:bg-slate-100 mb-2"
               >
                 <ChevronLeft size={20} />
-                <span>Public View</span>
+                <span>Founder Hub</span>
               </Link>
               
               {navItems.map((item) => {

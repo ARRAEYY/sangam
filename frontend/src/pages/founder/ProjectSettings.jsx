@@ -102,12 +102,12 @@ export default function ProjectSettings() {
                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-colors whitespace-nowrap text-left ${
                      activeTab === item.id
                        ? item.isDanger
-                         ? 'bg-rose-50 text-rose-700 shadow-sm'
+                         ? 'bg-red-50 text-red-700 shadow-sm'
                          : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
                        : 'text-slate-500 hover:bg-white hover:border-slate-200 border border-transparent hover:text-slate-900'
                    }`}
                  >
-                   <span className={`${activeTab === item.id ? (item.isDanger ? 'text-rose-500' : 'text-brand-600') : 'text-slate-400'}`}>
+                   <span className={`${activeTab === item.id ? (item.isDanger ? 'text-red-500' : 'text-brand-600') : 'text-slate-400'}`}>
                      {item.icon}
                    </span>
                    {item.label}
@@ -247,27 +247,29 @@ export default function ProjectSettings() {
 
                 {/* Danger Zone */}
                 {activeTab === 'DANGER' && (
-                  <div className="bg-rose-50 border border-rose-200 rounded-[18px] p-8 shadow-sm animate-in fade-in">
-                    <h3 className="font-display font-semibold text-rose-800 text-lg mb-1 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
-                    <p className="text-[13px] text-rose-700/80 mb-8">Irreversible and destructive actions.</p>
-                    
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-rose-100 rounded-xl shadow-sm">
-                        <div>
-                          <h4 className="font-semibold text-slate-900 text-[14px]">Transfer Ownership</h4>
-                          <p className="text-[12px] text-slate-500 mt-1">Transfer this project to another user or organization.</p>
-                        </div>
-                        <button type="button" className="button button-secondary shrink-0">
-                          Transfer
-                        </button>
-                      </div>
+                  <div className="bg-white border border-slate-200 rounded-[18px] p-8 shadow-sm space-y-8 animate-in fade-in">
+                      <h3 className="font-display font-semibold text-slate-900 text-lg mb-1 flex items-center gap-2">
+                        <AlertTriangle size={20} className="text-red-500" /> Danger Zone
+                      </h3>
+                      <p className="text-[13px] text-slate-500 mb-8">Irreversible and destructive actions.</p>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-rose-100 rounded-xl shadow-sm">
-                        <div>
-                          <h4 className="font-semibold text-rose-700 text-[14px]">Delete Project</h4>
-                          <p className="text-[12px] text-slate-500 mt-1">Permanently delete this project and all its data. This cannot be undone.</p>
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                          <div>
+                            <h4 className="font-semibold text-slate-900 text-[14px]">Transfer Ownership</h4>
+                            <p className="text-[12px] text-slate-500 mt-1">Transfer this project to another user or organization.</p>
+                          </div>
+                          <button type="button" className="button button-secondary shrink-0">
+                            Transfer
+                          </button>
                         </div>
-                        <button type="button" className="button bg-rose-600 hover:bg-rose-700 text-white shrink-0 border-none">
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                          <div>
+                            <h4 className="font-semibold text-slate-900 text-[14px]">Delete Project</h4>
+                            <p className="text-[12px] text-slate-500 mt-1">Permanently delete this project and all its data. This cannot be undone.</p>
+                          </div>
+                        <button type="button" className="button bg-red-600 hover:bg-red-700 text-white shrink-0 border-none">
                           Delete Project
                         </button>
                       </div>

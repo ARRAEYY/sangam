@@ -13,6 +13,7 @@ import {
   LogIn,
   Settings,
   Network,
+  LayoutGrid,
 } from 'lucide-react'
 import ExploreIcon from './ExploreIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -162,6 +163,13 @@ export default function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700"
                   >
                     <User size={15} /> Your dashboard
+                  </Link>
+                  <Link
+                    to="/founder"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    <LayoutGrid size={15} /> Founder Hub
                   </Link>
                   <Link
                     to="/settings"
