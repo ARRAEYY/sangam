@@ -36,21 +36,22 @@ const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
 
 export default function App() {
   const location = useLocation()
-  const isFounderWorkspace = location.pathname.startsWith('/founder/projects/')
-  const inAppShell = !NO_SHELL_PATHS.includes(location.pathname) && !isFounderWorkspace
+  const isFounderWorkspace = location.pathname.startsWith('/founder/projects')
+  const hasGlobalNavbar = !NO_SHELL_PATHS.includes(location.pathname)
+  const hasGlobalSidebar = hasGlobalNavbar && !isFounderWorkspace
 
   return (
     <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
-      {inAppShell && <Navbar />}
+      {hasGlobalNavbar && <Navbar />}
       
       <div className="flex flex-1 w-full relative">
         {/* Fixed position sidebar */}
-        {inAppShell && <Sidebar />}
+        {hasGlobalSidebar && <Sidebar />}
         
         {/* Main Content Area */}
         <main
           className={`flex-1 min-w-0 ${
-            inAppShell
+            hasGlobalSidebar
               ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 w-full'
               : 'w-full'
           }`}
@@ -85,7 +86,7 @@ export default function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar on mobile screens */}
-      {inAppShell && <MobileBottomNav />}
+      {hasGlobalSidebar && <MobileBottomNav />}
     </div>
   )
 }

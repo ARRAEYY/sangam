@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import {
   LayoutDashboard,
   CheckSquare,
@@ -9,13 +10,10 @@ import {
   FileText,
   Settings,
   BarChart3,
-  Search,
   ChevronLeft,
-  ExternalLink,
-  Menu,
   X,
-  ShieldAlert,
-  Sparkles
+  Menu,
+  ShieldAlert
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../api'
@@ -50,10 +48,26 @@ export default function FounderLayout({ children }) {
     }
   }, [id])
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [location.pathname])
+
+  // Handle drawer scroll lock and escape key
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') setMobileMenuOpen(false)
+      }
+      document.addEventListener('keydown', handleEsc)
+      return () => {
+        document.body.style.overflow = ''
+        document.removeEventListener('keydown', handleEsc)
+      }
+    } else {
+      document.body.style.overflow = ''
+    }
+  }, [mobileMenuOpen])
 
   const pendingAppsCount = attention?.pendingApplicants?.length || 0
   const pendingReviewCount = attention?.tasksAwaitingReview?.length || 0
@@ -66,14 +80,12 @@ export default function FounderLayout({ children }) {
       path: `/founder/projects/${id}/tasks`, 
       icon: CheckSquare,
       badge: pendingReviewCount > 0 ? pendingReviewCount : null,
-      badgeColor: 'bg-amber-100 text-amber-800'
     },
     { 
       label: 'Applications', 
       path: `/founder/projects/${id}/applications`, 
       icon: FileText,
       badge: pendingAppsCount > 0 ? pendingAppsCount : null,
-      badgeColor: 'bg-[#7f1d3b]/10 text-[#7f1d3b]'
     },
     { label: 'Milestones', path: `/founder/projects/${id}/milestones`, icon: Flag },
     { label: 'Team', path: `/founder/projects/${id}/team`, icon: Users },
@@ -82,150 +94,161 @@ export default function FounderLayout({ children }) {
     { label: 'Settings', path: `/founder/projects/${id}/settings`, icon: Settings },
   ]
 
-  return (
-    <div className="min-h-[calc(100vh-4rem)] flex bg-[#fbfaf8] text-slate-900 -mx-5 -my-4 sm:-mx-6 sm:-my-6 font-sans">
-      {/* ── Mobile Backdrop ────────────────────────────────────────────────── */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+  const SidebarContent = () => (
+    <div className="flex h-full w-full flex-col items-start gap-[11px] pt-[30px] pb-6 px-4 overflow-hidden">
+      
+      <Link to={`/projects/${id}`} className="flex w-full items-center focus-visible:outline-none mb-4">
+        <div className="icon-nav-btn shrink-0 bg-brand-50 text-brand-700">
+          <ChevronLeft size={18} strokeWidth={1.75} />
+        </div>
+        <div className="opacity-0 w-0 -translate-x-3 group-hover:w-auto group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out ml-[15px] whitespace-nowrap overflow-hidden pointer-events-none group-hover:pointer-events-auto">
+          <p className="text-[13px] font-bold text-slate-900 truncate max-w-[120px]">{project?.title || 'Project'}</p>
+          <p className="text-[10px] text-slate-500 font-medium">Public View</p>
+        </div>
+      </Link>
 
-      {/* ── Left Sidebar Navigation Rail ──────────────────────────────────── */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-stone-200/80 flex flex-col shrink-0 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:shadow-none'
-        }`}
-      >
-        {/* Project Branding Strip */}
-        <div className="p-5 border-b border-stone-100">
-          <div className="flex items-center justify-between mb-4">
-            <Link
-              to="/founder"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-[#7f1d3b] transition-colors"
-            >
-              <ChevronLeft size={14} /> Back to Hub
-            </Link>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-1 text-slate-400 hover:text-slate-700 rounded-lg lg:hidden"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#7f1d3b] flex items-center justify-center text-white font-display font-bold text-base shadow-sm">
-              {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
+      {navItems.map((item) => {
+        const Icon = item.icon
+        const active = location.pathname.startsWith(item.path)
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className="flex w-full items-center focus-visible:outline-none relative"
+          >
+            <div className={`icon-nav-btn shrink-0 ${active ? 'active' : ''}`}>
+              <Icon size={18} strokeWidth={1.75} />
+              {item.badge && (
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-[#7f1d3b] ring-2 ring-paper" />
+              )}
+              <span className="sr-only">{item.label}</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-display font-bold text-sm text-slate-900 truncate" title={project?.title}>
-                {project?.title || 'Loading Project...'}
-              </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Build
+            <div className={`opacity-0 w-0 -translate-x-3 group-hover:w-auto group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out ml-[15px] flex items-center justify-between pointer-events-none group-hover:pointer-events-auto flex-1 overflow-hidden`}>
+               <span className={`text-[15px] font-semibold whitespace-nowrap ${active ? 'text-maroon' : 'text-ink-soft group-hover:text-ink'}`}>
+                {item.label}
+              </span>
+              {item.badge && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#7f1d3b]/10 text-[#7f1d3b] text-[10px] font-bold">
+                  {item.badge}
                 </span>
-                {totalDecisions > 0 && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800" title={`${totalDecisions} items need attention`}>
-                    <ShieldAlert size={10} /> {totalDecisions}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-          </div>
-        </div>
+          </Link>
+        )
+      })}
+    </div>
+  )
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <div className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-            Admin Workspace
-          </div>
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname.startsWith(item.path)
-
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
-                  isActive
-                    ? 'bg-[#7f1d3b] text-white font-semibold shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-stone-100/70'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400'} />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {item.badge && !isActive && (
-                  <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${item.badgeColor}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* Sidebar Footer User Info */}
-        <div className="p-4 border-t border-stone-100 bg-stone-50/50 flex items-center gap-3">
-          <img
-            src={user?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Atharv'}
-            alt="User avatar"
-            className="w-8 h-8 rounded-full bg-stone-200 object-cover border border-stone-200"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-900 truncate">{user?.full_name || 'Project Lead'}</p>
-            <p className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
-              <Sparkles size={10} className="text-[#7f1d3b]" /> Project Admin
-            </p>
-          </div>
-        </div>
+  return (
+    <div className="flex flex-1 w-full relative">
+      {/* Desktop Sidebar */}
+      <aside className="app-rail group hidden md:block bg-paper shrink-0" style={{ position: 'sticky', top: '74px', height: 'calc(100vh - 74px)' }}>
+        <SidebarContent />
       </aside>
 
-      {/* ── Main Content Area ──────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Top Header Bar */}
-        <header className="h-14 bg-white/90 backdrop-blur border-b border-stone-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+      {/* Main Content */}
+      <main className="app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 w-full flex-1 min-w-0">
+        
+        {/* Mobile Header (Only visible on small screens to toggle menu) */}
+        <div className="md:hidden flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-stone-100 rounded-lg lg:hidden"
-              aria-label="Open Navigation Menu"
-            >
-              <Menu size={20} />
-            </button>
-            <div className="flex items-center gap-2 text-xs">
-              <Link to="/explore" className="text-slate-400 hover:text-slate-600 hidden sm:inline">Projects</Link>
-              <span className="text-slate-300 hidden sm:inline">/</span>
-              <span className="font-bold text-slate-800 truncate max-w-[140px] sm:max-w-[240px]">
+             <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-700 font-display font-bold text-sm">
+              {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
+            </div>
+            <div>
+              <h2 className="font-display font-bold text-sm text-slate-900 truncate max-w-[150px]">
                 {project?.title || 'Admin'}
-              </span>
-              <span className="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 text-[10px] font-bold">
-                Console
-              </span>
+              </h2>
             </div>
           </div>
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-1.5 text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+          >
+            <Menu size={18} />
+          </button>
+        </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to={`/projects/${id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#7f1d3b] bg-[#7f1d3b]/10 hover:bg-[#7f1d3b]/15 rounded-lg transition-colors border border-[#7f1d3b]/20"
-            >
-              <span>Public View</span>
-              <ExternalLink size={12} />
-            </Link>
+        {children}
+      </main>
+
+      {/* Mobile Menu Drawer */}
+      {createPortal(
+        <div
+          className={`fixed inset-0 z-[100] flex transition-opacity duration-300 md:hidden ${
+            mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <div
+            className={`absolute inset-0 bg-ink/40 backdrop-blur-sm transition-opacity duration-300 ${
+              mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div
+            className={`relative flex h-[100dvh] w-[85%] max-w-[360px] flex-col bg-white px-5 pb-5 pt-4 shadow-2xl transition-transform duration-300 ease-out ${
+              mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <div className="mb-6 flex shrink-0 items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-700 font-display font-bold text-lg">
+                  {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-display font-bold text-sm text-slate-900 truncate">{project?.title || 'Loading Project...'}</h2>
+                  <p className="text-[11px] text-slate-500 font-medium">Console</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-full border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pb-4 space-y-1">
+               <Link
+                to={`/projects/${id}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-[15px] font-medium transition text-slate-700 hover:bg-slate-100 mb-2"
+              >
+                <ChevronLeft size={20} />
+                <span>Public View</span>
+              </Link>
+              
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const active = location.pathname.startsWith(item.path)
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[15px] font-medium transition ${
+                      active
+                        ? 'bg-brand-50 text-brand-700 font-semibold'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${active ? 'bg-white text-brand-700' : 'bg-[#7f1d3b]/10 text-[#7f1d3b]'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
           </div>
-        </header>
-
-        {/* Dynamic Page Content */}
-        <main className="p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto flex-1">
-          {children}
-        </main>
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

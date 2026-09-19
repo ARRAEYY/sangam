@@ -77,37 +77,37 @@ export default function ProjectSettings() {
 
   return (
     <FounderLayout>
-      <div className="max-w-6xl mx-auto pb-12">
+      <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Project Settings</h1>
-            <p className="text-sm text-slate-500 mt-1">Manage project preferences and configuration.</p>
+            <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Project Settings</h1>
+            <p className="text-[15px] text-slate-500 mt-1">Manage project preferences and configuration.</p>
           </div>
           {toastMessage && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold rounded-xl animate-in fade-in slide-in-from-top-2 shadow-sm">
-              <CheckCircle2 size={16} className="text-emerald-500" /> {toastMessage}
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] font-bold rounded-xl animate-in fade-in slide-in-from-top-2 shadow-sm">
+              <CheckCircle2 size={16} className="text-emerald-600" /> {toastMessage}
             </span>
           )}
-        </div>
+        </section>
 
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-10 dashboard-section reveal-in delay-1">
           {/* Settings Sidebar */}
           <aside className="w-full md:w-64 shrink-0">
-            <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+            <nav className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
                {navItems.map((item) => (
                  <button
                    key={item.id}
                    onClick={() => setActiveTab(item.id)}
-                   className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors whitespace-nowrap text-left ${
+                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-colors whitespace-nowrap text-left ${
                      activeTab === item.id
                        ? item.isDanger
-                         ? 'bg-red-50 text-red-700'
-                         : 'bg-maroon-50 text-maroon-700'
-                       : 'text-slate-600 hover:bg-slate-100'
+                         ? 'bg-rose-50 text-rose-700 shadow-sm'
+                         : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
+                       : 'text-slate-500 hover:bg-white hover:border-slate-200 border border-transparent hover:text-slate-900'
                    }`}
                  >
-                   <span className={`${activeTab === item.id ? (item.isDanger ? 'text-red-500' : 'text-maroon-500') : 'text-slate-400'}`}>
+                   <span className={`${activeTab === item.id ? (item.isDanger ? 'text-rose-500' : 'text-brand-600') : 'text-slate-400'}`}>
                      {item.icon}
                    </span>
                    {item.label}
@@ -119,63 +119,63 @@ export default function ProjectSettings() {
           {/* Settings Content */}
           <div className="flex-1 min-w-0">
             {loading ? (
-              <div className="py-20 text-center text-slate-400 animate-pulse">Loading settings...</div>
+              <div className="py-20 text-center text-slate-400 animate-pulse font-medium">Loading settings...</div>
             ) : (
               <form onSubmit={handleSave} className="space-y-6">
                 
                 {/* General Tab */}
                 {activeTab === 'GENERAL' && (
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-8 animate-in fade-in">
+                  <div className="bg-white border border-slate-200 rounded-[18px] p-8 shadow-sm space-y-8 animate-in fade-in">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 mb-1">Project Profile</h3>
-                      <p className="text-sm text-slate-500 mb-6">Basic information that represents your project publicly.</p>
+                      <h3 className="font-display font-semibold text-slate-900 text-lg mb-1">Project Profile</h3>
+                      <p className="text-[13px] text-slate-500 mb-8">Basic information that represents your project publicly.</p>
                       
-                      <div className="space-y-5">
+                      <div className="space-y-6">
                         {/* Avatar / Logo Upload */}
-                        <div className="flex items-center gap-5">
-                           <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <div className="flex items-center gap-6">
+                           <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
                              {logoUrl ? (
                                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                              ) : (
-                               <ImageIcon size={28} className="text-slate-300" />
+                               <ImageIcon size={32} className="text-slate-300" />
                              )}
                            </div>
                            <div>
-                             <label className="block text-sm font-semibold text-slate-700 mb-1">Project Logo</label>
+                             <label className="block text-[14px] font-semibold text-slate-900 mb-2">Project Logo</label>
                              <div className="flex items-center gap-3">
                                <input
                                  type="text"
                                  value={logoUrl}
                                  onChange={(e) => setLogoUrl(e.target.value)}
                                  placeholder="Enter logo URL (e.g., imgur link)"
-                                 className="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all placeholder:text-slate-400"
+                                 className="flex-1 text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-slate-400"
                                />
-                               <button type="button" className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors border border-slate-200 shadow-sm">
+                               <button type="button" className="button button-secondary">
                                  Upload
                                </button>
                              </div>
-                             <p className="text-xs text-slate-400 mt-1.5">Recommended size: 256x256px.</p>
+                             <p className="text-[12px] text-slate-400 mt-2">Recommended size: 256x256px.</p>
                            </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Name</label>
+                          <label className="block text-[14px] font-semibold text-slate-900 mb-2">Project Name</label>
                           <input
                             type="text"
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
-                            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all font-medium text-slate-900"
+                            className="w-full text-[14px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-semibold text-slate-900"
                             required
                           />
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5"><Tags size={14} className="text-slate-400" /> Category</label>
+                            <label className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 mb-2"><Tags size={14} className="text-brand-500" /> Category</label>
                             <select
                               value={category}
                               onChange={(e) => setCategory(e.target.value)}
-                              className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all text-slate-700"
+                              className="w-full text-[14px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700"
                             >
                               <option>Technology</option>
                               <option>Environment</option>
@@ -184,11 +184,11 @@ export default function ProjectSettings() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5"><Globe size={14} className="text-slate-400" /> Visibility</label>
+                            <label className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 mb-2"><Globe size={14} className="text-brand-500" /> Visibility</label>
                             <select
                               value={visibility}
                               onChange={(e) => setVisibility(e.target.value)}
-                              className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all text-slate-700"
+                              className="w-full text-[14px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700"
                             >
                               <option>Public</option>
                               <option>Private</option>
@@ -198,12 +198,12 @@ export default function ProjectSettings() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Short Description</label>
+                          <label className="block text-[14px] font-semibold text-slate-900 mb-2">Short Description</label>
                           <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={4}
-                            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all text-slate-700 resize-y"
+                            className="w-full text-[14px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700 resize-y leading-relaxed"
                             placeholder="Briefly describe what your project is about..."
                           />
                         </div>
@@ -214,31 +214,31 @@ export default function ProjectSettings() {
 
                 {/* Hiring Tab */}
                 {activeTab === 'HIRING' && (
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-8 animate-in fade-in">
+                  <div className="bg-white border border-slate-200 rounded-[18px] p-8 shadow-sm space-y-8 animate-in fade-in">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 mb-1">Hiring Configuration</h3>
-                      <p className="text-sm text-slate-500 mb-6">Set up global requirements and questions for applicants.</p>
+                      <h3 className="font-display font-semibold text-slate-900 text-lg mb-1">Hiring Configuration</h3>
+                      <p className="text-[13px] text-slate-500 mb-8">Set up global requirements and questions for applicants.</p>
                       
-                      <div className="space-y-5">
+                      <div className="space-y-6">
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">General Requirements</label>
+                          <label className="block text-[14px] font-semibold text-slate-900 mb-2">General Requirements</label>
                           <textarea
                             value={generalRequirements}
                             onChange={(e) => setGeneralRequirements(e.target.value)}
-                            rows={4}
-                            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all text-slate-700 font-mono"
+                            rows={5}
+                            className="w-full text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700 font-mono leading-relaxed"
                           />
-                          <p className="text-xs text-slate-400 mt-1.5">These apply to all open roles by default.</p>
+                          <p className="text-[12px] text-slate-400 mt-2">These apply to all open roles by default.</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Default Screening Questions</label>
+                          <label className="block text-[14px] font-semibold text-slate-900 mb-2">Default Screening Questions</label>
                           <textarea
                             value={screeningQuestions}
                             onChange={(e) => setScreeningQuestions(e.target.value)}
-                            rows={4}
-                            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 transition-all text-slate-700 font-mono"
+                            rows={5}
+                            className="w-full text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700 font-mono leading-relaxed"
                           />
-                          <p className="text-xs text-slate-400 mt-1.5">Applicants will be asked these when applying for roles.</p>
+                          <p className="text-[12px] text-slate-400 mt-2">Applicants will be asked these when applying for roles.</p>
                         </div>
                       </div>
                     </div>
@@ -247,27 +247,27 @@ export default function ProjectSettings() {
 
                 {/* Danger Zone */}
                 {activeTab === 'DANGER' && (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm animate-in fade-in">
-                    <h3 className="text-lg font-bold text-red-800 mb-1 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
-                    <p className="text-sm text-red-600/80 mb-6">Irreversible and destructive actions.</p>
+                  <div className="bg-rose-50 border border-rose-200 rounded-[18px] p-8 shadow-sm animate-in fade-in">
+                    <h3 className="font-display font-semibold text-rose-800 text-lg mb-1 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
+                    <p className="text-[13px] text-rose-700/80 mb-8">Irreversible and destructive actions.</p>
                     
                     <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-red-100 rounded-xl">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-rose-100 rounded-xl shadow-sm">
                         <div>
-                          <h4 className="font-bold text-slate-900 text-sm">Transfer Ownership</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">Transfer this project to another user or organization.</p>
+                          <h4 className="font-semibold text-slate-900 text-[14px]">Transfer Ownership</h4>
+                          <p className="text-[12px] text-slate-500 mt-1">Transfer this project to another user or organization.</p>
                         </div>
-                        <button type="button" className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-colors shrink-0">
+                        <button type="button" className="button button-secondary shrink-0">
                           Transfer
                         </button>
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-red-100 rounded-xl">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-rose-100 rounded-xl shadow-sm">
                         <div>
-                          <h4 className="font-bold text-red-700 text-sm">Delete Project</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">Permanently delete this project and all its data. This cannot be undone.</p>
+                          <h4 className="font-semibold text-rose-700 text-[14px]">Delete Project</h4>
+                          <p className="text-[12px] text-slate-500 mt-1">Permanently delete this project and all its data. This cannot be undone.</p>
                         </div>
-                        <button type="button" className="px-4 py-2 bg-red-600 text-white font-semibold text-sm rounded-lg hover:bg-red-700 transition-colors shrink-0">
+                        <button type="button" className="button bg-rose-600 hover:bg-rose-700 text-white shrink-0 border-none">
                           Delete Project
                         </button>
                       </div>
@@ -277,14 +277,13 @@ export default function ProjectSettings() {
 
                 {/* Save Button Footer */}
                 {activeTab !== 'DANGER' && (
-                  <div className="flex items-center justify-end pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-end pt-6 border-t border-slate-200">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-maroon-600 text-white font-bold text-sm rounded-xl hover:bg-maroon-700 transition-all shadow-sm shadow-maroon-600/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                      className="button button-primary shadow-md shadow-brand-600/20"
                     >
-                      <Save size={18} />
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? 'Saving...' : 'Save Changes'} <Save size={14} className="ml-1" />
                     </button>
                   </div>
                 )}

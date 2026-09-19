@@ -59,156 +59,138 @@ export default function ProjectAnalytics() {
 
   return (
     <FounderLayout>
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Top Header */}
-        <div className="flex items-center justify-between">
+        <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Project Analytics</h1>
-            <p className="text-xs text-slate-500">Track performance metrics and member growth over time.</p>
+            <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Project Analytics</h1>
+            <p className="text-[15px] text-slate-500 mt-1">Track performance metrics and member growth over time.</p>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 shadow-sm">
             <Calendar size={14} className="text-slate-400" />
-            <select className="bg-transparent focus:outline-none cursor-pointer">
+            <select className="bg-transparent focus:outline-none cursor-pointer text-slate-700 font-semibold">
               <option>Last 30 days</option>
               <option>Last 60 days</option>
               <option>All time</option>
             </select>
           </div>
-        </div>
+        </section>
 
         {/* 4 Summary Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">Total Members</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.totalMembers || 16}</p>
-            </div>
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Users size={22} />
-            </div>
+        <section className="dashboard-stats reveal-in delay-1 mb-10">
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users size={12} className="text-brand-500" /> Total Members</span>
+            <strong className="block mb-1 text-2xl">{stats.totalMembers || 16}</strong>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">Total Tasks</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.totalTasks || 28}</p>
-            </div>
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-              <CheckSquare size={22} />
-            </div>
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><CheckSquare size={12} className="text-emerald-500" /> Total Tasks</span>
+            <strong className="block mb-1 text-2xl">{stats.totalTasks || 28}</strong>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">Milestones</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.totalMilestones || 5}</p>
-            </div>
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-              <Flag size={22} />
-            </div>
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Flag size={12} className="text-amber-500" /> Milestones</span>
+            <strong className="block mb-1 text-2xl">{stats.totalMilestones || 5}</strong>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">Applications</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.totalApplications || 16}</p>
-            </div>
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-              <FileText size={22} />
-            </div>
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileText size={12} className="text-purple-500" /> Applications</span>
+            <strong className="block mb-1 text-2xl">{stats.totalApplications || 16}</strong>
           </div>
-        </div>
+        </section>
 
         {/* ── Charts Grid ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Task Completion Trend (Line Chart SVG) */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">Task Completion Trend</h3>
-                <p className="text-[11px] text-slate-400">Cumulative completed tasks over time</p>
+        <section className="dashboard-section reveal-in delay-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Task Completion Trend (Line Chart SVG) */}
+            <div className="lg:col-span-2 bg-white p-8 rounded-[18px] border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="font-display font-semibold text-slate-900 text-[16px]">Task Completion Trend</h3>
+                  <p className="text-[13px] text-slate-500 mt-0.5">Cumulative completed tasks over time</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-[12px] bg-emerald-50 px-2.5 py-1 rounded-md">
+                  <TrendingUp size={14} /> +24%
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded-lg">
-                <TrendingUp size={14} /> +24%
-              </div>
-            </div>
 
-            {/* SVG Line Chart Canvas */}
-            <div className="h-48 w-full relative flex items-end">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 400 150">
-                {/* Grid Lines */}
-                <line x1="0" y1="30" x2="400" y2="30" stroke="#f1f5f9" strokeWidth="1" />
-                <line x1="0" y1="75" x2="400" y2="75" stroke="#f1f5f9" strokeWidth="1" />
-                <line x1="0" y1="120" x2="400" y2="120" stroke="#f1f5f9" strokeWidth="1" />
+              {/* SVG Line Chart Canvas */}
+              <div className="h-56 w-full relative flex items-end">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 400 150">
+                  {/* Grid Lines */}
+                  <line x1="0" y1="30" x2="400" y2="30" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="0" y1="75" x2="400" y2="75" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="0" y1="120" x2="400" y2="120" stroke="#f1f5f9" strokeWidth="1" />
 
-                {/* Trend Line Path */}
-                <path
-                  d="M 10 130 Q 100 100 200 65 T 390 20"
-                  fill="none"
-                  stroke="#4f46e5"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                />
+                  {/* Trend Line Path */}
+                  <path
+                    d="M 10 130 Q 100 100 200 65 T 390 20"
+                    fill="none"
+                    stroke="#7f1d3b"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
 
-                {/* Data Points */}
-                <circle cx="10" cy="130" r="4" fill="#4f46e5" />
-                <circle cx="100" cy="105" r="4" fill="#4f46e5" />
-                <circle cx="200" cy="65" r="4" fill="#4f46e5" />
-                <circle cx="300" cy="45" r="4" fill="#4f46e5" />
-                <circle cx="390" cy="20" r="4" fill="#4f46e5" />
-              </svg>
-            </div>
-
-            {/* X Axis Labels */}
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 pt-3 border-t border-slate-100">
-              <span>Apr 1</span>
-              <span>Apr 8</span>
-              <span>Apr 15</span>
-              <span>Apr 22</span>
-              <span>Apr 30</span>
-            </div>
-          </div>
-
-          {/* Members by Role (Doughnut Chart) */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <h3 className="font-bold text-slate-900 text-sm mb-4">Members by Role</h3>
-
-            <div className="flex items-center justify-center py-4">
-              <div className="relative w-36 h-36 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-indigo-500" strokeDasharray="50 100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-emerald-500" strokeDasharray="25 100" strokeDashoffset="-50" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-amber-500" strokeDasharray="25 100" strokeDashoffset="-75" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Data Points */}
+                  <circle cx="10" cy="130" r="5" fill="#7f1d3b" />
+                  <circle cx="100" cy="105" r="5" fill="#7f1d3b" />
+                  <circle cx="200" cy="65" r="5" fill="#7f1d3b" />
+                  <circle cx="300" cy="45" r="5" fill="#7f1d3b" />
+                  <circle cx="390" cy="20" r="5" fill="#7f1d3b" />
                 </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-2xl font-bold text-slate-900">{stats.totalMembers || 16}</span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Members</span>
+              </div>
+
+              {/* X Axis Labels */}
+              <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-4 border-t border-slate-100">
+                <span>Apr 1</span>
+                <span>Apr 8</span>
+                <span>Apr 15</span>
+                <span>Apr 22</span>
+                <span>Apr 30</span>
+              </div>
+            </div>
+
+            {/* Members by Role (Doughnut Chart) */}
+            <div className="bg-white p-8 rounded-[18px] border border-slate-200 shadow-sm flex flex-col justify-between">
+              <h3 className="font-display font-semibold text-slate-900 text-[16px] mb-6">Members by Role</h3>
+
+              <div className="flex items-center justify-center py-6">
+                <div className="relative w-40 h-40 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path className="text-brand-600" strokeDasharray="50 100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path className="text-emerald-500" strokeDasharray="25 100" strokeDashoffset="-50" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path className="text-amber-500" strokeDasharray="25 100" strokeDashoffset="-75" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                  <div className="absolute flex flex-col items-center">
+                    <span className="text-3xl font-bold text-slate-900">{stats.totalMembers || 16}</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Members</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Role Legend */}
+              <div className="grid grid-cols-2 gap-3 text-[13px] pt-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-brand-600" />
+                  <span className="font-semibold text-slate-700">Dev (8)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <span className="font-semibold text-slate-700">Design (3)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-slate-300" />
+                  <span className="font-semibold text-slate-700">Admin (1)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-amber-500" />
+                  <span className="font-semibold text-slate-700">Others (4)</span>
                 </div>
               </div>
             </div>
-
-            {/* Role Legend */}
-            <div className="grid grid-cols-2 gap-2 text-xs pt-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                <span className="font-medium text-slate-600">Developer (8)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="font-medium text-slate-600">Designer (3)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                <span className="font-medium text-slate-600">Admin (1)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="font-medium text-slate-600">Others (4)</span>
-              </div>
-            </div>
           </div>
-        </div>
+        </section>
       </div>
     </FounderLayout>
   )

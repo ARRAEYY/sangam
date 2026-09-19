@@ -189,10 +189,10 @@ export default function ProjectOverview() {
 
   return (
     <FounderLayout>
-      <div className="space-y-6">
+      <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* ── Action Feedback Toast ────────────────────────────────────────── */}
         {actionSuccessMessage && (
-          <div className="flex items-center justify-between p-3.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200/80 text-xs font-semibold shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between p-3.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200/80 text-xs font-semibold shadow-sm animate-in fade-in slide-in-from-top-2 duration-200 mb-6">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-600" />
               <span>{actionSuccessMessage}</span>
@@ -207,164 +207,92 @@ export default function ProjectOverview() {
         )}
 
         {/* ── Top Header Strip ────────────────────────────────────────────── */}
-        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <section className="reveal-in flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1.5 flex-wrap">
-              <h1 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
                 {project.title || 'AI for Social Good'}
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-emerald-50 text-emerald-700">
                 Active Build
               </span>
               {totalDecisionsCount > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-brand-50 text-brand-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-ping" />
                   {totalDecisionsCount} {totalDecisionsCount === 1 ? 'decision needed' : 'decisions needed'}
                 </span>
               )}
             </div>
-            <p className="text-slate-500 text-xs sm:text-sm line-clamp-1">
+            <p className="text-slate-500 text-sm line-clamp-1">
               {project.tagline || project.description || 'Coordinating contributors and accelerating build milestones.'}
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setIsTaskModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#7f1d3b] hover:bg-[#5c132b] text-white font-semibold text-xs rounded-xl transition-colors shadow-sm"
-            >
-              <Plus size={15} />
-              <span>Create Task</span>
-            </button>
             <Link
               to={`/projects/${id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+              className="button button-secondary"
             >
-              <span>Public View</span>
-              <ExternalLink size={13} />
+              Public View <ExternalLink size={14} />
             </Link>
+            <button
+              onClick={() => setIsTaskModalOpen(true)}
+              className="button button-primary"
+            >
+              Create Task <Plus size={14} />
+            </button>
           </div>
-        </div>
+        </section>
 
-        {/* ── 4 Telemetry Metric Cards ─────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Task Completion */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Task Completion</span>
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <CheckSquare size={16} />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="font-display text-2xl font-bold text-slate-900">{completionPercentage}%</span>
-                <span className="text-xs text-slate-400 font-medium">({stats.completedTasks}/{stats.totalTasks} done)</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
+        {/* ── 4 Telemetry Metric Cards (Stats Strip) ─────────────────────────────────────── */}
+        <section className="dashboard-stats reveal-in delay-1 mb-12">
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Task Completion</span>
+            <strong className="block mb-1">{completionPercentage}%</strong>
+            <span className="stat-caption block text-[11px] text-slate-400">{stats.completedTasks}/{stats.totalTasks} done</span>
           </div>
 
-          {/* Card 2: Active Roster */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active Roster</span>
-              <div className="p-2 bg-[#7f1d3b]/10 text-[#7f1d3b] rounded-lg">
-                <Users size={16} />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-display text-2xl font-bold text-slate-900">{stats.totalMembers}</span>
-                <span className="text-xs text-slate-400 font-medium">Contributors</span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">
-                {pendingApplicants.length} applicants in recruiting pipeline
-              </p>
-            </div>
+          <div className="stat-block">
+            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Roster</span>
+            <strong className="block mb-1">{stats.totalMembers.toString().padStart(2, '0')}</strong>
+            <span className="stat-caption block text-[11px] text-slate-400">{pendingApplicants.length} pending apps</span>
           </div>
 
-          {/* Card 3: Decision Queue */}
-          <div className={`p-5 rounded-2xl border shadow-sm flex flex-col justify-between transition-all ${
-            totalDecisionsCount > 0 ? 'bg-amber-50/40 border-amber-200/90' : 'bg-white border-stone-200/80'
-          }`}>
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Decision Queue</span>
-              <div className={`p-2 rounded-lg ${totalDecisionsCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-                <ShieldCheck size={16} />
-              </div>
+          <div className="stat-block profile-stat flex flex-col justify-center px-6">
+            <div className="stat-line mb-2">
+              <span className="eyebrow text-[10px] font-bold text-slate-400 uppercase tracking-widest">Milestone Pace</span>
+              <span className="text-emerald-600 font-bold text-[12px]">On Schedule</span>
             </div>
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className={`font-display text-2xl font-bold ${totalDecisionsCount > 0 ? 'text-amber-900' : 'text-slate-900'}`}>
-                  {totalDecisionsCount}
-                </span>
-                <span className="text-xs text-slate-500 font-medium">pending actions</span>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                {totalDecisionsCount === 0 ? 'All reviews & requests cleared' : `${pendingApplicants.length} apps · ${reviewTasks.length} reviews`}
-              </p>
+            <div className="progress-track mb-2">
+              <span style={{ width: '65%' }} className="bg-emerald-500" />
             </div>
+            <span className="stat-caption text-[11px] text-slate-400">Targeting release in 14d</span>
           </div>
 
-          {/* Card 4: Sprint Velocity */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Milestone Pace</span>
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <Flame size={16} />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-display text-2xl font-bold text-slate-900">Sprint 3</span>
-                <span className="text-xs text-emerald-600 font-bold">On Schedule</span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Targeting next release in 14 days
-              </p>
-            </div>
+          <div className={`dashboard-prompt ${totalDecisionsCount > 0 ? 'bg-brand-50 text-brand-900' : 'bg-[#faf9f5]'}`}>
+            <ShieldCheck size={16} />
+            <span><strong>Decision Queue:</strong> {totalDecisionsCount}</span>
+            <ChevronRight size={16} />
           </div>
-        </div>
+        </section>
 
         {/* ── ⚡ Actionable Decision Queue (Attention Center) ───────────────── */}
-        <section className="bg-white rounded-2xl border border-stone-200/80 shadow-sm p-5 sm:p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
-                <Sparkles size={16} />
-              </div>
-              <div>
-                <h2 className="font-display text-sm font-bold text-slate-900">
-                  Decision Queue
-                </h2>
-                <p className="text-[11px] text-slate-500">
-                  Clear blockers, review deliverables, and welcome applicants with 1 click.
-                </p>
-              </div>
+        <section className="dashboard-section reveal-in delay-2 mb-12">
+          <div className="section-heading mb-6">
+            <div>
+              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Action Required</span>
+              <h2>Decision Queue</h2>
             </div>
-
             {totalDecisionsCount > 0 && (
-              <span className="text-xs font-bold text-[#7f1d3b] bg-[#7f1d3b]/10 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold tracking-widest text-brand-700 bg-brand-50 px-2.5 py-1 rounded-sm uppercase">
                 {totalDecisionsCount} pending
               </span>
             )}
           </div>
 
           {totalDecisionsCount === 0 ? (
-            <div className="py-10 text-center flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-                <CheckCircle2 size={24} />
-              </div>
-              <h3 className="font-display text-sm font-bold text-slate-800 mb-1">Decision Queue Cleared</h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                No pending applicant reviews or blocked deliverables. Your project is cruising smoothly!
-              </p>
+            <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
+              No pending applicant reviews or blocked deliverables. Your project is cruising smoothly!
             </div>
           ) : (
             <div className="space-y-3">
@@ -372,36 +300,26 @@ export default function ProjectOverview() {
               {pendingApplicants.map((applicant) => (
                 <div
                   key={`applicant-${applicant.id}`}
-                  className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-stone-50/70 hover:bg-stone-50 rounded-xl border border-stone-200/60 gap-4 transition-all"
+                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors gap-4"
                 >
                   <div className="flex items-start gap-3 min-w-0">
                     <img
                       src={applicant.avatar}
                       alt={applicant.name}
-                      className="w-10 h-10 rounded-full bg-stone-200 object-cover border border-stone-300 shrink-0"
+                      className="w-10 h-10 rounded-full bg-slate-100 object-cover shrink-0"
                     />
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900">{applicant.name}</span>
-                        <span className="text-[10px] font-semibold text-slate-500">applied for</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#7f1d3b]/10 text-[#7f1d3b]">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-semibold text-sm text-slate-800">{applicant.name}</span>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-600">
                           {applicant.role}
                         </span>
                         <span className="text-[10px] text-slate-400 font-medium">({applicant.applied_on})</span>
                       </div>
                       {applicant.pitch && (
-                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-1 italic">
+                        <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-1">
                           "{applicant.pitch}"
                         </p>
-                      )}
-                      {applicant.matched_skills && (
-                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          {applicant.matched_skills.map((s, idx) => (
-                            <span key={idx} className="px-1.5 py-0.5 rounded bg-white text-slate-600 border border-stone-200 text-[9px] font-medium">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
                       )}
                     </div>
                   </div>
@@ -409,16 +327,15 @@ export default function ProjectOverview() {
                   <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
                     <button
                       onClick={() => handleApplicantAction(applicant.id, 'REJECT')}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-stone-100 rounded-lg border border-stone-200 transition-colors"
+                      className="button button-secondary text-[11px] py-1.5 px-3"
                     >
                       Decline
                     </button>
                     <button
                       onClick={() => handleApplicantAction(applicant.id, 'ACCEPT')}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-[#7f1d3b] hover:bg-[#5c132b] rounded-lg transition-colors shadow-sm"
+                      className="button button-primary text-[11px] py-1.5 px-3"
                     >
-                      <UserPlus size={13} />
-                      <span>Accept & Invite</span>
+                      Accept & Invite
                     </button>
                   </div>
                 </div>
@@ -428,21 +345,21 @@ export default function ProjectOverview() {
               {reviewTasks.map((task) => (
                 <div
                   key={`review-${task.id}`}
-                  className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-amber-50/50 hover:bg-amber-50 rounded-xl border border-amber-200/80 gap-4 transition-all"
+                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors gap-4"
                 >
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="p-2 bg-amber-100 text-amber-800 rounded-lg shrink-0">
-                      <Clock size={18} />
+                    <div className="activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-amber-50 text-amber-600">
+                      <Clock size={16} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900">{task.title}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-semibold text-sm text-slate-800">{task.title}</span>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-amber-50 text-amber-700">
                           Ready for Review
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-600 mt-1">
-                        Submitted by <strong className="text-slate-800">{task.assignee?.name || 'Contributor'}</strong> · Due {task.due_date || 'Soon'}
+                      <p className="text-[13px] text-slate-500">
+                        Submitted by <strong className="text-slate-700">{task.assignee?.name || 'Contributor'}</strong>
                       </p>
                     </div>
                   </div>
@@ -450,16 +367,15 @@ export default function ProjectOverview() {
                   <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
                     <button
                       onClick={() => handleTaskReviewAction(task.id, 'REQUEST_CHANGES')}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-stone-100 rounded-lg border border-stone-200 transition-colors"
+                      className="button button-secondary text-[11px] py-1.5 px-3"
                     >
                       Request Changes
                     </button>
                     <button
                       onClick={() => handleTaskReviewAction(task.id, 'APPROVE')}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm"
+                      className="button button-primary text-[11px] py-1.5 px-3"
                     >
-                      <Check size={13} />
-                      <span>Approve & Complete</span>
+                      Approve & Complete
                     </button>
                   </div>
                 </div>
@@ -469,31 +385,30 @@ export default function ProjectOverview() {
               {blockedTasks.map((task) => (
                 <div
                   key={`blocked-${task.id}`}
-                  className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-rose-50/60 rounded-xl border border-rose-200/80 gap-4"
+                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-rose-100 bg-rose-50/30 gap-4"
                 >
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="p-2 bg-rose-100 text-rose-800 rounded-lg shrink-0">
-                      <AlertTriangle size={18} />
+                    <div className="activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-rose-100 text-rose-600">
+                      <AlertTriangle size={16} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900">{task.title}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-semibold text-sm text-slate-800">{task.title}</span>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-rose-100 text-rose-700">
                           Blocked
                         </span>
                       </div>
-                      <p className="text-[11px] text-rose-700 mt-1">
-                        Assignee: {task.assignee?.name || 'Unassigned'} · Requires owner intervention
+                      <p className="text-[13px] text-rose-600">
+                        Assignee: {task.assignee?.name || 'Unassigned'}
                       </p>
                     </div>
                   </div>
 
                   <Link
                     to={`/founder/projects/${id}/tasks`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-800 bg-white hover:bg-rose-50 rounded-lg border border-rose-200 transition-colors self-end md:self-center"
+                    className="button button-secondary text-[11px] py-1.5 px-3 border-rose-200 text-rose-700 self-end md:self-center"
                   >
-                    <span>Resolve Task</span>
-                    <ArrowRight size={13} />
+                    Resolve Task <ArrowRight size={13} />
                   </Link>
                 </div>
               ))}
@@ -502,120 +417,118 @@ export default function ProjectOverview() {
         </section>
 
         {/* ── Dual-Column Overview Section ─────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-[1fr_300px] gap-8 reveal-in delay-3">
+          
           {/* Milestones Roadmap */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
-              <div className="flex items-center gap-2">
-                <Flag size={16} className="text-[#7f1d3b]" />
-                <h3 className="font-display font-bold text-sm text-slate-900">Milestone Roadmap</h3>
+          <section className="dashboard-activity">
+            <div className="section-heading mb-6">
+              <div>
+                <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Timeline</span>
+                <h2>Milestone Roadmap</h2>
               </div>
-              <Link
-                to={`/founder/projects/${id}/milestones`}
-                className="text-xs font-bold text-[#7f1d3b] hover:text-[#5c132b] flex items-center gap-1"
-              >
-                <span>View All</span>
-                <ChevronRight size={14} />
+              <Link to={`/founder/projects/${id}/milestones`} className="text-[11px] font-bold text-brand-700 hover:underline flex items-center gap-1">
+                View all <ChevronRight size={14} />
               </Link>
             </div>
 
-            <div className="space-y-4">
+            <div className="activity-list space-y-4">
               {milestones.map((m) => (
-                <div key={m.id} className="p-3.5 bg-stone-50/70 rounded-xl border border-stone-200/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-xs text-slate-800 truncate pr-2">{m.title}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
-                      m.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                      m.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                      'bg-stone-200 text-slate-700'
+                <div key={m.id} className="activity-item p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-sm text-slate-800 truncate pr-2">{m.title}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest shrink-0 ${
+                      m.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
+                      m.status === 'IN_PROGRESS' ? 'bg-brand-50 text-brand-700' :
+                      'bg-slate-100 text-slate-600'
                     }`}>
                       {m.status === 'COMPLETED' ? 'Done' : m.status === 'IN_PROGRESS' ? 'In Progress' : 'Planned'}
                     </span>
                   </div>
-                  <div className="w-full bg-stone-200/70 h-1.5 rounded-full overflow-hidden mb-1.5">
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-2">
                     <div
                       className={`h-full rounded-full ${
-                        m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-[#7f1d3b]'
+                        m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-brand-600'
                       }`}
                       style={{ width: `${m.progress}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
                     <span>Due {m.dueDate}</span>
                     <span>{m.progress}% Progress</span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
           {/* Real-time Activity Stream */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-[#7f1d3b]" />
-                <h3 className="font-display font-bold text-sm text-slate-900">Project Pulse & Activity</h3>
+          <section className="dashboard-sidebar">
+            <div className="explore-card accent-sand p-6 rounded-[18px] border border-slate-100 bg-[#faf9f5]">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-200/50 pb-4">
+                <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                  <Clock size={16} className="text-slate-400" /> Activity
+                </h3>
+                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+                </span>
               </div>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live
-              </span>
-            </div>
 
-            <div className="space-y-3.5">
-              {recentActivities.map((act, idx) => (
-                <div key={idx} className="flex items-start gap-3 py-1.5 border-b border-stone-100 last:border-none">
-                  <div className="w-2 h-2 rounded-full bg-[#7f1d3b] mt-1.5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-slate-700 font-medium">{act.text}</p>
-                    <span className="text-[10px] text-slate-400">{act.time}</span>
+              <div className="space-y-4 mb-6">
+                {recentActivities.map((act, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-600 mt-1.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-slate-700">{act.text}</p>
+                      <span className="text-[11px] text-slate-400">{act.time}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <Link
-              to={`/founder/projects/${id}/tasks`}
-              className="mt-4 pt-3 border-t border-stone-100 text-center text-xs font-semibold text-slate-600 hover:text-[#7f1d3b] flex items-center justify-center gap-1 transition-colors"
-            >
-              <span>Explore All Tasks & Deliverables</span>
-              <ArrowRight size={13} />
-            </Link>
-          </div>
+              <Link
+                to={`/founder/projects/${id}/tasks`}
+                className="button button-secondary w-full text-center justify-center text-[12px]"
+              >
+                Explore Deliverables <ArrowRight size={14} />
+              </Link>
+            </div>
+          </section>
+
         </div>
 
         {/* ── Quick Create Task Modal ─────────────────────────────────────── */}
         {isTaskModalOpen && (
           <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
-                <h3 className="font-display font-bold text-slate-900 text-sm">Quick Create Task</h3>
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                <h3 className="font-display font-semibold text-slate-900 text-lg">Quick Create Task</h3>
                 <button
                   onClick={() => setIsTaskModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                  className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-full transition"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <form onSubmit={handleQuickCreateTask} className="space-y-4 text-xs">
+              <form onSubmit={handleQuickCreateTask} className="space-y-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Task Title</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Task Title</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Implement Webhook listener"
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7f1d3b]/20 focus:border-[#7f1d3b]"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Priority</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Priority</label>
                   <select
                     value={newTaskPriority}
                     onChange={(e) => setNewTaskPriority(e.target.value)}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7f1d3b]/20 focus:border-[#7f1d3b]"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -623,18 +536,18 @@ export default function ProjectOverview() {
                   </select>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsTaskModalOpen(false)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-stone-100 rounded-lg"
+                    className="button button-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={newTaskSubmitting}
-                    className="px-4 py-1.5 text-xs font-semibold text-white bg-[#7f1d3b] hover:bg-[#5c132b] rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                    className="button button-primary"
                   >
                     {newTaskSubmitting ? 'Creating...' : 'Create Task'}
                   </button>
