@@ -172,8 +172,8 @@ export default function ProjectOverview() {
   if (error) {
     return (
       <FounderLayout>
-        <div className="p-8 text-center bg-white rounded-2xl border border-rose-200">
-          <div className="inline-flex items-center gap-2 p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-semibold mb-3">
+        <div className="p-8 text-center bg-white rounded-2xl border border-red-200">
+          <div className="inline-flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-semibold mb-3">
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
@@ -207,18 +207,18 @@ export default function ProjectOverview() {
         )}
 
         {/* ── Top Header Strip ────────────────────────────────────────────── */}
-        <section className="reveal-in flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <section className="reveal-in bg-white border border-slate-200 rounded-[20px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1.5 flex-wrap">
               <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
                 {project.title || 'AI for Social Good'}
               </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-emerald-50 text-emerald-700">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-emerald-50 text-emerald-700">
                 Active Build
               </span>
               {totalDecisionsCount > 0 && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-brand-50 text-brand-700 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-ping" />
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-amber-50 text-amber-700 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                   {totalDecisionsCount} {totalDecisionsCount === 1 ? 'decision needed' : 'decisions needed'}
                 </span>
               )}
@@ -229,113 +229,167 @@ export default function ProjectOverview() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setIsTaskModalOpen(true)}
+              className="button button-primary"
+            >
+              <Plus size={14} /> Create Task
+            </button>
             <Link
               to={`/projects/${id}`}
               className="button button-secondary"
             >
               Public View <ExternalLink size={14} />
             </Link>
-            <button
-              onClick={() => setIsTaskModalOpen(true)}
-              className="button button-primary"
-            >
-              Create Task <Plus size={14} />
-            </button>
           </div>
         </section>
 
         {/* ── 4 Telemetry Metric Cards (Stats Strip) ─────────────────────────────────────── */}
-        <section className="dashboard-stats reveal-in delay-1 mb-12">
-          <div className="stat-block">
-            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Task Completion</span>
-            <strong className="block mb-1">{completionPercentage}%</strong>
-            <span className="stat-caption block text-[11px] text-slate-400">{stats.completedTasks}/{stats.totalTasks} done</span>
-          </div>
-
-          <div className="stat-block">
-            <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Roster</span>
-            <strong className="block mb-1">{stats.totalMembers.toString().padStart(2, '0')}</strong>
-            <span className="stat-caption block text-[11px] text-slate-400">{pendingApplicants.length} pending apps</span>
-          </div>
-
-          <div className="stat-block profile-stat flex flex-col justify-center px-6">
-            <div className="stat-line mb-2">
-              <span className="eyebrow text-[10px] font-bold text-slate-400 uppercase tracking-widest">Milestone Pace</span>
-              <span className="text-emerald-600 font-bold text-[12px]">On Schedule</span>
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 reveal-in delay-1 mb-12">
+          {/* Card 1: Task Completion */}
+          <div className="bg-white border border-slate-200 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Task Completion</span>
+              <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckSquare size={14} />
+              </div>
             </div>
-            <div className="progress-track mb-2">
-              <span style={{ width: '65%' }} className="bg-emerald-500" />
+            <div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <strong className="text-3xl font-display font-bold text-slate-900">{completionPercentage}%</strong>
+                <span className="text-[12px] font-medium text-slate-400">({stats.completedTasks}/{stats.totalTasks} done)</span>
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionPercentage}%` }} />
+              </div>
             </div>
-            <span className="stat-caption text-[11px] text-slate-400">Targeting release in 14d</span>
           </div>
 
-          <div className={`dashboard-prompt ${totalDecisionsCount > 0 ? 'bg-brand-50 text-brand-900' : 'bg-[#faf9f5]'}`}>
-            <ShieldCheck size={16} />
-            <span><strong>Decision Queue:</strong> {totalDecisionsCount}</span>
-            <ChevronRight size={16} />
+          {/* Card 2: Active Roster */}
+          <div className="bg-white border border-slate-200 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Roster</span>
+              <div className="w-6 h-6 rounded bg-red-50 text-red-600 flex items-center justify-center">
+                <Users size={14} />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <strong className="text-2xl font-display font-bold text-slate-900">{stats.totalMembers}</strong>
+                <span className="text-[13px] font-medium text-slate-600">Contributors</span>
+              </div>
+              <span className="text-[12px] text-slate-500 font-medium">{pendingApplicants.length} applicants in recruiting pipeline</span>
+            </div>
+          </div>
+
+          {/* Card 3: Decision Queue */}
+          <div className="bg-[#fffcf5] border border-amber-100 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Decision Queue</span>
+              <div className="w-6 h-6 rounded bg-amber-100 text-amber-700 flex items-center justify-center">
+                <ShieldCheck size={14} />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <strong className="text-2xl font-display font-bold text-slate-900">{totalDecisionsCount}</strong>
+                <span className="text-[13px] font-medium text-slate-600">pending actions</span>
+              </div>
+              <span className="text-[12px] text-slate-500 font-medium">{pendingApplicants.length} apps • {reviewTasks.length} reviews</span>
+            </div>
+          </div>
+
+          {/* Card 4: Milestone Pace */}
+          <div className="bg-white border border-slate-200 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Milestone Pace</span>
+              <div className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Flame size={14} />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <strong className="text-xl font-display font-bold text-slate-900">Sprint 3</strong>
+                <span className="text-[12px] font-bold text-emerald-600">On Schedule</span>
+              </div>
+              <span className="text-[12px] text-slate-500 font-medium">Targeting next release in 14 days</span>
+            </div>
           </div>
         </section>
 
         {/* ── ⚡ Actionable Decision Queue (Attention Center) ───────────────── */}
-        <section className="dashboard-section reveal-in delay-2 mb-12">
-          <div className="section-heading mb-6">
-            <div>
-              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Action Required</span>
-              <h2>Decision Queue</h2>
+        <section className="bg-white border border-slate-200 rounded-[20px] p-6 shadow-sm reveal-in delay-2 mb-12">
+          <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+               <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+                 <Sparkles size={16} />
+               </div>
+               <div>
+                 <h2 className="text-lg font-bold text-slate-900 leading-tight">Decision Queue</h2>
+                 <p className="text-[12px] text-slate-500">Clear blockers, review deliverables, and welcome applicants with 1 click.</p>
+               </div>
             </div>
             {totalDecisionsCount > 0 && (
-              <span className="text-[11px] font-bold tracking-widest text-brand-700 bg-brand-50 px-2.5 py-1 rounded-sm uppercase">
+              <span className="text-[11px] font-bold tracking-widest text-maroon bg-[#fff0f4] px-3 py-1 rounded-full uppercase shrink-0">
                 {totalDecisionsCount} pending
               </span>
             )}
           </div>
 
           {totalDecisionsCount === 0 ? (
-            <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
+            <div className="py-12 text-center text-slate-400">
               No pending applicant reviews or blocked deliverables. Your project is cruising smoothly!
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="flex flex-col">
               {/* 1. Pending Applicants */}
-              {pendingApplicants.map((applicant) => (
+              {pendingApplicants.map((applicant, index) => (
                 <div
                   key={`applicant-${applicant.id}`}
-                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors gap-4"
+                  className={`flex flex-col md:flex-row md:items-center justify-between py-4 ${index !== 0 ? 'border-t border-slate-100' : ''} gap-4 hover:bg-slate-50/30 transition-colors -mx-6 px-6`}
                 >
-                  <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex items-start gap-4 min-w-0">
                     <img
                       src={applicant.avatar}
                       alt={applicant.name}
-                      className="w-10 h-10 rounded-full bg-slate-100 object-cover shrink-0"
+                      className="w-10 h-10 rounded-full bg-slate-100 object-cover shrink-0 mt-1"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-semibold text-sm text-slate-800">{applicant.name}</span>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-600">
+                        <span className="font-semibold text-[14px] text-slate-900">{applicant.name}</span>
+                        <span className="text-[12px] text-slate-500">applied for</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-50 text-red-700">
                           {applicant.role}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium">({applicant.applied_on})</span>
+                        <span className="text-[11px] text-slate-400 font-medium shrink-0">({applicant.applied_on})</span>
                       </div>
                       {applicant.pitch && (
-                        <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-1">
+                        <p className="text-[13px] text-slate-500 italic line-clamp-1">
                           "{applicant.pitch}"
                         </p>
                       )}
+                      <div className="flex items-center gap-2 mt-2">
+                        {applicant.matched_skills?.slice(0,3).map(skill => (
+                          <span key={skill} className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                  <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
                     <button
                       onClick={() => handleApplicantAction(applicant.id, 'REJECT')}
-                      className="button button-secondary text-[11px] py-1.5 px-3"
+                      className="text-[12px] font-semibold text-slate-500 hover:text-slate-800 transition px-2"
                     >
                       Decline
                     </button>
                     <button
                       onClick={() => handleApplicantAction(applicant.id, 'ACCEPT')}
-                      className="button button-primary text-[11px] py-1.5 px-3"
+                      className="button button-primary text-[12px] py-2"
                     >
-                      Accept & Invite
+                      <UserPlus size={14} className="mr-1" /> Accept & Invite
                     </button>
                   </div>
                 </div>
@@ -345,37 +399,37 @@ export default function ProjectOverview() {
               {reviewTasks.map((task) => (
                 <div
                   key={`review-${task.id}`}
-                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors gap-4"
+                  className="flex flex-col md:flex-row md:items-center justify-between py-4 border-t border-slate-100 gap-4 hover:bg-slate-50/30 transition-colors -mx-6 px-6"
                 >
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-amber-50 text-amber-600">
-                      <Clock size={16} />
+                  <div className="flex items-start gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-50 text-amber-600 shrink-0 mt-1">
+                      <Clock size={18} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-semibold text-sm text-slate-800">{task.title}</span>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-amber-50 text-amber-700">
+                        <span className="font-semibold text-[14px] text-slate-900">{task.title}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700">
                           Ready for Review
                         </span>
                       </div>
                       <p className="text-[13px] text-slate-500">
-                        Submitted by <strong className="text-slate-700">{task.assignee?.name || 'Contributor'}</strong>
+                        Submitted by <strong className="text-slate-700">{task.assignee?.name || 'Contributor'}</strong> <span className="mx-1">•</span> Due {task.due_date}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                  <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
                     <button
                       onClick={() => handleTaskReviewAction(task.id, 'REQUEST_CHANGES')}
-                      className="button button-secondary text-[11px] py-1.5 px-3"
+                      className="text-[12px] font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 rounded-full px-4 py-2 transition"
                     >
                       Request Changes
                     </button>
                     <button
                       onClick={() => handleTaskReviewAction(task.id, 'APPROVE')}
-                      className="button button-primary text-[11px] py-1.5 px-3"
+                      className="button px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full border-none text-[12px]"
                     >
-                      Approve & Complete
+                      <Check size={14} className="mr-1" /> Approve & Complete
                     </button>
                   </div>
                 </div>
@@ -385,30 +439,30 @@ export default function ProjectOverview() {
               {blockedTasks.map((task) => (
                 <div
                   key={`blocked-${task.id}`}
-                  className="activity-item flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-rose-100 bg-rose-50/30 gap-4"
+                  className="flex flex-col md:flex-row md:items-center justify-between py-4 border-t border-slate-100 gap-4 hover:bg-slate-50/30 transition-colors -mx-6 px-6"
                 >
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-rose-100 text-rose-600">
-                      <AlertTriangle size={16} />
+                  <div className="flex items-start gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-50 text-red-600 shrink-0 mt-1">
+                      <AlertTriangle size={18} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-semibold text-sm text-slate-800">{task.title}</span>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-rose-100 text-rose-700">
+                        <span className="font-semibold text-[14px] text-slate-900">{task.title}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-50 text-red-700">
                           Blocked
                         </span>
                       </div>
-                      <p className="text-[13px] text-rose-600">
-                        Assignee: {task.assignee?.name || 'Unassigned'}
+                      <p className="text-[13px] text-slate-500">
+                        Assignee: <strong className="text-slate-700">{task.assignee?.name || 'Unassigned'}</strong> <span className="mx-1">•</span> Requires owner intervention
                       </p>
                     </div>
                   </div>
 
                   <Link
                     to={`/founder/projects/${id}/tasks`}
-                    className="button button-secondary text-[11px] py-1.5 px-3 border-rose-200 text-rose-700 self-end md:self-center"
+                    className="text-[12px] font-semibold text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 rounded-full px-4 py-2 transition flex items-center gap-1 self-start md:self-center"
                   >
-                    Resolve Task <ArrowRight size={13} />
+                    Resolve Task <ArrowRight size={14} />
                   </Link>
                 </div>
               ))}
