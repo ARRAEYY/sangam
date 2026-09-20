@@ -8,22 +8,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // BYPASS AUTH: Hardcode frontend user context
+    // Restore session from HttpOnly cookie — getProfile() returns 401 if not logged in
     api.getProfile().then(profile => {
       setUser(profile)
     }).catch(() => {
-      // If backend fails, still bypass frontend
-      setUser({
-        id: 'bypass-id',
-        email: 'ananya@nst.rishihood.edu.in',
-        full_name: 'Ananya Sharma',
-        avatar_url: 'https://i.pravatar.cc/150?u=ananya',
-        is_onboarded: true
-      })
+      setUser(null)
     }).finally(() => {
       setLoading(false)
     })
   }, [])
+
 
   const login = async (email, password) => {
     const data = await api.login({ email, password })

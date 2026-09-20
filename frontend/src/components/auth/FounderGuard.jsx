@@ -5,21 +5,28 @@ import { api } from '../../api'
 
 export default function FounderGuard({ children }) {
   const { user, loading: authLoading } = useAuth()
-  const { id: projectId } = useParams() // Using 'id' to be consistent with /projects/:id
+  const { id: projectId } = useParams()
   const location = useLocation()
   const [isLead, setIsLead] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function checkLeadStatus() {
-      if (!user || !projectId) {
+      // No projectId means this is the /founder hub — just require auth
+      if (!projectId) {
+        setIsLead(true)
+        setLoading(false)
+        return
+      }
+
+      if (!user) {
         setLoading(false)
         return
       }
 
       try {
-        const context = await api.getProjectContext(projectId, user.token)
-        setIsLead(context.is_lead)
+        const context = await api.getProjectContext(projectId)
+        setIsLead(context.is_lead || context.is_owner)
       } catch (err) {
         console.error('Error checking lead status:', err)
         setIsLead(false)
@@ -28,8 +35,10 @@ export default function FounderGuard({ children }) {
       }
     }
 
-    checkLeadStatus()
-  }, [user, projectId])
+    if (!authLoading) {
+      checkLeadStatus()
+    }
+  }, [user, projectId, authLoading])
 
   if (authLoading || loading) {
     return (
@@ -47,8 +56,14 @@ export default function FounderGuard({ children }) {
   }
 
   if (isLead === false) {
-    return <Navigate to={`/projects/${projectId}`} replace />
+    // For project-scoped routes, redirect to the public project page
+    if (projectId) {
+      return <Navigate to={`/projects/${projectId}`} replace />
+    }
+    // For the hub route, redirect to dashboard
+    return <Navigate to="/dashboard" replace />
   }
 
   return children
 }
+

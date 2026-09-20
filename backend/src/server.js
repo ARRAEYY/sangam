@@ -118,7 +118,9 @@ app.use('/api/applications', customCsrfProtection, applicationRoutes)
 app.use('/api/notifications', customCsrfProtection, notificationRoutes)
 app.use('/api/connections', customCsrfProtection, connectionRoutes)
 app.use('/api/founder', customCsrfProtection, founderRoutes)
+app.use('/api/admin', customCsrfProtection, adminRoutes)
 app.use('/api/projects/:id/manage', customCsrfProtection, adminRoutes)
+
 
 app.get('/api/health', async (req, res) => {
   try {
