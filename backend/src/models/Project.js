@@ -17,6 +17,10 @@ const Project = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    logo_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     short_description: {
       type: DataTypes.STRING(500),
       allowNull: true,
@@ -45,6 +49,11 @@ const Project = sequelize.define(
     open_roles: {
       type: DataTypes.JSON,
       allowNull: true,
+    },
+    property_schema: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
     },
     team_size_needed: {
       type: DataTypes.INTEGER,

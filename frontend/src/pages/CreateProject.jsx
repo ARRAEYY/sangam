@@ -57,7 +57,7 @@ export default function CreateProject({ mode = "create" }) {
         setCategory(data.category || "Other");
         setSelectedSkills(data.required_skills ? data.required_skills.map(s => s.name) : []);
         setTechStack(data.tech_stack || []);
-
+        
         api.getApplicants(id).then(setApplicants).catch(console.error);
 
         setLoading(false);
@@ -372,10 +372,10 @@ export default function CreateProject({ mode = "create" }) {
                       <div key={app.id} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100">
-                            {app.applicant.avatar_url ? <img src={app.applicant.avatar_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">{getInitials(app.applicant.full_name)}</div>}
+                            {app.user.avatar_url ? <img src={app.user.avatar_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">{getInitials(app.user.full_name)}</div>}
                           </div>
                           <div>
-                            <div className="font-medium text-sm text-slate-900">{app.applicant.full_name}</div>
+                            <div className="font-medium text-sm text-slate-900">{app.user.full_name}</div>
                             <div className="text-xs text-slate-500 line-clamp-1">{app.pitch_message || 'No pitch provided.'}</div>
                           </div>
                         </div>
@@ -473,14 +473,7 @@ export default function CreateProject({ mode = "create" }) {
           <div className="preview-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#7f1d3b]/5 to-transparent rounded-bl-full opacity-50" />
 
-            {(lookingFor || "Role Title") && (
-              <div className="mb-0 text-[12px] font-bold tracking-[0.1em] uppercase z-10 relative">
-                <span className="text-black font-medium mr-1.5">LOOKING FOR:</span>
-                <span className="text-[#7f1d3b] font-bold">{lookingFor || "Role Title"}</span>
-              </div>
-            )}
-
-            <h2 className="text-xl font-bold text-[#2a2a2a] leading-tight mt-1 relative z-10">{title || "Your project title"}</h2>
+            <h2 className="text-xl font-bold text-[#2a2a2a] leading-tight mt-1">{title || "Your project title"}</h2>
             <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">
               {shortDescription || "A one-sentence hook that captures attention. Discovery cards are kept intentionally clean and minimal."}
             </p>

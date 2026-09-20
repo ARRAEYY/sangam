@@ -10,6 +10,8 @@ const projectRoutes = require('./routes/projects')
 const applicationRoutes = require('./routes/applications')
 const notificationRoutes = require('./routes/notifications')
 const connectionRoutes = require('./routes/connections')
+const adminRoutes = require('./routes/admin')
+const founderRoutes = require('./routes/founder')
 const errorHandler = require('./middleware/errorHandler')
 const { generalLimiter } = require('./middleware/rateLimit')
 const helmet = require('helmet')
@@ -55,7 +57,8 @@ app.use(
   })
 )
 app.use(cookieParser())
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // Configure Helmet to allow cross-origin API access and popups (for Google OAuth)
 app.use(helmet({
@@ -114,6 +117,10 @@ app.use('/api/projects', customCsrfProtection, projectRoutes)
 app.use('/api/applications', customCsrfProtection, applicationRoutes)
 app.use('/api/notifications', customCsrfProtection, notificationRoutes)
 app.use('/api/connections', customCsrfProtection, connectionRoutes)
+app.use('/api/founder', customCsrfProtection, founderRoutes)
+app.use('/api/admin', customCsrfProtection, adminRoutes)
+app.use('/api/projects/:id/manage', customCsrfProtection, adminRoutes)
+
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -122,7 +129,12 @@ app.get('/api/health', async (req, res) => {
   } catch (error) {
     res.status(503).json({ status: 'error', database: 'unreachable' })
   }
-})
+});
+
+// Test route to verify basic routing is working
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Basic routing is working!' });
+});
 
 // Kept for backwards compatibility with the original /health path.
 app.get('/health', (req, res) => {

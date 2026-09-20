@@ -13,7 +13,7 @@ export function MemberPickerModal({ isOpen, onClose, onAddMember, excludeUserIds
   const [roleCategory, setRoleCategory] = useState("OTHER");
 
   useEffect(() => {
-    if (!query || selectedUser) {
+    if (selectedUser) {
       setResults([]);
       return;
     }
@@ -21,8 +21,20 @@ export function MemberPickerModal({ isOpen, onClose, onAddMember, excludeUserIds
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await api.searchUsers(query);
+        let data;
+        if (!query.trim()) {
+          data = await api.searchTalent({ skill: '' });
+        } else {
+          data = await api.searchUsers(query);
+        }
+        
         const usersArray = Array.isArray(data) ? data : (data?.users || []);
+        
+        // Sort by profile completion if it's the empty query case, else keep search rank
+        if (!query.trim()) {
+          usersArray.sort((a, b) => (b.profileCompletion || 0) - (a.profileCompletion || 0));
+        }
+        
         // Filter out already added members
         const filtered = usersArray.filter(u => !excludeUserIds.includes(u.id));
         setResults(filtered);

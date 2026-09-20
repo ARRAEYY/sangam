@@ -141,6 +141,7 @@ function serializeProject(project) {
     id: safeProject.id,
     title: safeProject.title,
     description: safeProject.description,
+    logo_url: safeProject.logo_url || null,
     status: safeProject.status,
     team_size_needed: safeProject.team_size_needed,
     created_at: createdAt,

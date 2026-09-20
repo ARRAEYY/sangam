@@ -8,18 +8,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Attempt to fetch profile on mount using HttpOnly cookie
-    api
-      .getProfile()
-      .then((profile) => {
-        setUser(profile)
-        setLoading(false)
-      })
-      .catch(() => {
-        setUser(null)
-        setLoading(false)
-      })
+    // Restore session from HttpOnly cookie — getProfile() returns 401 if not logged in
+    api.getProfile().then(profile => {
+      setUser(profile)
+    }).catch(() => {
+      setUser(null)
+    }).finally(() => {
+      setLoading(false)
+    })
   }, [])
+
 
   const login = async (email, password) => {
     const data = await api.login({ email, password })
