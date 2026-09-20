@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Plus, User, ShieldCheck, Mail } from 'lucide-react'
 import FounderLayout from '../../components/founder/FounderLayout'
+import { MemberPickerModal } from '../../components/MemberPickerModal'
 import { TalentModal } from '../../components/TalentModal'
 import { api } from '../../api'
 
@@ -10,6 +11,33 @@ export default function ProjectTeam() {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState(null)
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+
+  const handleAddMember = async (payload) => {
+    try {
+      await api.addProjectMember(id, {
+        userId: payload.user_id,
+        role: payload.role,
+        roleCategory: payload.role_category
+      })
+      const updated = await api.getMembers(id)
+      setMembers(updated)
+      setIsPickerOpen(false)
+    } catch (err) {
+      alert(err.message || 'Failed to add member')
+    }
+  }
+
+  const handleRemoveMember = async (e, userId) => {
+    e.stopPropagation()
+    if (!window.confirm('Are you sure you want to remove this member?')) return
+    try {
+      await api.removeMember(id, userId)
+      setMembers(prev => prev.filter(m => m.user_id !== userId))
+    } catch (err) {
+      alert(err.message || 'Failed to remove member')
+    }
+  }
 
   useEffect(() => {
     async function loadTeamData() {
@@ -41,7 +69,7 @@ export default function ProjectTeam() {
             <button className="button button-secondary">
               <Mail size={14} className="mr-1" /> Invite by Email
             </button>
-            <button className="button button-primary">
+            <button onClick={() => setIsPickerOpen(true)} className="button button-primary">
               Add Member <Plus size={14} />
             </button>
           </div>
@@ -82,6 +110,14 @@ export default function ProjectTeam() {
                         <p className="text-[12px] font-bold tracking-widest uppercase text-slate-500 mt-1">{member.role}</p>
                       </div>
                     </div>
+                    {!member.is_lead && (
+                      <button 
+                        onClick={(e) => handleRemoveMember(e, member.user_id)}
+                        className="text-[12px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -101,6 +137,13 @@ export default function ProjectTeam() {
         isOpen={!!selectedUserId} 
         onClose={() => setSelectedUserId(null)} 
         talentId={selectedUserId} 
+      />
+
+      <MemberPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onAddMember={handleAddMember}
+        excludeUserIds={members.map(m => m.user_id)}
       />
     </FounderLayout>
   )
