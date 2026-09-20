@@ -114,6 +114,37 @@ function NetworkVisual() {
   );
 }
 
+function AnimatedStat({ end, suffix, label, icon: Icon, colorClass, textClass }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const duration = 1500;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.ceil(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [end]);
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className={`flex items-center justify-center w-14 h-14 rounded-full shadow-sm ${colorClass} ${textClass}`}>
+        <Icon size={24} />
+      </div>
+      <div className="flex flex-col justify-center">
+        <span className="font-display font-bold text-4xl sm:text-5xl leading-none text-ink tracking-tight">{count}{suffix}</span>
+        <span className="text-xs sm:text-sm text-ink-soft uppercase tracking-wider font-bold mt-1.5">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   const activeSection = useActiveSection();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -153,6 +184,13 @@ export default function Landing() {
             <div className="landing-hero">
               <div className="hero-copy reveal-element delay-1">
                 <h1>Where campus<br /><em>ideas find</em><br />their people.</h1>
+
+                {/* Dynamic Stats UI */}
+                <div className="flex flex-wrap items-center gap-6 mt-8 -mb-2">
+                  <AnimatedStat end={5} suffix="+" label="Projects Live" icon={BriefcaseBusiness} colorClass="bg-[#f4e4e4]" textClass="text-maroon" />
+                  <div className="hidden sm:block w-px h-14 bg-slate-200" />
+                  <AnimatedStat end={100} suffix="+" label="Learners" icon={UsersRound} colorClass="bg-[#e8eef0]" textClass="text-[#345b73]" />
+                </div>
 
                 <div className="hero-actions">
                   <Link to="/explore" className="button button-primary">Explore Sangam <ArrowRight size={16} /></Link>
