@@ -238,4 +238,6 @@ export const api = {
     request(`/api/founder/projects/${projectId}/analytics`, { token }),
   updateProjectSettings: (projectId, payload, token) =>
     request(`/api/founder/projects/${projectId}/settings`, { method: 'PATCH', body: payload, token }),
+  transferProjectOwnership: (projectId, newOwnerId, token) =>
+    request(`/api/founder/projects/${projectId}/transfer`, { method: 'POST', body: { newOwnerId }, token }),
 }

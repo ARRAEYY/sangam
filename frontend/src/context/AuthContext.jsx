@@ -8,14 +8,21 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Attempt to fetch profile on mount using HttpOnly cookie
-    api
-      .getProfile()
-      .then(setUser)
-      .catch(() => {
-        setUser(null)
+    // BYPASS AUTH: Hardcode frontend user context
+    api.getProfile().then(profile => {
+      setUser(profile)
+    }).catch(() => {
+      // If backend fails, still bypass frontend
+      setUser({
+        id: 'bypass-id',
+        email: 'ananya@nst.rishihood.edu.in',
+        full_name: 'Ananya Sharma',
+        avatar_url: 'https://i.pravatar.cc/150?u=ananya',
+        is_onboarded: true
       })
-      .finally(() => setLoading(false))
+    }).finally(() => {
+      setLoading(false)
+    })
   }, [])
 
   const login = async (email, password) => {

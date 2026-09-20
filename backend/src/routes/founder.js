@@ -514,4 +514,42 @@ router.patch('/projects/:projectId/settings', requireAuth, checkProjectLead, asy
   }
 });
 
+router.post('/projects/:projectId/transfer', requireAuth, checkProjectLead, async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const { newOwnerId } = req.body;
+    
+    if (!newOwnerId) {
+      return res.status(400).json({ detail: 'New owner ID is required.' });
+    }
+
+    const project = await Project.findByPk(projectId);
+    if (!project) return res.status(404).json({ detail: 'Project not found.' });
+
+    const newOwnerMember = await ProjectMember.findOne({
+      where: { project_id: projectId, user_id: newOwnerId, status: 'ACTIVE' }
+    });
+
+    if (!newOwnerMember) {
+      return res.status(400).json({ detail: 'Selected user is not an active member of this project.' });
+    }
+
+    await sequelize.transaction(async (t) => {
+      await project.update({ owner_id: newOwnerId }, { transaction: t });
+      await newOwnerMember.update({ is_lead: true, role_category: 'LEAD' }, { transaction: t });
+
+      const currentOwnerMember = await ProjectMember.findOne({
+        where: { project_id: projectId, user_id: req.user.id }
+      });
+      if (currentOwnerMember) {
+        await currentOwnerMember.update({ is_lead: false, role_category: 'MEMBER' }, { transaction: t });
+      }
+    });
+
+    return res.json({ message: 'Ownership transferred successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 module.exports = router

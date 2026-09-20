@@ -53,15 +53,7 @@ export default function ProjectTasks() {
           api.getMembers(id).catch(() => []),
         ])
 
-        if (!taskList || taskList.length === 0) {
-          setTasks([
-            { id: 1, title: 'Design Component Library', assignee: { name: 'Priya Patel', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' }, status: 'COMPLETED', priority: 'MEDIUM', due_date: 'May 18, 2025' },
-            { id: 2, title: 'Develop Core Authentication & Sessions', assignee: { name: 'Rahul Mehta', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul' }, status: 'READY_FOR_REVIEW', priority: 'HIGH', due_date: 'May 25, 2025' },
-            { id: 3, title: 'Integrate Vector Search Engine', assignee: { name: 'Sneha Rao', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha' }, status: 'IN_PROGRESS', priority: 'HIGH', due_date: 'Jun 1, 2025' },
-            { id: 4, title: 'Write Public API Documentation', assignee: { name: 'Arjun Verma', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun' }, status: 'TODO', priority: 'LOW', due_date: 'Jun 5, 2025' },
-            { id: 5, title: 'Database Schema Migration for SQLite', assignee: { name: 'Neha Shah', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Neha' }, status: 'TODO', priority: 'MEDIUM', due_date: 'Jun 10, 2025' },
-          ])
-        } else {
+        if (taskList) {
           setTasks(taskList)
         }
 
@@ -82,7 +74,7 @@ export default function ProjectTasks() {
 
   const handleUpdateStatus = async (taskId, newStatus) => {
     try {
-      await api.updateTask(id, taskId, { status: newStatus }).catch(() => null)
+      await api.updateTask(id, taskId, { status: newStatus })
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
       showToast(`Task status updated to ${newStatus.replace(/_/g, ' ')}`)
     } catch (err) {
@@ -93,11 +85,11 @@ export default function ProjectTasks() {
   const handleReviewAction = async (taskId, action) => {
     try {
       if (action === 'APPROVE') {
-        await api.reviewTask(id, taskId, { action: 'APPROVE' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'APPROVE' })
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'COMPLETED' } : t))
         showToast('Deliverable approved & completed!')
       } else {
-        await api.reviewTask(id, taskId, { action: 'REQUEST_CHANGES', feedback: 'Changes requested by lead' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'REQUEST_CHANGES', feedback: 'Changes requested by lead' })
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'IN_PROGRESS' } : t))
         showToast('Feedback logged: Task sent back to In Progress.')
       }

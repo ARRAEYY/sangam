@@ -17,6 +17,10 @@ const Project = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    logo_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     short_description: {
       type: DataTypes.STRING(500),
       allowNull: true,

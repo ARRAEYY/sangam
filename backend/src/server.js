@@ -57,7 +57,8 @@ app.use(
   })
 )
 app.use(cookieParser())
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // Configure Helmet to allow cross-origin API access and popups (for Google OAuth)
 app.use(helmet({

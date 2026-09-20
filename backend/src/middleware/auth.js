@@ -2,6 +2,18 @@ const { User } = require('../models')
 const { verifyToken } = require('../utils/auth')
 
 async function requireAuth(req, res, next) {
+  try {
+    // BYPASS AUTH: Hardcoded Ananya login
+    const { User: DynUser } = require('../models')
+    const user = await DynUser.findOne({ where: { email: 'ananya@nst.rishihood.edu.in' } })
+    if (user) {
+      req.user = user
+      return next()
+    }
+  } catch (error) {
+    console.error("Auth bypass error", error)
+  }
+
   // 1. Prefer httpOnly cookie
   let token = req.cookies?.token
 

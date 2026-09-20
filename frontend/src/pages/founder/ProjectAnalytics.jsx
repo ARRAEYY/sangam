@@ -13,27 +13,11 @@ export default function ProjectAnalytics() {
     async function loadAnalytics() {
       try {
         setLoading(true)
-        const data = await api.getProjectAnalytics(id).catch(() => null)
-        setAnalytics(data || {
-          stats: {
-            totalMembers: 16,
-            totalTasks: 28,
-            totalMilestones: 5,
-            totalApplications: 16,
-          },
-          completionTrend: [
-            { date: 'Apr 1', count: 4 },
-            { date: 'Apr 8', count: 9 },
-            { date: 'Apr 15', count: 14 },
-            { date: 'Apr 22', count: 18 },
-            { date: 'Apr 30', count: 24 },
-          ],
-          roleDistribution: [
-            { role: 'Developer', count: 8, color: 'bg-indigo-500' },
-            { role: 'Designer', count: 3, color: 'bg-emerald-500' },
-            { role: 'Admin', count: 1, color: 'bg-purple-500' },
-            { role: 'Others', count: 4, color: 'bg-amber-500' },
-          ],
+        const res = await api.getProjectAnalytics(id).catch(() => null)
+        setAnalytics({
+          stats: res?.stats || { totalMembers: 0, totalTasks: 0, totalMilestones: 0, totalApplications: 0 },
+          completionTrend: res?.completionTrend || [],
+          roleDistribution: res?.roleDistribution || [],
         })
       } catch (err) {
         console.error('Failed to fetch analytics:', err)
@@ -81,22 +65,22 @@ export default function ProjectAnalytics() {
         <section className="dashboard-stats reveal-in delay-1 mb-10">
           <div className="stat-block">
             <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users size={12} className="text-brand-500" /> Total Members</span>
-            <strong className="block mb-1 text-2xl">{stats.totalMembers || 16}</strong>
+            <strong className="block mb-1 text-2xl">{stats.totalMembers || 0}</strong>
           </div>
 
           <div className="stat-block">
             <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><CheckSquare size={12} className="text-emerald-500" /> Total Tasks</span>
-            <strong className="block mb-1 text-2xl">{stats.totalTasks || 28}</strong>
+            <strong className="block mb-1 text-2xl">{stats.totalTasks || 0}</strong>
           </div>
 
           <div className="stat-block">
             <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Flag size={12} className="text-amber-500" /> Milestones</span>
-            <strong className="block mb-1 text-2xl">{stats.totalMilestones || 5}</strong>
+            <strong className="block mb-1 text-2xl">{stats.totalMilestones || 0}</strong>
           </div>
 
           <div className="stat-block">
             <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileText size={12} className="text-purple-500" /> Applications</span>
-            <strong className="block mb-1 text-2xl">{stats.totalApplications || 16}</strong>
+            <strong className="block mb-1 text-2xl">{stats.totalApplications || 0}</strong>
           </div>
         </section>
 

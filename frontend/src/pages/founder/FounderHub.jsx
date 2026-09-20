@@ -112,7 +112,10 @@ export default function FounderHub() {
 
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mt-2 mb-2">
                 <div className="flex-1 min-w-0 pr-0 md:pr-24">
-                  <h3 className="text-xl font-bold text-slate-900 leading-tight break-words mb-3">
+                  <h3 className="text-xl font-bold text-slate-900 leading-tight break-words mb-3 flex items-center gap-3">
+                    {project.logo_url && (
+                      <img src={project.logo_url} alt="Logo" className="w-8 h-8 rounded-md object-cover border border-slate-200" />
+                    )}
                     {project.title}
                   </h3>
 
