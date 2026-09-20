@@ -1,0 +1,224 @@
+const { calculateProfileCompletion } = require('./profileCompletion')
+
+function normalizeSkill(skill) {
+  if (!skill) return null
+  if (typeof skill === 'string') {
+    return { id: null, name: skill.trim() }
+  }
+  return { id: skill.id, name: skill.name }
+}
+
+function serializeSkills(skills = []) {
+  return skills.map(normalizeSkill).filter(Boolean)
+}
+
+function serializeUser(user, extra = {}, includePrivate = false) {
+  if (!user) return null
+
+  const plain = user.toJSON ? user.toJSON() : user
+  const createdAt = plain.created_at || plain.createdAt || null
+  const updatedAt = plain.updated_at || plain.updatedAt || null
+  const { password_hash, google_id, email_verification_token, password_reset_token, createdAt: _c, updatedAt: _u, ...safeUser } = plain
+
+  const userObj = {
+    ...safeUser,
+    id: safeUser.id,
+    email: includePrivate ? safeUser.email : undefined,
+    full_name: safeUser.full_name,
+    branch: safeUser.branch,
+    graduation_year: safeUser.graduation_year,
+    headline: safeUser.headline || null,
+    location: safeUser.location || null,
+    bio: safeUser.bio || null,
+    avatar_url: safeUser.avatar_url || null,
+    auth_provider: safeUser.auth_provider || 'LOCAL',
+    github_url: safeUser.github_url || null,
+    linkedin_url: safeUser.linkedin_url || null,
+    portfolio_url: safeUser.portfolio_url || null,
+    leetcode_url: safeUser.leetcode_url || null,
+    codeforces_url: safeUser.codeforces_url || null,
+    skills: serializeSkills(safeUser.skills || []),
+    created_at: createdAt,
+    updated_at: updatedAt,
+  }
+
+  userObj.profile_completion = calculateProfileCompletion(userObj, {
+    experiences: extra.experiences || userObj.experiences || [],
+    educations: extra.educations || userObj.educations || [],
+    achievements: extra.achievements || userObj.achievements || [],
+    memberships: extra.memberships || userObj.project_roles || [],
+  })
+
+  return userObj
+}
+
+function serializeNotification(notification) {
+  if (!notification) return null
+  const plain = notification.toJSON ? notification.toJSON() : notification
+  const createdAt = plain.created_at || plain.createdAt || null
+
+  return {
+    id: plain.id,
+    type: plain.type,
+    message: plain.message,
+    is_read: plain.is_read,
+    created_at: createdAt,
+    project: plain.project ? { id: plain.project.id, title: plain.project.title } : null,
+    actor: plain.actor
+      ? { id: plain.actor.id, full_name: plain.actor.full_name, avatar_url: plain.actor.avatar_url || null }
+      : null,
+    connection_request_id: plain.connection_request_id || null,
+  }
+}
+
+function serializeExperience(experience) {
+  if (!experience) return null
+  const plain = experience.toJSON ? experience.toJSON() : experience
+  return {
+    id: plain.id,
+    organization: plain.organization,
+    role: plain.role,
+    description: plain.description,
+    location: plain.location || null,
+    work_type: plain.work_type || 'On-site',
+    employment_type: plain.employment_type || 'Full-time',
+    start_date: plain.start_date,
+    end_date: plain.end_date,
+  }
+}
+
+function serializeEducation(education) {
+  if (!education) return null
+  const plain = education.toJSON ? education.toJSON() : education
+  return {
+    id: plain.id,
+    institution: plain.institution,
+    degree: plain.degree,
+    department: plain.department,
+    start_year: plain.start_year,
+    graduation_year: plain.graduation_year,
+  }
+}
+
+function serializeAchievement(achievement) {
+  if (!achievement) return null
+  const plain = achievement.toJSON ? achievement.toJSON() : achievement
+  return {
+    id: plain.id,
+    type: plain.type,
+    title: plain.title,
+    description: plain.description,
+    issuer: plain.issuer,
+    date_awarded: plain.date_awarded,
+    url: plain.url,
+  }
+}
+
+function serializeConnectionRequest(connectionRequest) {
+  if (!connectionRequest) return null
+  const plain = connectionRequest.toJSON ? connectionRequest.toJSON() : connectionRequest
+  const createdAt = plain.created_at || plain.createdAt || null
+
+  return {
+    id: plain.id,
+    status: plain.status,
+    message: plain.message || null,
+    created_at: createdAt,
+    requester: plain.requester ? serializeUser(plain.requester) : null,
+    recipient: plain.recipient ? serializeUser(plain.recipient) : null,
+  }
+}
+
+function serializeProject(project) {
+  if (!project) return null
+
+  const plain = project.toJSON ? project.toJSON() : project
+  const createdAt = plain.created_at || plain.createdAt || null
+  const updatedAt = plain.updated_at || plain.updatedAt || null
+  const { createdAt: _c, updatedAt: _u, ...safeProject } = plain
+
+  return {
+    id: safeProject.id,
+    title: safeProject.title,
+    description: safeProject.description,
+    status: safeProject.status,
+    team_size_needed: safeProject.team_size_needed,
+    created_at: createdAt,
+    updated_at: updatedAt,
+    owner: safeProject.owner
+      ? {
+          id: safeProject.owner.id,
+          full_name: safeProject.owner.full_name,
+          avatar_url: safeProject.owner.avatar_url || null,
+        }
+      : safeProject.owner_id
+        ? { id: safeProject.owner_id, full_name: safeProject.owner_name || null, avatar_url: null }
+        : null,
+    member_count: safeProject.member_count || 0,
+    required_skills: serializeSkills(safeProject.required_skills || []),
+    short_description: safeProject.short_description || null,
+    category: safeProject.category || 'Other',
+    looking_for: safeProject.looking_for || null,
+    expectations: safeProject.expectations || null,
+    tech_stack: safeProject.tech_stack || [],
+    time_horizon: safeProject.time_horizon || null,
+    open_roles: safeProject.open_roles || [],
+    members: safeProject.members ? safeProject.members.map(m => ({
+      user_id: m.user_id,
+      role: m.role,
+      role_category: m.role_category,
+      is_lead: m.is_lead,
+      status: m.status,
+      user: m.user ? {
+        id: m.user.id,
+        full_name: m.user.full_name,
+        avatar_url: m.user.avatar_url,
+        headline: m.user.headline
+      } : null
+    })) : [],
+    milestones: safeProject.milestones ? safeProject.milestones.map(ms => ({
+      id: ms.id,
+      title: ms.title,
+      description: ms.description,
+      due_date: ms.due_date,
+      status: ms.status,
+      order_index: ms.order_index
+    })) : [],
+  }
+}
+
+function serializeApplication(application) {
+  if (!application) return null
+
+  const plain = application.toJSON ? application.toJSON() : application
+  const appliedAt =
+    plain.applied_at ||
+    plain.appliedAt ||
+    plain.created_at ||
+    plain.createdAt ||
+    null
+
+  const { createdAt: _c, updatedAt: _u, ...safeApplication } = plain
+
+  return {
+    id: safeApplication.id,
+    project_id: safeApplication.project_id,
+    pitch_message: safeApplication.pitch_message,
+    status: safeApplication.status,
+    applied_at: appliedAt,
+    applicant: safeApplication.applicant ? serializeUser(safeApplication.applicant) : null,
+    project: safeApplication.project ? serializeProject(safeApplication.project) : null,
+  }
+}
+
+module.exports = {
+  serializeUser,
+  serializeProject,
+  serializeApplication,
+  serializeSkills,
+  serializeNotification,
+  serializeConnectionRequest,
+  serializeExperience,
+  serializeEducation,
+  serializeAchievement,
+}
