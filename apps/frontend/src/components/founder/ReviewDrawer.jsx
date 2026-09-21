@@ -18,7 +18,7 @@ export default function ReviewDrawer({ task, projectId, onClose, onReviewComplet
     try {
       await api.reviewTask(projectId, task.id, {
         decision,
-        comment: comment.trim() || undefined,
+        feedback: comment.trim() || undefined,
       })
       onReviewComplete(task.id, decision)
       onClose()

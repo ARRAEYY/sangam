@@ -2,8 +2,8 @@ const { User } = require('../models')
 const { verifyToken } = require('../utils/auth')
 
 async function requireAuth(req, res, next) {
-  // 1. Prefer httpOnly cookie
-  let token = req.cookies?.token
+  // 1. Prefer HttpOnly access_token cookie (set by login/refresh)
+  let token = req.cookies?.access_token || req.cookies?.token
 
   // 2. Fall back to Authorization header (API / mobile clients)
   if (!token) {

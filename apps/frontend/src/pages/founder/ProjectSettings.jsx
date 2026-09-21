@@ -1,15 +1,81 @@
-import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Save, AlertTriangle, Image as ImageIcon, FileText, CheckCircle2, ShieldAlert, Globe, Tags, Users } from 'lucide-react'
+import React, { useEffect, useState, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Save, AlertTriangle, Image as ImageIcon, FileText, CheckCircle2, ShieldAlert, Globe, Tags, Users, X } from 'lucide-react'
 import FounderLayout from '../../components/founder/FounderLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectSettings() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('GENERAL') // GENERAL, HIRING, DANGER
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const fileInputRef = useRef(null)
+
+  const handleDeleteProject = async () => {
+    if (!window.confirm('Are you absolutely sure you want to permanently delete this project? This action cannot be undone.')) {
+      return
+    }
+    try {
+      setLoading(true)
+      await api.deleteProject(id)
+      navigate('/dashboard')
+    } catch (err) {
+      alert(err.message || 'Failed to delete project')
+      setLoading(false)
+    }
+  }
+
+  // Transfer State
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
+  const [projectMembers, setProjectMembers] = useState([])
+  const [selectedNewOwner, setSelectedNewOwner] = useState(null)
+  const [transferring, setTransferring] = useState(false)
+
+  const handleOpenTransfer = async () => {
+    setIsTransferModalOpen(true)
+    try {
+      const data = await api.getMembers(id)
+      // Filter out the current lead
+      const eligible = data.filter(m => !m.is_lead)
+      setProjectMembers(eligible)
+    } catch (err) {
+      console.error('Failed to load members', err)
+    }
+  }
+
+  const handleConfirmTransfer = async () => {
+    if (!selectedNewOwner) return
+    try {
+      setTransferring(true)
+      await api.transferProjectOwnership(id, selectedNewOwner)
+      setToastMessage('Ownership transferred successfully.')
+      setIsTransferModalOpen(false)
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 1500)
+    } catch (err) {
+      alert(err.message || 'Failed to transfer ownership.')
+    } finally {
+      setTransferring(false)
+    }
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File is too large. Please select an image under 2MB.')
+        return
+      }
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoUrl(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   // Settings State
   const [projectName, setProjectName] = useState('')
@@ -58,7 +124,7 @@ export default function ProjectSettings() {
         visibility,
         description,
         logo_url: logoUrl,
-      }).catch(() => null)
+      })
 
       setToastMessage('Settings saved successfully!')
       setTimeout(() => setToastMessage(''), 3000)
@@ -143,14 +209,26 @@ export default function ProjectSettings() {
                            <div>
                              <label className="block text-[14px] font-semibold text-slate-900 mb-2">Project Logo</label>
                              <div className="flex items-center gap-3">
+                                <input
+                                  type="text"
+                                  value={logoUrl?.startsWith('data:image') ? 'Uploaded Image' : logoUrl}
+                                  onChange={(e) => {
+                                    if (e.target.value !== 'Uploaded Image') {
+                                      setLogoUrl(e.target.value)
+                                    }
+                                  }}
+                                  placeholder="Enter logo URL (e.g., imgur link) or upload"
+                                  disabled={logoUrl?.startsWith('data:image')}
+                                  className="flex-1 text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-slate-400"
+                                />
                                <input
-                                 type="text"
-                                 value={logoUrl}
-                                 onChange={(e) => setLogoUrl(e.target.value)}
-                                 placeholder="Enter logo URL (e.g., imgur link)"
-                                 className="flex-1 text-[13px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-slate-400"
+                                 type="file"
+                                 ref={fileInputRef}
+                                 onChange={handleFileChange}
+                                 accept="image/*"
+                                 className="hidden"
                                />
-                               <button type="button" className="button button-secondary">
+                               <button type="button" className="button button-secondary" onClick={() => fileInputRef.current?.click()}>
                                  Upload
                                </button>
                              </div>
@@ -259,7 +337,7 @@ export default function ProjectSettings() {
                             <h4 className="font-semibold text-slate-900 text-[14px]">Transfer Ownership</h4>
                             <p className="text-[12px] text-slate-500 mt-1">Transfer this project to another user or organization.</p>
                           </div>
-                          <button type="button" className="button button-secondary shrink-0">
+                          <button type="button" onClick={handleOpenTransfer} className="button button-secondary shrink-0">
                             Transfer
                           </button>
                         </div>
@@ -269,7 +347,11 @@ export default function ProjectSettings() {
                             <h4 className="font-semibold text-slate-900 text-[14px]">Delete Project</h4>
                             <p className="text-[12px] text-slate-500 mt-1">Permanently delete this project and all its data. This cannot be undone.</p>
                           </div>
-                        <button type="button" className="button bg-red-600 hover:bg-red-700 text-white shrink-0 border-none">
+                        <button 
+                          type="button" 
+                          onClick={handleDeleteProject}
+                          className="button bg-red-600 hover:bg-red-700 text-white shrink-0 border-none"
+                        >
                           Delete Project
                         </button>
                       </div>
@@ -295,6 +377,59 @@ export default function ProjectSettings() {
           </div>
         </div>
       </div>
+
+      {/* Transfer Modal */}
+      {isTransferModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden reveal-in">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-display font-semibold text-slate-900">Transfer Ownership</h3>
+              <button onClick={() => setIsTransferModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-[14px] text-slate-500 mb-4">Select an active team member to transfer ownership of this project to. You will lose founder access.</p>
+              
+              {projectMembers.length === 0 ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-[13px] text-slate-500">
+                  No eligible team members found.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                  {projectMembers.map(m => (
+                    <div 
+                      key={m.user_id}
+                      onClick={() => setSelectedNewOwner(m.user_id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedNewOwner === m.user_id ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:border-slate-300'}`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
+                        {m.user?.avatar_url ? <img src={m.user.avatar_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">{m.user?.full_name?.charAt(0)}</div>}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900 text-[14px]">{m.user?.full_name}</div>
+                        <div className="text-slate-500 text-[12px]">{m.role}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+              <button onClick={() => setIsTransferModalOpen(false)} className="button button-secondary text-[13px]">
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmTransfer}
+                disabled={!selectedNewOwner || transferring}
+                className="button bg-red-600 hover:bg-red-700 text-white text-[13px] disabled:opacity-50 border-none"
+              >
+                {transferring ? 'Transferring...' : 'Confirm Transfer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </FounderLayout>
   )
 }

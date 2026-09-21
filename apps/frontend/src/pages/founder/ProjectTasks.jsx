@@ -20,6 +20,8 @@ import {
   AlertTriangle,
   Sparkles
 } from 'lucide-react'
+import { DragDropContext, Draggable } from '@hello-pangea/dnd'
+import { StrictModeDroppable } from '../../components/ui/StrictModeDroppable'
 import FounderLayout from '../../components/founder/FounderLayout'
 import { api } from '../../services/api.js'
 
@@ -53,15 +55,7 @@ export default function ProjectTasks() {
           api.getMembers(id).catch(() => []),
         ])
 
-        if (!taskList || taskList.length === 0) {
-          setTasks([
-            { id: 1, title: 'Design Component Library', assignee: { name: 'Priya Patel', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' }, status: 'COMPLETED', priority: 'MEDIUM', due_date: 'May 18, 2025' },
-            { id: 2, title: 'Develop Core Authentication & Sessions', assignee: { name: 'Rahul Mehta', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul' }, status: 'READY_FOR_REVIEW', priority: 'HIGH', due_date: 'May 25, 2025' },
-            { id: 3, title: 'Integrate Vector Search Engine', assignee: { name: 'Sneha Rao', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha' }, status: 'IN_PROGRESS', priority: 'HIGH', due_date: 'Jun 1, 2025' },
-            { id: 4, title: 'Write Public API Documentation', assignee: { name: 'Arjun Verma', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun' }, status: 'TODO', priority: 'LOW', due_date: 'Jun 5, 2025' },
-            { id: 5, title: 'Database Schema Migration for SQLite', assignee: { name: 'Neha Shah', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Neha' }, status: 'TODO', priority: 'MEDIUM', due_date: 'Jun 10, 2025' },
-          ])
-        } else {
+        if (taskList) {
           setTasks(taskList)
         }
 
@@ -80,9 +74,18 @@ export default function ProjectTasks() {
     setTimeout(() => setFeedbackToast(''), 3500)
   }
 
+  const onDragEnd = (result) => {
+    if (!result.destination) return
+    const { source, destination, draggableId } = result
+    
+    if (source.droppableId !== destination.droppableId) {
+      handleUpdateStatus(draggableId, destination.droppableId)
+    }
+  }
+
   const handleUpdateStatus = async (taskId, newStatus) => {
     try {
-      await api.updateTask(id, taskId, { status: newStatus }).catch(() => null)
+      await api.updateTask(id, taskId, { status: newStatus })
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
       showToast(`Task status updated to ${newStatus.replace(/_/g, ' ')}`)
     } catch (err) {
@@ -93,11 +96,11 @@ export default function ProjectTasks() {
   const handleReviewAction = async (taskId, action) => {
     try {
       if (action === 'APPROVE') {
-        await api.reviewTask(id, taskId, { action: 'APPROVE' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'APPROVE' })
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'COMPLETED' } : t))
         showToast('Deliverable approved & completed!')
       } else {
-        await api.reviewTask(id, taskId, { action: 'REQUEST_CHANGES', feedback: 'Changes requested by lead' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'REQUEST_CHANGES', feedback: 'Changes requested by lead' })
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'IN_PROGRESS' } : t))
         showToast('Feedback logged: Task sent back to In Progress.')
       }
@@ -368,8 +371,9 @@ export default function ProjectTasks() {
 
         {/* ── View 1: Kanban Board Mode ────────────────────────────────────── */}
         {viewMode === 'BOARD' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start reveal-in delay-2">
-            {columns.map((col) => {
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+              {columns.map((col) => {
               const colTasks = filteredTasks.filter((t) => {
                 if (col.id === 'TODO') return t.status === 'TODO' || t.status === 'NOT_STARTED'
                 return t.status === col.id
@@ -386,18 +390,33 @@ export default function ProjectTasks() {
                   </div>
 
                   {/* Task Card List */}
-                  <div className="space-y-4 flex-1 overflow-y-auto pr-1">
-                    {colTasks.length === 0 ? (
-                      <div className="py-12 text-center text-slate-400 text-sm border-2 border-dashed border-slate-200/80 rounded-[18px]">
-                        No tasks
-                      </div>
-                    ) : (
-                      colTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="bg-white p-5 rounded-[18px] border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
-                        >
-                          <div>
+                  <StrictModeDroppable droppableId={col.id}>
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className={`space-y-4 flex-1 overflow-y-auto pr-1 pb-4 min-h-[150px] transition-colors ${snapshot.isDraggingOver ? 'bg-slate-100/50 rounded-xl p-2' : ''}`}
+                      >
+                        {colTasks.length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-sm border-2 border-dashed border-slate-200/80 rounded-[18px]">
+                            No tasks
+                          </div>
+                        ) : (
+                          colTasks.map((task, index) => (
+                            <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  style={provided.draggableProps.style}
+                                  className={`bg-white p-5 rounded-[18px] border border-slate-200 flex flex-col justify-between group select-none ${
+                                    snapshot.isDragging 
+                                      ? 'shadow-xl ring-2 ring-brand-500 z-50' 
+                                      : 'shadow-sm hover:shadow-md transition-shadow duration-200'
+                                  }`}
+                                >
+                                  <div>
                             {/* Card Topline */}
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
@@ -493,13 +512,19 @@ export default function ProjectTasks() {
                             </div>
                           </div>
                         </div>
+                              )}
+                            </Draggable>
                       ))
                     )}
+                    {provided.placeholder}
                   </div>
-                </div>
+                )}
+              </StrictModeDroppable>
+            </div>
               )
             })}
           </div>
+          </DragDropContext>
         ) : (
           /* ── View 2: Table Mode ─────────────────────────────────────────── */
           <div className="dashboard-section reveal-in delay-2">

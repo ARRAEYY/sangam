@@ -29,50 +29,7 @@ export default function ProjectApplications() {
         setLoading(true)
         const apps = await api.getFounderApplicants(id).catch(() => [])
 
-        if (!apps || apps.length === 0) {
-          setApplications([
-            {
-              id: 1,
-              name: 'Ananya Singh',
-              role: 'Frontend Architect',
-              applied_on: 'May 10, 2025',
-              status: 'PENDING',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya',
-              skills: ['React', 'Tailwind', 'Next.js', 'State Machines'],
-              pitch: 'I have 2 years of experience building collaborative web applications. Super excited about Sangam!'
-            },
-            {
-              id: 2,
-              name: 'Karan Malhotra',
-              role: 'ML Engineer',
-              applied_on: 'May 9, 2025',
-              status: 'SHORTLISTED',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Karan',
-              skills: ['PyTorch', 'FastAPI', 'Vector Databases'],
-              pitch: 'Specialized in fine-tuning embeddings and building low-latency inference pipelines.'
-            },
-            {
-              id: 3,
-              name: 'Riya Patel',
-              role: 'Product Designer',
-              applied_on: 'May 8, 2025',
-              status: 'REJECTED',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riya',
-              skills: ['Figma', 'Prototyping', 'Design Systems'],
-              pitch: 'Focused on accessibility and human-centered design.'
-            },
-            {
-              id: 4,
-              name: 'Daniel Kim',
-              role: 'Backend Developer',
-              applied_on: 'May 7, 2025',
-              status: 'PENDING',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel',
-              skills: ['Node.js', 'PostgreSQL', 'Docker'],
-              pitch: 'Passionate about building resilient distributed systems and clean REST APIs.'
-            },
-          ])
-        } else {
+        if (apps) {
           setApplications(apps)
         }
       } catch (err) {
@@ -91,7 +48,7 @@ export default function ProjectApplications() {
 
   const handleAction = async (appId, action) => {
     try {
-      await api.applicantAction(id, appId, action).catch(() => null)
+      await api.applicantAction(id, appId, action)
       const nextStatus = action === 'ACCEPT' ? 'ACCEPTED' : action === 'SHORTLIST' ? 'SHORTLISTED' : 'REJECTED'
       setApplications(prev => prev.map(a => a.id === appId ? { ...a, status: nextStatus } : a))
       showToast(`Applicant successfully ${action === 'ACCEPT' ? 'accepted & invited' : action === 'SHORTLIST' ? 'shortlisted' : 'declined'}.`)

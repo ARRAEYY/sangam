@@ -33,7 +33,8 @@ export default function TalentSearch() {
         api.listConnectionRequests('received').catch(() => [])
       ])
       
-      setTalent(data)
+      const sortedData = data.sort((a, b) => (b.profileCompletion || 0) - (a.profileCompletion || 0))
+      setTalent(sortedData)
       setConnectedUserIds(new Set((conns || []).map(c => c.user?.id).filter(Boolean)))
       setSentReqUserIds(new Set((sent || []).filter(r => r.status === 'PENDING').map(r => r.recipient?.id).filter(Boolean)))
       setReceivedReqUserIds(new Set((received || []).filter(r => r.status === 'PENDING').map(r => r.requester?.id).filter(Boolean)))

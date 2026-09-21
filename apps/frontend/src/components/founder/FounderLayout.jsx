@@ -152,9 +152,13 @@ export default function FounderLayout({ children }) {
         {/* Mobile Header (Only visible on small screens to toggle menu) */}
         <div className="md:hidden flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-700 font-display font-bold text-sm">
-              {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
-            </div>
+            {project?.logo_url ? (
+              <img src={project.logo_url} alt="Logo" className="w-8 h-8 rounded-lg object-cover bg-white" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-700 font-display font-bold text-sm">
+                {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
+              </div>
+            )}
             <div>
               <h2 className="font-display font-bold text-sm text-slate-900 truncate max-w-[150px]">
                 {project?.title || 'Admin'}
@@ -190,14 +194,29 @@ export default function FounderLayout({ children }) {
               mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            <div className="mb-6 flex shrink-0 items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-700 font-display font-bold text-lg">
-                  {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display font-bold text-sm text-slate-900 truncate">{project?.title || 'Loading Project...'}</h2>
-                  <p className="text-[11px] text-slate-500 font-medium">Console</p>
+            <div className="mb-6 flex shrink-0 items-start justify-between border-b border-slate-100 pb-4">
+              <div>
+                <Link
+                  to="/founder"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors mb-4 text-sm font-medium"
+                >
+                  <ChevronLeft size={16} /> Back to Hub
+                </Link>
+                <div className="flex items-center gap-3">
+                  {project?.logo_url ? (
+                    <img src={project.logo_url} alt="Logo" className="w-10 h-10 rounded-xl object-cover bg-white shadow-sm border border-slate-100" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-display font-bold text-lg shadow-sm border border-brand-100/50">
+                      {project?.title ? project.title.charAt(0).toUpperCase() : 'P'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h2 className="font-display font-bold text-slate-900 text-[15px] truncate max-w-[140px]">
+                      {project?.title || 'Loading...'}
+                    </h2>
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-brand-600">Active Build</span>
+                  </div>
                 </div>
               </div>
               <button

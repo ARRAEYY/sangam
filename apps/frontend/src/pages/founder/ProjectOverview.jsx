@@ -47,24 +47,13 @@ export default function ProjectOverview() {
         api.getTasks(id).catch(() => []),
       ])
 
-      const tasks = taskList && taskList.length > 0 ? taskList : [
-        { id: 1, title: 'Design Landing Page System', status: 'COMPLETED', priority: 'HIGH', due_date: 'May 20, 2025' },
-        { id: 2, title: 'Develop Core Authentication', status: 'READY_FOR_REVIEW', priority: 'HIGH', due_date: 'May 25, 2025', assignee: { name: 'Rahul M.' } },
-        { id: 3, title: 'AI Matching Engine Integration', status: 'IN_PROGRESS', priority: 'MEDIUM', due_date: 'Jun 1, 2025', assignee: { name: 'Sneha K.' } },
-        { id: 4, title: 'Write Public Documentation', status: 'TODO', priority: 'LOW', due_date: 'Jun 5, 2025' },
-        { id: 5, title: 'Database schema migration', status: 'BLOCKED', priority: 'HIGH', due_date: 'Jun 8, 2025', assignee: { name: 'Arjun P.' } },
-      ]
-
+      const tasks = taskList || []
       const pending = (apps || []).filter(a => a.status === 'PENDING' || a.status === 'Pending')
-      const initialPending = pending.length > 0 ? pending : [
-        { id: 101, name: 'Ananya Singh', role: 'Frontend Architect', applied_on: '2h ago', matched_skills: ['React', 'Tailwind', 'Next.js'], avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya', pitch: 'Hey! Loved the mission. I built scalable dashboard systems at my university hackathon.' },
-        { id: 102, name: 'Karan Malhotra', role: 'ML Engineer', applied_on: '5h ago', matched_skills: ['PyTorch', 'FastAPI'], avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Karan', pitch: 'Experienced with NLP ranking and graph embeddings. Would love to contribute!' },
-      ]
 
       const inReview = tasks.filter(t => t.status === 'READY_FOR_REVIEW')
       const blocked = tasks.filter(t => t.status === 'BLOCKED')
 
-      setPendingApplicants(initialPending)
+      setPendingApplicants(pending)
       setReviewTasks(inReview)
 
       const totalTasks = tasks.length
@@ -72,28 +61,19 @@ export default function ProjectOverview() {
       const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS').length
 
       setData({
-        project: projectInfo || attention.project || { title: 'AI for Social Good', tagline: 'Connecting purpose-driven builders.' },
+        project: projectInfo || attention?.project || { title: 'Untitled Project', tagline: '' },
         stats: {
-          totalMembers: analytics?.stats?.totalMembers || 12,
+          totalMembers: analytics?.stats?.totalMembers || 0,
           totalTasks,
           completedTasks,
           inProgressTasks,
           blockedTasks: blocked.length,
-          totalMilestones: analytics?.stats?.totalMilestones || 4,
-          totalApplications: initialPending.length,
+          totalMilestones: analytics?.stats?.totalMilestones || 0,
+          totalApplications: pending.length,
         },
         blockedTasks: blocked,
-        milestones: [
-          { id: 1, title: 'MVP Development & Architecture', dueDate: 'Jun 15, 2025', progress: 100, status: 'COMPLETED' },
-          { id: 2, title: 'Private Beta with 50 Creators', dueDate: 'Jul 1, 2025', progress: 65, status: 'IN_PROGRESS' },
-          { id: 3, title: 'Public Showcase & Community Launch', dueDate: 'Aug 10, 2025', progress: 20, status: 'PENDING' },
-        ],
-        recentActivities: [
-          { text: 'Rahul submitted "Core Authentication" for review', time: '1 hour ago', type: 'review' },
-          { text: 'Ananya Singh applied for Frontend Architect', time: '2 hours ago', type: 'application' },
-          { text: 'Priya Patel completed UI Style Guide', time: '5 hours ago', type: 'task' },
-          { text: 'Sneha joined as AI Specialist', time: '1 day ago', type: 'member' },
-        ]
+        milestones: analytics?.milestones || [],
+        recentActivities: analytics?.recentActivities || []
       })
     } catch (err) {
       console.error('Failed to fetch overview data:', err)
@@ -121,11 +101,11 @@ export default function ProjectOverview() {
   const handleTaskReviewAction = async (taskId, action) => {
     try {
       if (action === 'APPROVE') {
-        await api.reviewTask(id, taskId, { action: 'APPROVE' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'APPROVE' }).catch(() => null)
         setReviewTasks(prev => prev.filter(t => t.id !== taskId))
         setActionSuccessMessage('Deliverable approved & marked as completed!')
       } else {
-        await api.reviewTask(id, taskId, { action: 'REQUEST_CHANGES', feedback: 'Changes requested' }).catch(() => null)
+        await api.reviewTask(id, taskId, { decision: 'REQUEST_CHANGES', feedback: 'Changes requested' }).catch(() => null)
         setReviewTasks(prev => prev.filter(t => t.id !== taskId))
         setActionSuccessMessage('Feedback logged and task returned to In Progress.')
       }
@@ -210,8 +190,11 @@ export default function ProjectOverview() {
         <section className="reveal-in bg-white border border-slate-200 rounded-[20px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+              {project.logo_url && (
+                <img src={project.logo_url} alt="Logo" className="w-10 h-10 rounded-lg object-cover border border-slate-200" />
+              )}
               <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
-                {project.title || 'AI for Social Good'}
+                {project.title || 'Untitled Project'}
               </h1>
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-emerald-50 text-emerald-700">
                 Active Build
@@ -316,6 +299,87 @@ export default function ProjectOverview() {
             </div>
           </div>
         </section>
+
+        {/* ── Dual-Column Overview Section ─────────────────────────────────── */}
+        <div className="grid md:grid-cols-[1fr_300px] gap-8 reveal-in delay-3">
+          
+          {/* Milestones Roadmap */}
+          <section className="dashboard-activity">
+            <div className="section-heading mb-6">
+              <div>
+                <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Timeline</span>
+                <h2>Milestone Roadmap</h2>
+              </div>
+              <Link to={`/founder/projects/${id}/milestones`} className="text-[11px] font-bold text-brand-700 hover:underline flex items-center gap-1">
+                View all <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            <div className="activity-list space-y-4">
+              {milestones.map((m) => (
+                <div key={m.id} className="activity-item p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-sm text-slate-800 truncate pr-2">{m.title}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest shrink-0 ${
+                      m.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
+                      m.status === 'IN_PROGRESS' ? 'bg-brand-50 text-brand-700' :
+                      'bg-slate-100 text-slate-600'
+                    }`}>
+                      {m.status === 'COMPLETED' ? 'Done' : m.status === 'IN_PROGRESS' ? 'In Progress' : 'Planned'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-2">
+                    <div
+                      className={`h-full rounded-full ${
+                        m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-brand-600'
+                      }`}
+                      style={{ width: `${m.progress}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span>Due {m.dueDate}</span>
+                    <span>{m.progress}% Progress</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Real-time Activity Stream */}
+          <section className="dashboard-sidebar">
+            <div className="explore-card accent-sand p-6 rounded-[18px] border border-slate-100 bg-[#faf9f5]">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-200/50 pb-4">
+                <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                  <Clock size={16} className="text-slate-400" /> Activity
+                </h3>
+                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+                </span>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                {recentActivities.map((act, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-600 mt-1.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-slate-700">{act.text}</p>
+                      <span className="text-[11px] text-slate-400">{act.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                to={`/founder/projects/${id}/tasks`}
+                className="button button-secondary w-full text-center justify-center text-[12px]"
+              >
+                Explore Deliverables <ArrowRight size={14} />
+              </Link>
+            </div>
+          </section>
+
+        </div>
+
 
         {/* ── ⚡ Actionable Decision Queue (Attention Center) ───────────────── */}
         <section className="bg-white border border-slate-200 rounded-[20px] p-6 shadow-sm reveal-in delay-2 mb-12">
@@ -469,86 +533,6 @@ export default function ProjectOverview() {
             </div>
           )}
         </section>
-
-        {/* ── Dual-Column Overview Section ─────────────────────────────────── */}
-        <div className="grid md:grid-cols-[1fr_300px] gap-8 reveal-in delay-3">
-          
-          {/* Milestones Roadmap */}
-          <section className="dashboard-activity">
-            <div className="section-heading mb-6">
-              <div>
-                <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Timeline</span>
-                <h2>Milestone Roadmap</h2>
-              </div>
-              <Link to={`/founder/projects/${id}/milestones`} className="text-[11px] font-bold text-brand-700 hover:underline flex items-center gap-1">
-                View all <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            <div className="activity-list space-y-4">
-              {milestones.map((m) => (
-                <div key={m.id} className="activity-item p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-semibold text-sm text-slate-800 truncate pr-2">{m.title}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest shrink-0 ${
-                      m.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
-                      m.status === 'IN_PROGRESS' ? 'bg-brand-50 text-brand-700' :
-                      'bg-slate-100 text-slate-600'
-                    }`}>
-                      {m.status === 'COMPLETED' ? 'Done' : m.status === 'IN_PROGRESS' ? 'In Progress' : 'Planned'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-2">
-                    <div
-                      className={`h-full rounded-full ${
-                        m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-brand-600'
-                      }`}
-                      style={{ width: `${m.progress}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                    <span>Due {m.dueDate}</span>
-                    <span>{m.progress}% Progress</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Real-time Activity Stream */}
-          <section className="dashboard-sidebar">
-            <div className="explore-card accent-sand p-6 rounded-[18px] border border-slate-100 bg-[#faf9f5]">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-200/50 pb-4">
-                <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                  <Clock size={16} className="text-slate-400" /> Activity
-                </h3>
-                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
-                </span>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                {recentActivities.map((act, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-600 mt-1.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] text-slate-700">{act.text}</p>
-                      <span className="text-[11px] text-slate-400">{act.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                to={`/founder/projects/${id}/tasks`}
-                className="button button-secondary w-full text-center justify-center text-[12px]"
-              >
-                Explore Deliverables <ArrowRight size={14} />
-              </Link>
-            </div>
-          </section>
-
-        </div>
 
         {/* ── Quick Create Task Modal ─────────────────────────────────────── */}
         {isTaskModalOpen && (
