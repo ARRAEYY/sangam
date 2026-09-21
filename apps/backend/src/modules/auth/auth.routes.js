@@ -56,7 +56,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
     sameSite: isProd ? 'None' : 'Lax',
     path: '/',
   }
-  
+
   // Access token cookie (short lived)
   res.cookie('token', accessToken, {
     ...cookieOptions,
@@ -239,7 +239,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
     const jwt = signToken(user)
     const refreshStr = generateRefreshToken()
-    
+
     // Save to DB
     await RefreshToken.create({
       user_id: user.id,
