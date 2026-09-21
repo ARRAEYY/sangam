@@ -1,4 +1,15 @@
 {
+  "name": "sangam-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:frontend": "pnpm --filter campus-platform-frontend dev",
+    "dev:backend": "pnpm --filter campus-platform-backend dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1"
   }
