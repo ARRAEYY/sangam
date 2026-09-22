@@ -3,14 +3,24 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    const transaction = await queryInterface.sequelize.transaction();
-    try {
-      // Add missing columns to experiences
-      await queryInterface.addColumn('experiences', 'location', { type: Sequelize.STRING, allowNull: true }, { transaction });
-      await queryInterface.addColumn('experiences', 'work_type', { type: Sequelize.STRING, allowNull: true, defaultValue: 'On-site' }, { transaction });
-      await queryInterface.addColumn('experiences', 'employment_type', { type: Sequelize.STRING, allowNull: true, defaultValue: 'Full-time' }, { transaction });
+    const tables = await queryInterface.showAllTables();
+    
+    // 1. Experiences columns
+    if (tables.includes('experiences')) {
+      const expDesc = await queryInterface.describeTable('experiences');
+      if (!expDesc.location) {
+        await queryInterface.addColumn('experiences', 'location', { type: Sequelize.STRING, allowNull: true });
+      }
+      if (!expDesc.work_type) {
+        await queryInterface.addColumn('experiences', 'work_type', { type: Sequelize.STRING, allowNull: true, defaultValue: 'On-site' });
+      }
+      if (!expDesc.employment_type) {
+        await queryInterface.addColumn('experiences', 'employment_type', { type: Sequelize.STRING, allowNull: true, defaultValue: 'Full-time' });
+      }
+    }
 
-      // Create project_members
+    // 2. Project Members
+    if (!tables.includes('project_members')) {
       await queryInterface.createTable('project_members', {
         id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true },
         project_id: { type: Sequelize.UUID, allowNull: false, references: { model: 'projects', key: 'id' }, onDelete: 'CASCADE', onUpdate: 'CASCADE' },
@@ -22,12 +32,13 @@ module.exports = {
         status: { type: Sequelize.ENUM('ACTIVE', 'REMOVED', 'LEFT'), allowNull: false, defaultValue: 'ACTIVE' },
         created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
         updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
-      }, { transaction });
+      });
+      await queryInterface.addIndex('project_members', ['project_id', 'user_id'], { unique: true });
+      await queryInterface.addIndex('project_members', ['user_id', 'status']);
+    }
 
-      await queryInterface.addIndex('project_members', ['project_id', 'user_id'], { unique: true, transaction });
-      await queryInterface.addIndex('project_members', ['user_id', 'status'], { transaction });
-
-      // Create milestones (Omit custom_properties because the 20260916000001 migration adds it!)
+    // 3. Milestones
+    if (!tables.includes('milestones')) {
       await queryInterface.createTable('milestones', {
         id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true },
         project_id: { type: Sequelize.UUID, allowNull: false, references: { model: 'projects', key: 'id' }, onDelete: 'CASCADE', onUpdate: 'CASCADE' },
@@ -41,11 +52,12 @@ module.exports = {
         created_by: { type: Sequelize.UUID, allowNull: true, references: { model: 'users', key: 'id' }, onDelete: 'SET NULL', onUpdate: 'CASCADE' },
         created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
         updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
-      }, { transaction });
+      });
+      await queryInterface.addIndex('milestones', ['project_id', 'order_index']);
+    }
 
-      await queryInterface.addIndex('milestones', ['project_id', 'order_index'], { transaction });
-
-      // Create task_comments
+    // 4. Task Comments
+    if (!tables.includes('task_comments')) {
       await queryInterface.createTable('task_comments', {
         id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true },
         milestone_id: { type: Sequelize.UUID, allowNull: false, references: { model: 'milestones', key: 'id' }, onDelete: 'CASCADE', onUpdate: 'CASCADE' },
@@ -54,9 +66,11 @@ module.exports = {
         type: { type: Sequelize.ENUM('comment', 'feedback'), allowNull: false, defaultValue: 'comment' },
         created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
         updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
-      }, { transaction });
+      });
+    }
 
-      // Create refresh_tokens
+    // 5. Refresh Tokens
+    if (!tables.includes('refresh_tokens')) {
       await queryInterface.createTable('refresh_tokens', {
         id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true },
         user_id: { type: Sequelize.UUID, allowNull: false, references: { model: 'users', key: 'id' }, onDelete: 'CASCADE', onUpdate: 'CASCADE' },
@@ -65,29 +79,22 @@ module.exports = {
         is_revoked: { type: Sequelize.BOOLEAN, defaultValue: false, allowNull: false },
         created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
         updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
-      }, { transaction });
-
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
+      });
     }
   },
 
   async down (queryInterface, Sequelize) {
-    const transaction = await queryInterface.sequelize.transaction();
-    try {
-      await queryInterface.dropTable('refresh_tokens', { transaction });
-      await queryInterface.dropTable('task_comments', { transaction });
-      await queryInterface.dropTable('milestones', { transaction });
-      await queryInterface.dropTable('project_members', { transaction });
-      await queryInterface.removeColumn('experiences', 'location', { transaction });
-      await queryInterface.removeColumn('experiences', 'work_type', { transaction });
-      await queryInterface.removeColumn('experiences', 'employment_type', { transaction });
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
+    const tables = await queryInterface.showAllTables();
+    if (tables.includes('refresh_tokens')) await queryInterface.dropTable('refresh_tokens');
+    if (tables.includes('task_comments')) await queryInterface.dropTable('task_comments');
+    if (tables.includes('milestones')) await queryInterface.dropTable('milestones');
+    if (tables.includes('project_members')) await queryInterface.dropTable('project_members');
+    
+    if (tables.includes('experiences')) {
+      const expDesc = await queryInterface.describeTable('experiences');
+      if (expDesc.location) await queryInterface.removeColumn('experiences', 'location');
+      if (expDesc.work_type) await queryInterface.removeColumn('experiences', 'work_type');
+      if (expDesc.employment_type) await queryInterface.removeColumn('experiences', 'employment_type');
     }
   }
 };
