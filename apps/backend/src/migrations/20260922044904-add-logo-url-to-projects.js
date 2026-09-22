@@ -3,13 +3,19 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.addColumn('projects', 'logo_url', {
-      type: Sequelize.TEXT,
-      allowNull: true,
-    });
+    const tableDesc = await queryInterface.describeTable('projects');
+    if (!tableDesc.logo_url) {
+      await queryInterface.addColumn('projects', 'logo_url', {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      });
+    }
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.removeColumn('projects', 'logo_url');
+    const tableDesc = await queryInterface.describeTable('projects');
+    if (tableDesc.logo_url) {
+      await queryInterface.removeColumn('projects', 'logo_url');
+    }
   }
 };

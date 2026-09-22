@@ -2,14 +2,20 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('projects', 'property_schema', {
-      type: Sequelize.JSONB,
-      allowNull: true,
-      defaultValue: {},
-    });
+    const tableDesc = await queryInterface.describeTable('projects');
+    if (!tableDesc.property_schema) {
+      await queryInterface.addColumn('projects', 'property_schema', {
+        type: Sequelize.JSONB,
+        allowNull: true,
+        defaultValue: {},
+      });
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('projects', 'property_schema');
+    const tableDesc = await queryInterface.describeTable('projects');
+    if (tableDesc.property_schema) {
+      await queryInterface.removeColumn('projects', 'property_schema');
+    }
   }
 };
