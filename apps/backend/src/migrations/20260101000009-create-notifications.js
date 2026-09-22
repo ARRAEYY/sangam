@@ -48,8 +48,24 @@ module.exports = {
       created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
     })
-    await queryInterface.addIndex('notifications', ['recipient_id', 'is_read'])
-    await queryInterface.addIndex('notifications', ['recipient_id', 'created_at'])
+    try {
+      await queryInterface.addIndex('notifications', ['recipient_id', 'is_read'])
+    } catch (err) {
+      if (err.name === 'SequelizeDatabaseError' && err.message.includes('already exists')) {
+        console.log('Index already exists, skipping...');
+      } else {
+        throw err;
+      }
+    }
+    try {
+      await queryInterface.addIndex('notifications', ['recipient_id', 'created_at'])
+    } catch (err) {
+      if (err.name === 'SequelizeDatabaseError' && err.message.includes('already exists')) {
+        console.log('Index already exists, skipping...');
+      } else {
+        throw err;
+      }
+    }
   },
   async down(queryInterface) {
     await queryInterface.dropTable('notifications')

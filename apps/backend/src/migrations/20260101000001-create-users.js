@@ -22,7 +22,15 @@ module.exports = {
       created_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
     })
-    await queryInterface.addIndex('users', ['email'], { unique: true, name: 'users_email_unique' })
+    try {
+      await queryInterface.addIndex('users', ['email'], { unique: true, name: 'users_email_unique' })
+    } catch (err) {
+      if (err.name === 'SequelizeDatabaseError' && err.message.includes('already exists')) {
+        console.log('Index already exists, skipping...');
+      } else {
+        throw err;
+      }
+    }
   },
   async down(queryInterface) {
     await queryInterface.dropTable('users')
