@@ -26,6 +26,8 @@ export function AuthProvider({ children }) {
     return profile
   }
 
+
+
   const loginWithGoogle = async (credential) => {
     const data = await api.loginWithGoogle(credential)
     const profile = data.user || (await api.getProfile())
