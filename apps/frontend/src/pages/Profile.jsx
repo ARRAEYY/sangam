@@ -307,7 +307,7 @@ export default function Profile() {
     .toUpperCase()
 
   return (
-    <div className="max-w-4xl mx-auto pb-16 pt-2">
+    <div className="max-w-4xl ml-12  pb-16 pt-2">
       {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       <section className="card mb-10 p-5 sm:p-7">
@@ -568,7 +568,7 @@ export default function Profile() {
       {/* Education */}
       <section id="section-education" className="mb-10">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display text-lg font-semibold text-slate-900">
+          <h3 className="font-display text-xl font-semibold text-slate-900 ml-5">
             {educationForm.id ? 'Edit Education' : 'Add Education'}
           </h3>
           <button onClick={() => { setEducationForm({ institution: '', degree: '', department: '', start_year: new Date().getFullYear() - 2, graduation_year: new Date().getFullYear() + 2 }); setShowAddEducation(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
@@ -684,7 +684,7 @@ export default function Profile() {
       {/* Experience */}
       <section id="section-experience" className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-lg font-semibold text-slate-900">
+          <h3 className="font-display text-xl font-semibold text-slate-900 ml-5">
             {experienceForm.id ? 'Edit Experience' : 'Add Experience'}
           </h3>
           <button onClick={() => { setExperienceForm({ organization: '', role: '', description: '', location: '', work_type: 'On-site', employment_type: 'Full-time', start_date: '', end_date: '' }); setShowAddExperience(true) }} className="btn-secondary !px-3.5 !py-1.5 text-xs">
@@ -795,7 +795,7 @@ export default function Profile() {
       {/* Achievements & Awards */}
       <section id="section-achievements" className="mb-10">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-semibold text-slate-900">Achievements & Certifications</h2>
+          <h2 className="font-display text-xl font-semibold text-slate-900 ml-5">Achievements & Certifications</h2>
           <button onClick={() => setShowAddAchievement(true)} className="btn-secondary !px-3.5 !py-1.5 text-xs">
             <Plus size={13} /> Add
           </button>
@@ -919,7 +919,7 @@ export default function Profile() {
 
       {/* Projects */}
       <section className="mb-10">
-        <h2 className="mb-3 font-display text-lg font-semibold text-slate-900">Projects</h2>
+        <h2 className="mb-3 font-display text-xl font-semibold text-slate-900 ml-5 ">Projects</h2>
         {myProjects.length === 0 && projectRoles.length === 0 ? (
           <p className="card border-dashed px-5 py-6 text-sm text-slate-500">
             You haven't posted any projects or joined any teams yet.{' '}

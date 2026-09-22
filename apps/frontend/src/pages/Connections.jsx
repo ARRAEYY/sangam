@@ -87,12 +87,12 @@ export default function Connections() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-16 pt-2">
+    <div className="max-w-4xl ml-12 pb-16 pt-2">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-slate-900">Find Your People</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="font-display text-2xl ml-5  font-bold text-slate-900">Find Your People</h1>
+          <p className="text-sm text-slate-500 mt-0.5 ml-5">
             Connect, collaborate, and build together.
           </p>
         </div>
