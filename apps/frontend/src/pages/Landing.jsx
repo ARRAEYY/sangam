@@ -167,7 +167,7 @@ export default function Landing() {
           <a href="#explore">Explore</a>
           <a href="#talent">Find talent</a>
           <a href="#opportunities">Opportunities</a>
-    
+
           <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
         </nav>
         <button className="landing-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
