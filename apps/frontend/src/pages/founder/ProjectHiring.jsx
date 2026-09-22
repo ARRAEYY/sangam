@@ -298,7 +298,7 @@ function DeleteConfirm({ role, onConfirm, onClose }) {
             <button
               id="role-delete-confirm-btn"
               onClick={onConfirm}
-              className="flex-1 h-10 rounded-lg bg-red-600 hover:bg-rose-700 text-white text-[13px] font-bold transition-colors"
+              className="flex-1 h-10 rounded-lg bg-red-600 hover:bg-rose-700 text-white text-[13px] font-bold transition-all ease-in-out hover:bg-red-400 hover:translate-x-1"
             >
               Delete
             </button>
