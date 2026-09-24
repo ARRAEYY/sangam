@@ -242,10 +242,6 @@ export default function Dashboard() {
         <div className="hero-art">
           <img src="/manus-storage/sangam-hero-assembly_407994fd.png" alt="Abstract maroon paths" />
         </div>
-        <div className="hero-note hidden md:flex">
-          <span className="hero-note-mark mr-2 text-[20px] text-[#7f1d3b]">↗</span>
-          <span className="text-[10px] text-slate-500 leading-tight">{loading ? <span className="inline-block w-4 h-4 bg-slate-200 animate-pulse rounded"></span> : openProjectsCount} open builds<br /><strong className="text-slate-800">waiting for you</strong></span>
-        </div>
       </section>
 
       {/* 2. Horizontal Stats Strip */}
@@ -271,9 +267,7 @@ export default function Dashboard() {
           <span className="stat-caption text-[11px] text-slate-400">Profile completeness</span>
         </div>
         <div className="dashboard-prompt bg-[#faf9f5]">
-          <Sparkles size={16} />
-          <span><strong>Learn. Connect. Grow.</strong></span>
-          <ChevronRight size={16} />
+          
         </div>
       </section>
 

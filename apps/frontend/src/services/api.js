@@ -98,6 +98,8 @@ async function request(path, { method = 'GET', body, token, params, _retry = fal
 }
 
 export const api = {
+  getPlatformStats: () => request('/api/platform-stats'),
+
   register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
   login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
   loginWithGoogle: (credential) =>

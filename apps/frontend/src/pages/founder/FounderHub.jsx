@@ -55,19 +55,23 @@ export default function FounderHub() {
                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </Link>
             <span className="inline-block px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold tracking-widest uppercase rounded-full">
-              Founder Hub
+              {projects.some(p => p.owner?.id === user?.id) ? 'Founder Hub' : 'Your Team'}
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-slate-900 mb-2">
-            Your Builds.
+            {projects.some(p => p.owner?.id === user?.id) ? 'Your Projects.' : 'Your Team.'}
           </h1>
           <p className="text-lg text-slate-600">
-            Manage your builds and track overall project health.
+            {projects.some(p => p.owner?.id === user?.id)
+              ? 'Manage your projects and track overall project health.'
+              : 'Collaborate on projects and track your deliverables.'}
           </p>
         </div>
-        <Link to="/create" className="flex-shrink-0 inline-flex items-center justify-center px-6 py-2.5 bg-maroon text-white font-semibold text-sm rounded-lg hover:bg-maroon/90 transition-colors whitespace-nowrap h-fit shadow-sm">
-           Start a Build
-        </Link>
+        {projects.some(p => p.owner?.id === user?.id) && (
+          <Link to="/create" className="flex-shrink-0 inline-flex items-center justify-center px-6 py-2.5 bg-maroon text-white font-semibold text-sm rounded-lg hover:bg-maroon/90 transition-colors whitespace-nowrap h-fit shadow-sm">
+            Start a Project
+          </Link>
+        )}
       </div>
 
       {projects.length === 0 ? (
@@ -141,13 +145,13 @@ export default function FounderHub() {
                   
                 </div>
 
-                {/* Attention Center Button Bottom Right */}
+                {/* Action Button Bottom Right */}
                 <div className="flex-shrink-0 flex items-center justify-end pl-0 pt-4 md:pt-0">
                   <Link
-                    to={`/founder/projects/${project.id}/overview`}
+                    to={`/workspace/${project.id}/overview`}
                     className="inline-flex items-center justify-center px-6 py-2.5 bg-maroon text-white font-semibold text-sm rounded-lg hover:bg-maroon/90 transition-colors whitespace-nowrap shadow-sm"
                   >
-                    Attention Center <ArrowRight size={16} className="ml-2" />
+                    {project.owner?.id === user?.id ? 'Attention Center' : 'View Project'} <ArrowRight size={16} className="ml-2" />
                   </Link>
                 </div>
               </div>

@@ -212,7 +212,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
             <button
               onClick={() => {
                 onClose();
-                navigate(`/founder/projects/${project.id}/overview`);
+                navigate(`/workspace/${project.id}/overview`);
               }}
               title="Manage Project"
               aria-label="Manage Project"
