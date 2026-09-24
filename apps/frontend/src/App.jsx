@@ -5,6 +5,7 @@ import Sidebar from './components/layout/Sidebar.jsx'
 import MobileBottomNav from './components/layout/MobileBottomNav.jsx'
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
 import FounderGuard from './components/auth/FounderGuard.jsx'
+import WorkspaceGuard from './components/auth/WorkspaceGuard.jsx'
 import Landing from './pages/Landing.jsx'
 import Auth from './pages/Auth.jsx'
 import Onboarding from './pages/Onboarding.jsx'
@@ -36,7 +37,7 @@ const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
 
 export default function App() {
   const location = useLocation()
-  const isFounderWorkspace = location.pathname.startsWith('/founder')
+  const isFounderWorkspace = location.pathname.startsWith('/founder') || location.pathname.startsWith('/workspace')
   const hasGlobalNavbar = !NO_SHELL_PATHS.includes(location.pathname)
   const hasGlobalSidebar = hasGlobalNavbar && !isFounderWorkspace
 
@@ -72,14 +73,14 @@ export default function App() {
             <Route path="/applications" element={<ProtectedRoute><Applications /></ProtectedRoute>} />
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
             <Route path="/founder" element={<FounderGuard><FounderHub /></FounderGuard>} />
-            <Route path="/founder/projects/:id/overview" element={<FounderGuard><ProjectOverview /></FounderGuard>} />
-            <Route path="/founder/projects/:id/tasks" element={<FounderGuard><ProjectTasks /></FounderGuard>} />
-            <Route path="/founder/projects/:id/milestones" element={<FounderGuard><ProjectMilestones /></FounderGuard>} />
-            <Route path="/founder/projects/:id/team" element={<FounderGuard><ProjectTeam /></FounderGuard>} />
-            <Route path="/founder/projects/:id/hiring" element={<FounderGuard><ProjectHiring /></FounderGuard>} />
-            <Route path="/founder/projects/:id/applications" element={<FounderGuard><ProjectApplications /></FounderGuard>} />
-            <Route path="/founder/projects/:id/settings" element={<FounderGuard><ProjectSettings /></FounderGuard>} />
-            <Route path="/founder/projects/:id/analytics" element={<FounderGuard><ProjectAnalytics /></FounderGuard>} />
+            <Route path="/workspace/:id/overview" element={<WorkspaceGuard><ProjectOverview /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/tasks" element={<WorkspaceGuard><ProjectTasks /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/milestones" element={<WorkspaceGuard><ProjectMilestones /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/team" element={<WorkspaceGuard><ProjectTeam /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/hiring" element={<WorkspaceGuard><ProjectHiring /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/applications" element={<WorkspaceGuard><ProjectApplications /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/settings" element={<WorkspaceGuard><ProjectSettings /></WorkspaceGuard>} />
+            <Route path="/workspace/:id/analytics" element={<WorkspaceGuard><ProjectAnalytics /></WorkspaceGuard>} />
           </Routes>
         </main>
       </div>
