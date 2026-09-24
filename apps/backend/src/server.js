@@ -141,6 +141,20 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
+// Public platform stats — no auth required, used by Landing page
+app.get('/api/platform-stats', async (req, res) => {
+  try {
+    const { Project, User } = require('./models')
+    const [openProjectsCount, totalUsersCount] = await Promise.all([
+      Project.count({ where: { status: 'OPEN' } }),
+      User.count(),
+    ])
+    res.json({ openProjects: openProjectsCount, totalUsers: totalUsersCount })
+  } catch (err) {
+    res.status(500).json({ detail: 'Failed to fetch platform stats.' })
+  }
+})
+
 app.use((req, res) => {
   res.status(404).json({ detail: 'Route not found.' })
 })

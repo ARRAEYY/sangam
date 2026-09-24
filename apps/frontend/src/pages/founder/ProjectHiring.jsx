@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { Plus, MoreHorizontal, Pencil, Trash2, X, Check, AlertTriangle, ChevronDown, Minus, Users } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 
 const ROLE_TYPES = ['Volunteer', 'Part-time', 'Full-time', 'Internship']
 const STATUS_OPTIONS = ['Open', 'Closed']
@@ -342,7 +342,7 @@ export default function ProjectHiring() {
   const openCount       = hiringRoles.filter(r => r.status === 'Open').length
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
 
         {/* Header */}
@@ -477,6 +477,6 @@ export default function ProjectHiring() {
         <DeleteConfirm role={modal.role} onConfirm={handleDelete} onClose={closeModal} />,
         document.body
       )}
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

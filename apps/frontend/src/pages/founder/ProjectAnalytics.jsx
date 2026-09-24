@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Users, CheckSquare, Flag, FileText, Calendar, TrendingUp } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectAnalytics() {
@@ -30,19 +30,19 @@ export default function ProjectAnalytics() {
 
   if (loading) {
     return (
-      <FounderLayout>
+      <WorkspaceLayout>
         <div className="flex flex-col items-center justify-center py-20 text-slate-500">
           <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
           <p className="font-medium">Calculating Project Analytics...</p>
         </div>
-      </FounderLayout>
+      </WorkspaceLayout>
     )
   }
 
   const { stats = {}, completionTrend = [], roleDistribution = [] } = analytics || {}
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Top Header */}
         <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -176,6 +176,6 @@ export default function ProjectAnalytics() {
           </div>
         </section>
       </div>
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

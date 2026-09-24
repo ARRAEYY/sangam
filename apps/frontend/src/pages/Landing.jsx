@@ -14,6 +14,7 @@ import {
   X
 } from "lucide-react";
 import { SangamEmblem } from "../components/ui/SangamLogo.jsx";
+import { api } from "../services/api.js";
 import "./Landing.css";
 
 // Sample Data mimicking the DB for the landing showcase
@@ -112,6 +113,18 @@ export default function Landing() {
   const activeSection = useActiveSection();
   const [menuOpen, setMenuOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [platformStats, setPlatformStats] = useState({ openProjects: 0, totalUsers: 0 });
+
+  useEffect(() => {
+    api.getPlatformStats()
+      .then((data) => {
+        if (data && typeof data.openProjects === 'number') {
+          setPlatformStats({ openProjects: data.openProjects, totalUsers: data.totalUsers });
+        }
+      })
+      .catch(() => { /* silently fall back to defaults */ });
+  }, []);
+
   const steps = [
     { title: "Discover", copy: "See the projects, skills, and open calls already taking shape." },
     { title: "Connect", copy: "Find the person whose point of view unlocks your next step." },
@@ -150,9 +163,9 @@ export default function Landing() {
 
                 {/* Dynamic Stats UI */}
                 <div className="flex flex-wrap items-center gap-6 mt-8 -mb-2">
-                  <AnimatedStat end={5} suffix="+" label="Projects Live" icon={BriefcaseBusiness} colorClass="bg-[#f4e4e4]" textClass="text-maroon" />
+                  <AnimatedStat end={platformStats.openProjects} suffix="" label="Projects Live" icon={BriefcaseBusiness} colorClass="bg-[#f4e4e4]" textClass="text-maroon" />
                   <div className="hidden sm:block w-px h-14 bg-slate-200" />
-                  <AnimatedStat end={100} suffix="+" label="Learners" icon={UsersRound} colorClass="bg-[#e8eef0]" textClass="text-[#345b73]" />
+                  <AnimatedStat end={platformStats.totalUsers} suffix="" label="Learners" icon={UsersRound} colorClass="bg-[#e8eef0]" textClass="text-[#345b73]" />
                 </div>
 
                 <div className="hero-actions">
