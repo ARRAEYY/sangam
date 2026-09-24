@@ -75,44 +75,7 @@ function ScrollProgressIndicator({ activeSection, totalSections }) {
   );
 }
 
-// Interactive SVG Network Visual for the Hero
-function NetworkVisual() {
-  const [active, setActive] = useState("people");
-  const nodes = [
-    { id: "people", label: "People", x: 19, y: 28, tone: "node-maroon" },
-    { id: "projects", label: "Projects", x: 63, y: 16, tone: "node-blue" },
-    { id: "skills", label: "Skills", x: 80, y: 55, tone: "node-sand" },
-    { id: "opportunities", label: "Open calls", x: 45, y: 78, tone: "node-rose" },
-    { id: "you", label: "You", x: 47, y: 43, tone: "node-you" },
-  ];
 
-  return (
-    <div className="network-visual" aria-label="Interactive map of people, projects, skills, and opportunities">
-      <div className="network-grid" />
-      {nodes.map((node) => (
-        <button
-          key={node.id}
-          className={`network-node ${node.tone} ${active === node.id ? "is-active" : ""}`}
-          style={{ left: `${node.x}%`, top: `${node.y}%` }}
-          onMouseEnter={() => setActive(node.id)}
-          onFocus={() => setActive(node.id)}
-          onClick={() => setActive(node.id)}
-        >
-          <span className="network-node-dot" />
-          <span>{node.label}</span>
-        </button>
-      ))}
-      <svg className="network-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M19 28 L47 43 L63 16 M47 43 L80 55 M47 43 L45 78" />
-        <path d="M19 28 L63 16 M63 16 L80 55 M80 55 L45 78" />
-      </svg>
-      <div className="network-caption">
-        <strong>{active === "you" ? "Your next move starts here." : `${nodes.find((node) => node.id === active)?.label} connect the dots.`}</strong>
-        <span>Hover to trace the signal.</span>
-      </div>
-    </div>
-  );
-}
 
 function AnimatedStat({ end, suffix, label, icon: Icon, colorClass, textClass }) {
   const [count, setCount] = useState(0);
@@ -198,10 +161,7 @@ export default function Landing() {
                 </div>
               </div>
               <div className="hero-network reveal-element delay-2">
-                <NetworkVisual />
-              </div>
-              <div className="hero-scroll reveal-element delay-3">
-                <ArrowDownRight size={15} /> Scroll to find your people
+                <img src="/hero-image.png" alt="People building together" className="w-full h-full object-contain" />
               </div>
             </div>
 
