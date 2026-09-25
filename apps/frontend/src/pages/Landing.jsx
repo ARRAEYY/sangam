@@ -133,9 +133,9 @@ export default function Landing() {
     <div className="landing-site relative">
       {/* Background Grid Lines */}
       <div className="fixed inset-0 pointer-events-none flex justify-center z-0 overflow-hidden">
-        <div className="w-[min(1400px,calc(100%-8vw))] h-full relative border-l border-r border-dashed border-black/20">
-          <div className="absolute top-[67px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed border-black/20"></div>
-          <div className="absolute top-[113px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed border-black/20"></div>
+        <div className={`w-[min(1400px,calc(100%-8vw))] h-full relative border-l border-r border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}>
+          <div className={`absolute top-[67px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
+          <div className={`absolute top-[113px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
         </div>
       </div>
 
@@ -373,37 +373,37 @@ export default function Landing() {
               </div>
               
               <div className="reveal-element delay-2 flex justify-center md:justify-end">
-                <div className="w-full max-w-[460px] bg-[#ece2d8] rounded-[24px] border-[3px] border-[#3b82f6] p-6 shadow-sm">
+                <div className="w-full max-w-[460px] bg-[#ebe0d5] rounded-[20px] border-[3px] border-[#3b82f6] p-6 shadow-sm">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-[13px] font-medium text-maroon">Recent movements</span>
-                    <span className="text-[12px] font-medium text-maroon flex items-center gap-1.5">
-                      Updated moments ago <span className="w-2 h-2 rounded-full bg-[#84cc16]"></span>
+                    <span className="text-[14px] font-medium text-[#7a2232]">Recent movements</span>
+                    <span className="text-[12px] font-medium text-[#7a2232] flex items-center gap-1.5">
+                      Updated moments ago <span className="w-2 h-2 rounded-full bg-[#83cc15]"></span>
                     </span>
                   </div>
                   
                   <div className="flex flex-col gap-4 mb-6">
                     {[1, 2, 3, 4, 5].map((_, i) => (
                       <div key={i} className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#f4d1ba] text-[#d45831] flex items-center justify-center font-bold text-[14px] flex-shrink-0">
+                        <div className="w-11 h-11 rounded-full bg-[#f6d4b9] text-[#c74e3a] flex items-center justify-center font-bold text-[15px] flex-shrink-0">
                           AR
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[14px] font-bold text-maroon truncate">Ishan Chetwani</div>
-                          <div className="text-[12px] text-maroon/80 truncate">B-Tech CS & AI · Class of 2029</div>
+                          <div className="text-[15px] font-bold text-[#7a2232] truncate leading-snug">Ishan Chetwani</div>
+                          <div className="text-[13px] text-[#4d161f] truncate mt-0.5">B-Tech CS & AI · Class of 2029</div>
                         </div>
-                        <div className="text-[12px] font-medium text-maroon whitespace-nowrap">
+                        <div className="text-[13px] font-medium text-[#7a2232] whitespace-nowrap">
                           12 mins
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="pt-4 border-t border-dashed border-black/15 flex justify-between items-center">
-                    <div className="bg-[#e4cbb5] text-[#b83b4b] text-[12px] font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
-                      <UsersRound size={14} /> 30 students in your network
+                  <div className="pt-5 border-t border-dashed border-black/10 flex justify-between items-center">
+                    <div className="bg-[#e2cebc] text-[#ad3a44] text-[13px] font-bold px-4 py-2 rounded-full flex items-center gap-2">
+                      <UsersRound size={15} /> 30 students in your network
                     </div>
-                    <Link to="/auth" className="bg-[#e4cbb5] text-[#b83b4b] text-[12px] font-bold px-4 py-1.5 rounded-full flex items-center gap-1 hover:bg-[#d4b9a1] transition-colors">
-                      Connect <ArrowUpRight size={14} />
+                    <Link to="/auth" className="bg-[#e2cebc] text-[#ad3a44] text-[13px] font-bold px-5 py-2 rounded-full flex items-center gap-1.5 hover:bg-[#d9c4b1] transition-colors">
+                      Connect <ArrowUpRight size={15} />
                     </Link>
                   </div>
                 </div>
