@@ -57,7 +57,7 @@
 .landing-nav { position: fixed; top: 67px; left: 50%; transform: translateX(-50%); z-index: 50; width: min(1400px, calc(100% - 8vw)); background: transparent; height: 46px; display: flex; align-items: center; justify-content: space-between; margin: 0 auto; }
 .landing-nav .public-brand { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-family: "Inter", sans-serif; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
 .landing-nav nav { display: flex; align-items: center; gap: 40px; color: var(--ink); font-family: "Inter", sans-serif; font-size: 16px; font-weight: 400; }
-.landing-nav nav a { transition: color 170ms ease, opacity 170ms ease; color: var(--ink); text-decoration: none; }
+.landing-nav nav a:not(.nav-cta) { transition: color 170ms ease, opacity 170ms ease; color: var(--ink); text-decoration: none; }
 .landing-nav nav a:hover { opacity: 0.7; }
 .landing-nav .nav-login { margin-left: 10px; color: var(--landing-ink); }
 .landing-nav .nav-cta { margin-left: -9px; }
