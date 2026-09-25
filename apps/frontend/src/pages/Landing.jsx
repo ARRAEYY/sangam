@@ -11,7 +11,8 @@ import {
   Menu,
   Sparkles,
   UsersRound,
-  X
+  X,
+  ArrowDown
 } from "lucide-react";
 import { SangamEmblem } from "../components/ui/SangamLogo.jsx";
 import { api } from "../services/api.js";
@@ -30,11 +31,7 @@ const talent = [
   { name: "Sana Iqbal", detail: "B.A. · Sociology", signal: "Asks better questions, then gets people in the room.", skills: ["Community", "Writing"], tone: "sand" },
 ];
 
-const opportunities = [
-  { icon: BriefcaseBusiness, type: "Internship", title: "Build the next campus experience", detail: "Design systems / 6 weeks", color: "rose" },
-  { icon: Sparkles, type: "Hackathon", title: "A better way to share a table", detail: "Product / This weekend", color: "blue" },
-  { icon: CalendarDays, type: "Event", title: "Open studio: first drafts", detail: "Community / Thursday, 6pm", color: "sand" },
-];
+
 
 // Reusable Scroll Hook for Animations
 function useActiveSection() {
@@ -133,80 +130,110 @@ export default function Landing() {
   ];
 
   return (
-    <div className="landing-site">
-      <header className="landing-nav">
-        <Link to="/" className="public-brand">
-          <SangamEmblem size={24} className="text-maroon" />
-        </Link>
-        <nav className={menuOpen ? "is-open" : ""}>
-          <a href="#about">About</a>
-          <a href="#explore">Explore</a>
-          <a href="#talent">Find talent</a>
-          <a href="#opportunities">Opportunities</a>
+    <div className="landing-site relative">
+      {/* Background Grid Lines */}
+      <div className="fixed inset-0 pointer-events-none flex justify-center z-0 overflow-hidden">
+        <div className="w-[min(1400px,calc(100%-8vw))] h-full relative border-l border-r border-dashed border-black/20">
+          <div className="absolute top-[67px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed border-black/20"></div>
+          <div className="absolute top-[113px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed border-black/20"></div>
+        </div>
+      </div>
 
-          <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
-        </nav>
-        <button className="landing-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
-          {menuOpen ? <X size={19} /> : <Menu size={19} />}
-        </button>
+      <header className="landing-nav z-50">
+        <div className="w-full h-full flex items-center justify-between">
+          <Link to="/" className="public-brand">
+            <SangamEmblem size={32} className="text-ink" />
+          </Link>
+          <nav className={menuOpen ? "is-open" : ""}>
+            <a href="#about">About</a>
+            <a href="#explore">Opportunities</a>
+            <a href="#talent">Find Talent</a>
+
+            <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
+          </nav>
+          <button className="landing-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
+            {menuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </div>
       </header>
 
       <main>
 
 
         {/* Hero Section */}
-        <section id="section-0" className="snap-section" data-index={0}>
-          <div className="snap-content-wrapper">
+        <section id="section-0" className="snap-section relative" data-index={0}>
+          <div className="snap-content-wrapper relative z-10">
             <div className="landing-hero">
               <div className="hero-copy reveal-element delay-1">
-                <h1>Where campus<br /><em>ideas find</em><br />their people.</h1>
+                <h1>Where campus<br /><em>ideas find</em> their<br />people.</h1>
 
-                {/* Dynamic Stats UI */}
-                <div className="flex flex-wrap items-center gap-6 mt-8 -mb-2">
-                  <AnimatedStat end={platformStats.openProjects} suffix="+" label="Projects Live" icon={BriefcaseBusiness} colorClass="bg-[#f4e4e4]" textClass="text-maroon" />
-                  <div className="hidden sm:block w-px h-14 bg-slate-200" />
-                  <AnimatedStat end={platformStats.totalUsers} suffix="+" label="Learners" icon={UsersRound} colorClass="bg-[#e8eef0]" textClass="text-[#345b73]" />
-                </div>
-
-                <div className="hero-actions">
+                <div className="hero-actions flex gap-4 mt-8">
                   <Link to="/explore" className="button button-primary">Explore Sangam <ArrowRight size={16} /></Link>
-                  <Link to="/talent" className="button button-quiet">Find your team <ArrowUpRight size={16} /></Link>
+                  <Link to="/talent" className="font-bold text-ink hover:text-maroon transition-colors text-sm flex items-center">Find your team</Link>
                 </div>
               </div>
               <div className="hero-network reveal-element delay-2">
                 <img src="/hero-image.png" alt="People building together" className="w-full h-full object-contain" />
               </div>
             </div>
+          </div>
 
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#8e9499] font-medium text-[13px] reveal-element delay-3 z-20">
+            Scroll to find your people
+            <ArrowDown size={20} />
           </div>
         </section>
 
         {/* The Problem Section */}
         <section id="section-1" className="snap-section" data-index={1}>
-          <div className="story-section" id="about">
-            <div className="story-heading reveal-element delay-1">
-              <h2>Good people are<br /><em>hard to find</em> in a<br />busy place.</h2>
-            </div>
-            <div className="story-grid">
-              <div className="problem-list reveal-element delay-2">
-                <div className="problem-row">
-                  <span>01</span><strong>Ideas stay in notebooks.</strong>
-                  <p>Because there is no obvious place to share the half-formed version.</p>
-                </div>
-                <div className="problem-row">
-                  <span>02</span><strong>Talent stays invisible.</strong>
-                  <p>Because a timetable can’t show you who thinks in the same direction.</p>
-                </div>
-                <div className="problem-row">
-                  <span>03</span><strong>Opportunities pass by.</strong>
-                  <p>Because the best campus moments move faster than a noticeboard.</p>
+          <div className="story-section w-full" id="about">
+            <div className="grid grid-cols-1 md:grid-cols-[0.8fr_1.2fr] gap-8 md:gap-16 items-center w-full">
+              {/* Left Column */}
+              <div className="flex flex-col gap-5 reveal-element delay-2 mt-4 md:mt-8">
+                <img src="/about-illustration.png" alt="Video call illustration" className="w-full max-w-[380px] h-auto object-contain drop-shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = "/hero-image.png"; }} />
+                <div className="bg-[#e9ded4] rounded-2xl p-6 max-w-[320px]">
+                  <h3 className="font-display text-[22px] text-maroon font-semibold leading-[1.15] mb-2">Make the invisible<br/>easy to find.</h3>
+                  <p className="text-[#667182] text-[12px] leading-[1.6] mb-4">One calm layer for campus energy where people, projects and possibilities can meet before they become obvious.</p>
+                  <Link to="/auth" className="inline-flex items-center gap-2 text-ink font-medium text-[12px] hover:text-maroon transition-colors">Join the network <ArrowRight size={14} /></Link>
                 </div>
               </div>
-              <div className="solution-card reveal-element delay-3">
-                <div className="solution-mark"><Link2 size={22} /></div>
-                <h3 className="font-display text-[40px] text-white my-4 leading-none">Make the invisible<br /><em className="text-[#f0c7c8] not-italic">easy to find.</em></h3>
-                <p className="text-white/70 text-[12px]">One calm layer for campus energy—where people, projects, and possibilities can meet before they become obvious.</p>
-                <Link to="/auth" className="inline-flex items-center gap-2 mt-4 text-white font-bold text-[11px]">Join the network <ArrowUpRight size={15} /></Link>
+
+              {/* Right Column */}
+              <div className="flex flex-col items-end text-right reveal-element delay-1">
+                <h2 className="font-display font-normal text-[clamp(32px,4vw,60px)] leading-[1.1] mb-8 text-ink">
+                  Good people are<br />
+                  <span className="text-maroon">hard to find</span> in a<br />
+                  busy place.
+                </h2>
+
+                <div className="w-full max-w-[500px] flex flex-col">
+                  {/* Item 1 */}
+                  <div className="py-5 border-b border-dashed border-black/15">
+                    <div className="flex justify-end items-center gap-3 mb-1">
+                      <h3 className="font-sans font-medium text-[24px] text-ink">Ideas Stay in notebooks.</h3>
+                      <span className="font-display font-bold text-[24px] text-maroon">01</span>
+                    </div>
+                    <p className="text-[#667182] text-[14px] leading-relaxed pr-10">Because there is no obvious place<br/>to share the half-formed version.</p>
+                  </div>
+
+                  {/* Item 2 */}
+                  <div className="py-5 border-b border-dashed border-black/15">
+                    <div className="flex justify-end items-center gap-3 mb-1">
+                      <h3 className="font-sans font-medium text-[24px] text-ink">Talent stays invisible.</h3>
+                      <span className="font-display font-bold text-[24px] text-maroon">02</span>
+                    </div>
+                    <p className="text-[#667182] text-[14px] leading-relaxed pr-10">Because a timetable can't show<br/>thinks in the same direction.</p>
+                  </div>
+
+                  {/* Item 3 */}
+                  <div className="py-5">
+                    <div className="flex justify-end items-center gap-3 mb-1">
+                      <h3 className="font-sans font-medium text-[24px] text-ink">Opportunities pass by.</h3>
+                      <span className="font-display font-bold text-[24px] text-maroon">03</span>
+                    </div>
+                    <p className="text-[#667182] text-[14px] leading-relaxed pr-10">Because the best campus moments<br/>move faster than a noticeboard.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -214,34 +241,38 @@ export default function Landing() {
 
         {/* How it Works Section */}
         <section id="section-2" className="snap-section" data-index={2}>
-          <div className="how-section">
-            <div className="how-layout">
+          <div className="how-section w-full max-w-[1200px] mx-auto px-4 md:px-0">
+            {/* Top Row: Heading & Illustration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-8">
               <div className="reveal-element delay-1">
-                <h2>Make the next<br /><em>step visible.</em></h2>
-                <p>There is no perfect starting point. Sangam gives every kind of momentum somewhere to go.</p>
+                <h2 className="font-display font-normal text-[clamp(32px,4vw,60px)] leading-[1.1] mb-4 text-ink">
+                  Make the<br />
+                  <span className="text-maroon">next step</span><br />
+                  visible.
+                </h2>
+                <p className="text-[#667182] text-[14px] md:text-[15px] leading-relaxed max-w-sm">
+                  There is no perfect starting point. Sangam gives every kind of momentum somewhere to go.
+                </p>
               </div>
-              <div className="step-system reveal-element delay-2">
-                <div className="step-tabs">
-                  {steps.map((item, index) => (
-                    <button
-                      key={item.title}
-                      className={step === index ? "is-active" : ""}
-                      onClick={() => setStep(index)}
-                    >
-                      <span>0{index + 1}</span>{item.title}
-                    </button>
-                  ))}
-                </div>
-                <div className="step-panel">
-                  <span className="step-number">0{step + 1}</span>
-                  <div>
-                    <h3>{steps[step].title}<span>/</span></h3>
-                    <p>{steps[step].copy}</p>
+              <div className="reveal-element delay-2 flex justify-center md:justify-end">
+                <img src="/third.png" alt="People connecting concepts" className="w-full max-w-[380px] h-auto object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "/hero-image.png"; }} />
+              </div>
+            </div>
+
+            {/* Bottom Row: Steps */}
+            <div className="border-t border-dashed border-black/15 pt-12 reveal-element delay-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {steps.map((item, index) => (
+                  <div key={item.title} className="flex flex-col">
+                    <h3 className="font-sans font-medium text-[22px] md:text-[24px] text-ink mb-3 flex gap-2 items-baseline">
+                      <span className="font-bold text-[20px] md:text-[22px]">0{index + 1}</span>
+                      {item.title}
+                    </h3>
+                    <p className="text-[#667182] text-[13px] md:text-[14px] leading-relaxed">
+                      {item.copy}
+                    </p>
                   </div>
-                  <button className="step-arrow" onClick={() => setStep((step + 1) % steps.length)}>
-                    <ChevronRight size={21} />
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -249,12 +280,15 @@ export default function Landing() {
 
         {/* Project Showcase Section */}
         <section id="section-3" className="snap-section" data-index={3}>
-          <div className="showcase-section" id="explore">
-            <div className="section-heading-row reveal-element delay-1">
-              <div>
-                <h2>Something worth<br /><em>joining.</em></h2>
+          <div className="showcase-section w-full max-w-[1200px] mx-auto px-4 md:px-0" id="explore">
+            <div className="flex flex-col md:flex-row md:items-end justify-between pb-8 reveal-element delay-1 border-b border-dashed border-black/15 mb-10">
+              <h2 className="font-display font-normal text-[clamp(32px,4vw,60px)] leading-[1.1] text-ink">
+                Something worth<br />
+                <span className="text-maroon">joining.</span>
+              </h2>
+              <div className="mt-6 md:mt-0 mb-2 md:mb-4">
+                <Link to="/explore" className="text-link">View all projects <ArrowUpRight size={15} /></Link>
               </div>
-              <Link to="/explore" className="text-link">View all projects <ArrowUpRight size={15} /></Link>
             </div>
             <div className="project-showcase">
               {projects.map((project, index) => (
@@ -285,12 +319,21 @@ export default function Landing() {
 
         {/* Talent Showcase Section */}
         <section id="section-4" className="snap-section" data-index={4}>
-          <div className="talent-section" id="talent">
-            <div className="section-heading-row reveal-element delay-1">
+          <div className="talent-section w-full max-w-[1200px] mx-auto px-4 md:px-0" id="talent">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6 reveal-element delay-1 border-b border-dashed border-black/15 mb-8 items-end">
               <div>
-                <h2>The missing piece<br /><em>might be closer.</em></h2>
+                <h2 className="font-display font-normal text-[clamp(32px,4vw,60px)] leading-[1.15] text-ink">
+                  The missing<br />
+                  piece <span className="text-maroon">might</span><br />
+                  <span className="text-maroon">be closer.</span>
+                </h2>
               </div>
-              <Link to="/talent" className="text-link">Meet the network <ArrowUpRight size={15} /></Link>
+              <div className="flex flex-col items-end gap-4 justify-end">
+                <img src="/fourth.png" alt="People at whiteboard" className="w-full max-w-[380px] h-auto object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "/hero-image.png"; }} />
+                <div className="mb-2">
+                  <Link to="/talent" className="text-link">Meet the network <ArrowUpRight size={15} /></Link>
+                </div>
+              </div>
             </div>
             <div className="talent-showcase">
               {talent.map((person) => (
@@ -313,109 +356,90 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Opportunities */}
-        <section id="section-5" className="snap-section" data-index={5}>
-          <div className="showcase-section" id="opportunities">
-            <div className="opportunity-section reveal-element delay-1">
-              <div className="opportunity-art">
-                <div className="orbit orbit-c"></div>
-                <div className="orbit orbit-b"></div>
-                <div className="orbit orbit-a"></div>
-                <div className="orbit-core"><Sparkles size={24} /></div>
-                <div className="orbit-label label-a">Internships</div>
-                <div className="orbit-label label-b">Hackathons</div>
-                <div className="orbit-label label-c">Events</div>
-              </div>
-              <div>
-                <div className="opportunity-copy">
-                  <h2>Not just<br /><em>projects.</em></h2>
-                  <p>Somewhere between an invitation and a first step, the next opportunity is waiting.</p>
-                  <Link to="/explore" className="button button-primary">See open calls <ArrowRight size={16} /></Link>
-                </div>
-                <div className="opportunity-list">
-                  {opportunities.map((o, i) => {
-                    const Icon = o.icon;
-                    return (
-                      <Link to="/auth" key={i} className="opportunity-row">
-                        <div className={`opp-icon ${o.color}`}><Icon size={20} /></div>
-                        <span>
-                          <small>{o.type}</small>
-                          <strong>{o.title}</strong>
-                          <em>{o.detail}</em>
-                        </span>
-                        <ArrowUpRight size={16} className="text-ink-soft" />
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Community */}
-        <section id="section-6" className="snap-section" data-index={6}>
-          <div className="community-section">
-            <div className="community-layout reveal-element delay-1">
-              <div>
-                <h2>A campus<br />feels<br /><em>different</em><br />when<br />you can see<br />it.</h2>
-                <p>Every connection gives the place a little more shape. Follow the movement without adding to the noise.</p>
-                <Link to="/auth" className="text-link mt-4">Add your signal <ArrowUpRight size={14} /></Link>
+        <section id="section-5" className="snap-section" data-index={5}>
+          <div className="community-section w-full max-w-[1200px] mx-auto px-4 md:px-0">
+            <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-8 md:gap-16 items-center">
+              <div className="reveal-element delay-1">
+                <h2 className="font-display font-normal text-[clamp(40px,5vw,72px)] leading-[1.1] mb-6 text-ink">
+                  A campus<br/>
+                  <span className="text-maroon">feels different</span><br/>
+                  when you can<br/>
+                  see it.
+                </h2>
+                <p className="text-[#667182] text-[16px] leading-relaxed max-w-md">
+                  Every network gives the place a little more shape. Follow the movement without adding to the noise.
+                </p>
               </div>
-              <div className="activity-board">
-                <div className="activity-head">
-                  Recent movement <span>Updated moments ago <i></i></span>
+              
+              <div className="reveal-element delay-2 flex justify-center md:justify-end">
+                <div className="w-full max-w-[460px] bg-[#ece2d8] rounded-[24px] border-[3px] border-[#3b82f6] p-6 shadow-sm">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-[13px] font-medium text-maroon">Recent movements</span>
+                    <span className="text-[12px] font-medium text-maroon flex items-center gap-1.5">
+                      Updated moments ago <span className="w-2 h-2 rounded-full bg-[#84cc16]"></span>
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-4 mb-6">
+                    {[1, 2, 3, 4, 5].map((_, i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#f4d1ba] text-[#d45831] flex items-center justify-center font-bold text-[14px] flex-shrink-0">
+                          AR
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[14px] font-bold text-maroon truncate">Ishan Chetwani</div>
+                          <div className="text-[12px] text-maroon/80 truncate">B-Tech CS & AI · Class of 2029</div>
+                        </div>
+                        <div className="text-[12px] font-medium text-maroon whitespace-nowrap">
+                          12 mins
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-dashed border-black/15 flex justify-between items-center">
+                    <div className="bg-[#e4cbb5] text-[#b83b4b] text-[12px] font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
+                      <UsersRound size={14} /> 30 students in your network
+                    </div>
+                    <Link to="/auth" className="bg-[#e4cbb5] text-[#b83b4b] text-[12px] font-bold px-4 py-1.5 rounded-full flex items-center gap-1 hover:bg-[#d4b9a1] transition-colors">
+                      Connect <ArrowUpRight size={14} />
+                    </Link>
+                  </div>
                 </div>
-                <div className="activity-list">
-                  <div className="activity-row">
-                    <div className="activity-avatar rose">N</div>
-                    <span><strong>Neel joined</strong><small>The local food atlas</small></span>
-                    <time>12 min</time>
-                  </div>
-                  <div className="activity-row">
-                    <div className="activity-avatar blue">A</div>
-                    <span><strong>Alisha saved</strong><small>Sangam studio sessions</small></span>
-                    <time>1 hr</time>
-                  </div>
-                  <div className="activity-row">
-                    <div className="activity-avatar sand"><UsersRound size={16} /></div>
-                    <span><strong>Your profile appeared</strong><small>in 8 searches this week</small></span>
-                    <time>Yesterday</time>
-                  </div>
-                </div>
-                <Link to="/auth" className="activity-footer">
-                  <span className="flex items-center gap-2"><UsersRound size={14} /> 28 students in your orbit</span>
-                  <ArrowUpRight size={16} />
-                </Link>
               </div>
             </div>
           </div>
         </section>
 
         {/* Final CTA */}
-        <section id="section-7" className="snap-section" data-index={7}>
-          <div className="snap-content-wrapper w-full h-full flex flex-col justify-end">
-            <div className="final-cta bg-[#7f1d3b] text-center text-white py-24 px-8 mt-auto relative overflow-hidden w-full flex-1 flex flex-col justify-center">
+        <section id="section-6" className="snap-section relative flex flex-col justify-between overflow-hidden !p-0" data-index={6}>
+          {/* Background Gradient */}
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#e28e6e] via-[#8c2a3e] to-[#3a0d15]"></div>
+          <div className="absolute inset-0 z-0 bg-black/5 backdrop-blur-[60px]"></div>
 
-              <div className="relative z-10 reveal-element delay-1">
-                <h2 className="font-display text-[clamp(48px,6vw,84px)] my-6 leading-none">Your next team<br />is already <em className="text-[#f2c7c9] not-italic">on campus.</em></h2>
-                <Link to="/auth" className="button bg-white text-[#7f1d3b] hover:bg-[#f7ece8]">Join Sangam <ArrowRight size={16} /></Link>
-              </div>
-
-            </div>
-            <footer className="landing-footer flex items-center justify-between py-8 px-[4vw] text-[10px] text-[#8a9198] w-full">
-              <Link to="/" className="public-brand font-display text-[20px] text-ink flex items-center gap-2">
-                <SangamEmblem size={20} className="text-maroon" />
-              </Link>
-
-              <div className="flex gap-4 font-bold text-ink">
-                <Link to="/explore">Explore</Link>
-                <Link to="/talent">Talent</Link>
-                <Link to="/auth">Join</Link>
-                <a href="#about">About</a>
-              </div>
-            </footer>
+          <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full px-4 pt-24">
+            <h2 className="font-display font-normal text-[clamp(40px,5vw,72px)] text-white text-center leading-[1.15] mb-8">
+              Your next team<br />
+              is already on campus.
+            </h2>
+            <Link to="/auth" className="inline-flex items-center gap-2 px-8 py-3 rounded-full border border-white/40 bg-white/10 hover:bg-white/20 text-white font-medium transition-all backdrop-blur-md text-[16px]">
+              Join us now <ArrowUpRight size={18} />
+            </Link>
           </div>
+          
+          <footer className="w-full relative z-10 border-t border-b border-dashed border-white/30 py-6 mb-8 mt-auto px-4 md:px-12">
+            <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+              <Link to="/" className="footer-logo flex items-center gap-2 text-white hover:opacity-80 transition-opacity">
+                <SangamEmblem size={24} className="text-white" />
+              </Link>
+              <div className="flex items-center gap-6 md:gap-8 text-white/90 text-[14px] font-medium">
+                <a href="#talent" className="hover:text-white transition-colors">Find Talent</a>
+                <a href="#explore" className="hover:text-white transition-colors">Opportunities</a>
+                <a href="#about" className="hover:text-white transition-colors">About</a>
+              </div>
+            </div>
+          </footer>
         </section>
       </main>
     </div>
