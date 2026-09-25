@@ -87,12 +87,12 @@ export default function Connections() {
   }
 
   return (
-    <div className="max-w-4xl ml-12 pb-16 pt-2">
+    <div className="w-full max-w-4xl mx-auto md:ml-12 px-4 md:px-0 pb-16 pt-2">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl ml-5  font-bold text-slate-900">Find Your People</h1>
-          <p className="text-sm text-slate-500 mt-0.5 ml-5">
+          <h1 className="font-display text-2xl font-bold text-slate-900">Find Your People</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
             Connect, collaborate, and build together.
           </p>
         </div>
@@ -101,10 +101,10 @@ export default function Connections() {
       {error && <div className="mb-6 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl px-2">
+      <div className="flex overflow-x-auto hide-scrollbar border-b border-slate-200 mb-6 bg-white rounded-t-xl px-2">
         <button
           onClick={() => setActiveTab('connections')}
-          className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'connections'
               ? 'border-brand-700 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -114,7 +114,7 @@ export default function Connections() {
         </button>
         <button
           onClick={() => setActiveTab('invitations')}
-          className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'invitations'
               ? 'border-brand-700 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -124,7 +124,7 @@ export default function Connections() {
         </button>
         <button
           onClick={() => setActiveTab('sent')}
-          className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'sent'
               ? 'border-brand-700 text-brand-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -192,7 +192,7 @@ export default function Connections() {
 
                     return (
                       <div key={c.connection_id} className="p-4 sm:p-5 flex items-start justify-between gap-4 border-b-2 border-gray-300 hover:bg-slate-50/70 transition">
-                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0">
+                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0 flex-1">
                           {person.avatar_url ? (
                             <img
                               src={person.avatar_url}
@@ -280,7 +280,7 @@ export default function Connections() {
 
                     return (
                       <div key={req.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-gray-300 hover:bg-slate-50/70 transition">
-                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0">
+                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0 flex-1">
                           {person.avatar_url ? (
                             <img src={person.avatar_url} alt={person.full_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover shrink-0 border border-slate-200" />
                           ) : (
@@ -347,7 +347,7 @@ export default function Connections() {
 
                     return (
                       <div key={req.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-gray-300 hover:bg-slate-50/70 transition">
-                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0">
+                        <div className="flex items-start gap-3.5 sm:gap-4 min-w-0 flex-1">
                           {person.avatar_url ? (
                             <img src={person.avatar_url} alt={person.full_name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover shrink-0 border border-slate-200" />
                           ) : (
