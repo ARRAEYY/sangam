@@ -60,6 +60,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
         {
           model: Project,
           as: 'project',
+          attributes: { include: ['team_size_needed'] },
           include: [
             { model: Skill, as: 'required_skills' },
             { model: User, as: 'owner', attributes: ['id', 'full_name'] },
@@ -99,28 +100,43 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
       return res.status(400).json({ detail: 'Status must be ACCEPTED, REJECTED or WITHDRAWN.' })
     }
 
-    await application.update({ status })
-
-    // On acceptance, create a ProjectMember row
+    // On acceptance, atomically resolve status + membership (#32)
     if (status === 'ACCEPTED') {
       const role = String(req.body?.role || 'Team Member').trim()
       const roleCategory = req.body?.role_category || 'OTHER'
       const validCategories = ProjectMember.ROLE_CATEGORIES
 
-      // Avoid duplicates
-      const existingMember = await ProjectMember.findOne({
-        where: { project_id: application.project_id, user_id: application.user_id },
-      })
-      if (!existingMember) {
-        await ProjectMember.create({
-          project_id: application.project_id,
-          user_id: application.user_id,
-          role,
-          role_category: validCategories.includes(roleCategory) ? roleCategory : 'OTHER',
-          is_lead: false,
-          status: 'ACTIVE',
+      // Atomic acceptance: status update + member creation succeed or fail
+      // together; duplicates and over-cap accepts are rejected up front (#32)
+      await sequelize.transaction(async (t) => {
+        const existingMember = await ProjectMember.findOne({
+          where: { project_id: application.project_id, user_id: application.user_id },
+          transaction: t,
         })
-      }
+        if (!existingMember) {
+          const activeCount = await ProjectMember.count({
+            where: { project_id: application.project_id, status: 'ACTIVE' },
+            transaction: t,
+          })
+          const project = await Project.findByPk(application.project_id, { transaction: t })
+          if (project && activeCount >= project.team_size_needed) {
+            const err = new Error(
+              `This project already has ${activeCount} of ${project.team_size_needed} allowed active members.`
+            )
+            err.statusCode = 409
+            throw err
+          }
+          await ProjectMember.create({
+            project_id: application.project_id,
+            user_id: application.user_id,
+            role,
+            role_category: validCategories.includes(roleCategory) ? roleCategory : 'OTHER',
+            is_lead: false,
+            status: 'ACTIVE',
+          }, { transaction: t })
+        }
+        await application.update({ status }, { transaction: t })
+      })
 
       // Notify the member about their role assignment
       await createNotification({

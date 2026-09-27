@@ -9,6 +9,7 @@ import WorkspaceGuard from './components/auth/WorkspaceGuard.jsx'
 import Landing from './pages/Landing.jsx'
 import Auth from './pages/Auth.jsx'
 import Onboarding from './pages/Onboarding.jsx'
+import VerifyEmail from './pages/VerifyEmail.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import Explore from './pages/Explore.jsx'
 import ProjectDetail from './pages/ProjectDetail.jsx'
@@ -33,7 +34,7 @@ import ProjectAnalytics from './pages/founder/ProjectAnalytics.jsx'
 // Landing, Auth, and ResetPassword are full-bleed marketing/entry screens; every other
 // route lives inside the app shell with the floating icon sidebar on desktop
 // and bottom navigation on mobile. Founder workspace pages handle their own layout.
-const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/reset-password']
+const NO_SHELL_PATHS = ['/', '/auth', '/onboarding', '/verify-email', '/reset-password']
 
 export default function App() {
   const location = useLocation()
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
             <Route path="/talent" element={<ProtectedRoute><TalentSearch /></ProtectedRoute>} />

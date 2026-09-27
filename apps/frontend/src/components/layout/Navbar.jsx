@@ -18,41 +18,19 @@ import {
 import ExploreIcon from '../ui/ExploreIcon.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { api } from '../../services/api.js'
+import useUnreadCount from '../../hooks/useUnreadCount.js'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import { SangamEmblem } from '../ui/SangamLogo.jsx'
 
 export default function Navbar() {
-  const { user, token, logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const unreadCount = useUnreadCount(user)
   const profileMenuRef = useRef(null)
   const mobileMenuRef = useRef(null)
-
-  // Fetch unread count for mobile drawer
-  useEffect(() => {
-    if (!user || !token) {
-      setUnreadCount(0)
-      return
-    }
-
-    let cancelled = false
-    const fetchCount = async () => {
-      try {
-        const { count } = await api.unreadNotificationCount(token)
-        if (!cancelled) setUnreadCount(count || 0)
-      } catch { }
-    }
-
-    fetchCount()
-    const interval = setInterval(fetchCount, 15000)
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [user, token])
 
   // Close menus on click outside
   useEffect(() => {

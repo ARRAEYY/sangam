@@ -119,11 +119,14 @@ export default function Dashboard() {
   const [activity, setActivity] = useState([])
   const [stats, setStats] = useState({ builds: 0, network: 0, profileSignal: 25 })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
 
     let isMounted = true
+    setError('')
 
     async function loadData() {
       try {
@@ -218,6 +221,7 @@ export default function Dashboard() {
 
       } catch (err) {
         console.error("Dashboard data load error:", err)
+        if (isMounted) setError("We couldn't load your dashboard right now. Please try again.")
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -225,10 +229,23 @@ export default function Dashboard() {
 
     loadData()
     return () => { isMounted = false }
-  }, [user])
+  }, [user, reloadKey])
 
   return (
     <div className="page-stack dashboard-page max-w-[1200px] mx-auto w-full">
+      {error && (
+        <section className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-5 text-center" role="alert">
+          <p className="text-sm text-red-700 mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey(k => k + 1)}
+            className="rounded-full bg-[#7f1d3b] px-5 py-2 text-[13px] font-bold text-white transition-colors hover:bg-[#5c132b]"
+          >
+            Try again
+          </button>
+        </section>
+      )}
+
       {/* 1. Hero Section */}
       <section className="dashboard-hero reveal-in">
         <div className="hero-copy">

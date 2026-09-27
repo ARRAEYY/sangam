@@ -10,7 +10,12 @@
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "migrate:status": "sequelize-cli db:migrate:status",
-    "test": "jest"
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/tests/env-setup.js"
+    ]
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

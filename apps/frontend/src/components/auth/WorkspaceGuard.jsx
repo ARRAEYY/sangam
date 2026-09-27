@@ -25,7 +25,8 @@ export default function WorkspaceGuard({ children }) {
 
       try {
         const context = await api.getProjectContext(projectId)
-        setHasAccess(context.is_lead || context.is_owner || context.is_member)
+        // Backend returns explicit flags now — plain members get access (#36)
+        setHasAccess(Boolean(context.is_lead || context.is_owner || context.is_member))
       } catch (err) {
         console.error('Error checking access status:', err)
         setHasAccess(false)

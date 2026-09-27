@@ -8,6 +8,17 @@ let sequelize
 
 if (process.env.DATABASE_URL) {
   const useSSL = process.env.DATABASE_SSL !== 'false'
+  // Certificates are validated by default (#48). Managed providers with
+  // non-standard CAs can set DATABASE_SSL_CA (PEM contents or file path) or
+  // explicitly opt out with DATABASE_SSL_REJECT_UNAUTHORIZED=false.
+  const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false'
+  const caConfig = process.env.DATABASE_SSL_CA
+    ? {
+        ca: process.env.DATABASE_SSL_CA.startsWith('-----BEGIN')
+          ? process.env.DATABASE_SSL_CA
+          : require('fs').readFileSync(process.env.DATABASE_SSL_CA, 'utf8'),
+      }
+    : {}
 
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
@@ -20,9 +31,8 @@ if (process.env.DATABASE_URL) {
       ? {
           ssl: {
             require: true,
-            // Managed Postgres providers (Neon, Supabase, Render, RDS) use
-            // certs that aren't in Node's default CA bundle.
-            rejectUnauthorized: false,
+            rejectUnauthorized,
+            ...caConfig,
           },
         }
       : {},

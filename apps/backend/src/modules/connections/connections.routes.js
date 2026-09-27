@@ -156,6 +156,10 @@ router.delete('/requests/:id', requireAuth, async (req, res, next) => {
     if (connectionRequest.status !== 'PENDING') {
       return res.status(409).json({ detail: 'This request has already been resolved.' })
     }
+    // Notifications referencing this request must go first — the FK has no
+    // ON DELETE rule in every environment (#34)
+    const { Notification } = require('../../models')
+    await Notification.destroy({ where: { connection_request_id: connectionRequest.id } })
     await connectionRequest.destroy()
     return res.status(204).send()
   } catch (error) {

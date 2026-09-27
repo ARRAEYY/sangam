@@ -24,30 +24,43 @@ router.get('/', requireAuth, ManageGuard, async (req, res, next) => {
       order: [['created_at', 'DESC']],
     });
 
-    // We need to calculate applicant counts and alert status for each project
-    const result = await Promise.all(projects.map(async (project) => {
-      const pendingApps = await Application.count({
-        where: { project_id: project.id, status: 'PENDING' },
-      });
+    // Batched aggregates — one query each instead of 4 per project (#45)
+    const projectIds = projects.map((p) => p.id);
+    const pendingApps = projectIds.length
+      ? await Application.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: 'PENDING' },
+          attributes: ['project_id', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const pendingMap = Object.fromEntries(pendingApps.map((r) => [r.project_id, parseInt(r.count, 10)]));
 
-      const hasBlockedTasks = await Milestone.findOne({
-        where: { project_id: project.id, status: 'BLOCKED' },
-      });
+    const alertTasks = projectIds.length
+      ? await Milestone.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: { [Op.in]: ['BLOCKED', 'READY_FOR_REVIEW'] } },
+          attributes: ['project_id'],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const alertSet = new Set(alertTasks.map((r) => r.project_id));
 
-      const hasReviewRequests = await Milestone.findOne({
-        where: { project_id: project.id, status: 'READY_FOR_REVIEW' },
-      });
+    const memberCounts = projectIds.length
+      ? await ProjectMember.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: 'ACTIVE' },
+          attributes: ['project_id', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const memberMap = Object.fromEntries(memberCounts.map((r) => [r.project_id, parseInt(r.count, 10)]));
 
-      const memberCount = await ProjectMember.count({
-        where: { project_id: project.id, status: 'ACTIVE' },
-      });
-
-      return {
-        ...serializeProject(project),
-        applicant_count: pendingApps,
-        member_count: memberCount,
-        has_alerts: !!(hasBlockedTasks || hasReviewRequests || pendingApps > 0),
-      };
+    const result = projects.map((project) => ({
+      ...serializeProject(project, { includeLogo: false }),
+      applicant_count: pendingMap[project.id] || 0,
+      member_count: memberMap[project.id] || 0,
+      has_alerts: alertSet.has(project.id) || (pendingMap[project.id] || 0) > 0,
     }));
 
     return res.json(result);
@@ -265,21 +278,37 @@ router.post('/applicants/:appId/action', requireAuth, checkProjectLead, async (r
     if (action === 'ACCEPT') {
       const roleTitle = String(role || 'Team Member').trim();
 
+      // Atomic acceptance with duplicate + team-size guards (#32)
       await sequelize.transaction(async (t) => {
-        // 1. Update Application status
+        const existingMember = await ProjectMember.findOne({
+          where: { project_id: projectId, user_id: application.user_id },
+          transaction: t,
+        });
+        if (!existingMember) {
+          const activeCount = await ProjectMember.count({
+            where: { project_id: projectId, status: 'ACTIVE' },
+            transaction: t,
+          });
+          const project = await Project.findByPk(projectId, { transaction: t });
+          if (project && activeCount >= project.team_size_needed) {
+            const err = new Error(
+              `This project already has ${activeCount} of ${project.team_size_needed} allowed active members.`
+            );
+            err.statusCode = 409;
+            throw err;
+          }
+          await ProjectMember.create({
+            project_id: projectId,
+            user_id: application.user_id,
+            role: roleTitle,
+            role_category: 'OTHER',
+            is_lead: false,
+            status: 'ACTIVE',
+          }, { transaction: t });
+        }
         await application.update({ status: 'ACCEPTED' }, { transaction: t });
 
-        // 2. Create ProjectMember
-        await ProjectMember.create({
-          project_id: projectId,
-          user_id: application.user_id,
-          role: roleTitle,
-          role_category: 'OTHER', // Default to OTHER, can be refined
-          is_lead: false,
-          status: 'ACTIVE',
-        }, { transaction: t });
-
-        // 3. Increment filled_count in Project.open_roles
+        // Increment filled_count in Project.open_roles
         const project = await Project.findByPk(projectId, { transaction: t });
         if (project && project.open_roles) {
           const roles = project.open_roles.map(r => ({ ...r }));

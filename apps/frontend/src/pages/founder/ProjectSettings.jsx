@@ -69,11 +69,25 @@ export default function ProjectSettings() {
         alert('File is too large. Please select an image under 2MB.')
         return
       }
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoUrl(reader.result)
+      // Downscale client-side so no multi-hundred-KB base64 blob is persisted
+      // and re-served in project list responses (#43)
+      const img = new Image()
+      const objectUrl = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl)
+        const maxDim = 512
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        setLogoUrl(canvas.toDataURL('image/jpeg', 0.82))
       }
-      reader.readAsDataURL(file)
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl)
+        alert('Could not read that image. Please try another file.')
+      }
+      img.src = objectUrl
     }
   }
 
@@ -97,12 +111,13 @@ export default function ProjectSettings() {
         setLoading(true)
         const project = await api.getProject(id).catch(() => null)
         if (project) {
-          setProjectName(project.title || 'AI for Social Good')
-          setCategory(project.category || 'Technology')
-          setProjectUrl(project.project_url || 'sangam.dev/ai-for-social-good')
+          setProjectName(project.title || '')
+          setCategory(project.category || 'Other')
+          setProjectUrl(project.project_url || '')
           setVisibility(project.visibility || 'Public')
-          setDescription(project.description || 'Building AI solutions for a better, more inclusive world.')
+          setDescription(project.description || '')
           setLogoUrl(project.logo_url || '')
+          setGeneralRequirements(project.hiring_requirements || '')
         }
       } catch (err) {
         console.error('Failed to load project settings:', err)

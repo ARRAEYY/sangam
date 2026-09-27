@@ -3,7 +3,9 @@ services:
     name: campus-log-api
     runtime: node
     plan: free
-    rootDir: backend
+    # Monorepo layout: the backend lives in apps/backend (rootDir: backend is
+    # stale and no longer contains source — issue #49).
+    rootDir: apps/backend
     buildCommand: npm install && npm run migrate
     startCommand: npm start
     healthCheckPath: /api/health
@@ -15,8 +17,17 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRE_MINUTES
-        value: 10080
+        # Short-lived access tokens; sessions renew silently via refresh (#50)
+        value: 60
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
         sync: false

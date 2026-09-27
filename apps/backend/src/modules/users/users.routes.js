@@ -13,6 +13,9 @@ const {
   ConnectionRequest,
   Connection,
   ProjectMember,
+  Milestone,
+  TaskComment,
+  RefreshToken,
 } = require('../../models')
 const { requireAuth } = require('../../middleware/auth')
 const {
@@ -23,8 +26,11 @@ const {
   serializeProject,
 } = require('../../utils/serializers')
 const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../../utils/courses')
+const { isValidHttpUrl } = require('../../utils/urlValidation')
 
 const router = express.Router()
+
+const PROFILE_URL_FIELDS = ['github_url', 'linkedin_url', 'portfolio_url', 'leetcode_url', 'codeforces_url']
 
 async function loadUserWithSkills(userId, options = {}) {
   return User.findByPk(userId, {
@@ -95,25 +101,30 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
     }
     if (payload.bio !== undefined) updates.bio = String(payload.bio || '') || null
     if (payload.avatar_url !== undefined) updates.avatar_url = String(payload.avatar_url || '').trim() || null
-    if (payload.github_url !== undefined) {
-      const value = String(payload.github_url || '').trim()
-      updates.github_url = value || null
+    // Stored URLs are rendered as links by the frontend — only absolute
+    // http(s) values are accepted (#22)
+    for (const field of PROFILE_URL_FIELDS) {
+      if (payload[field] !== undefined) {
+        const value = String(payload[field] || '').trim()
+        if (!isValidHttpUrl(value)) {
+          return res.status(400).json({ detail: `${field.replace(/_/g, ' ')} must be a valid http(s) URL.` })
+        }
+        updates[field] = value || null
+      }
     }
-    if (payload.linkedin_url !== undefined) {
-      const value = String(payload.linkedin_url || '').trim()
-      updates.linkedin_url = value || null
+    if (payload.headline !== undefined) {
+      const value = String(payload.headline || '').trim()
+      if (value.length > 100) {
+        return res.status(400).json({ detail: 'Headline must be 100 characters or fewer.' })
+      }
+      updates.headline = value || null
     }
-    if (payload.portfolio_url !== undefined) {
-      const value = String(payload.portfolio_url || '').trim()
-      updates.portfolio_url = value || null
-    }
-    if (payload.leetcode_url !== undefined) {
-      const value = String(payload.leetcode_url || '').trim()
-      updates.leetcode_url = value || null
-    }
-    if (payload.codeforces_url !== undefined) {
-      const value = String(payload.codeforces_url || '').trim()
-      updates.codeforces_url = value || null
+    if (payload.location !== undefined) {
+      const value = String(payload.location || '').trim()
+      if (value.length > 100) {
+        return res.status(400).json({ detail: 'Location must be 100 characters or fewer.' })
+      }
+      updates.location = value || null
     }
 
     await sequelize.transaction(async (t) => {
@@ -144,7 +155,7 @@ router.delete('/profile', requireAuth, async (req, res, next) => {
     }
 
     await sequelize.transaction(async (t) => {
-      // 1. Delete notifications sent or received
+      // 1. Delete notifications sent, received, or authored by the user
       await Notification.destroy({
         where: { [Op.or]: [{ recipient_id: userId }, { actor_id: userId }] },
         transaction: t,
@@ -168,17 +179,25 @@ router.delete('/profile', requireAuth, async (req, res, next) => {
       // 4. Delete applications submitted by user
       await Application.destroy({ where: { user_id: userId }, transaction: t })
 
-      // 5. Delete projects owned by user and their associated applications
+      // 5. Delete projects owned by user with ALL dependent rows — FK
+      //    constraints do not cascade in every environment (#34)
       const ownedProjects = await Project.findAll({ where: { owner_id: userId }, transaction: t })
       for (const project of ownedProjects) {
+        const projectMilestones = await Milestone.findAll({ where: { project_id: project.id }, transaction: t })
+        for (const milestone of projectMilestones) {
+          await TaskComment.destroy({ where: { milestone_id: milestone.id }, transaction: t })
+          await milestone.destroy({ transaction: t })
+        }
+        await ProjectMember.destroy({ where: { project_id: project.id }, transaction: t })
         await Application.destroy({ where: { project_id: project.id }, transaction: t })
         await Notification.destroy({ where: { project_id: project.id }, transaction: t })
         await project.setRequired_skills([], { transaction: t })
         await project.destroy({ transaction: t })
       }
 
-      // 6. Clear user skills
+      // 6. Clear user skills and session tokens
       await user.setSkills([], { transaction: t })
+      await RefreshToken.destroy({ where: { user_id: userId }, transaction: t })
 
       // 7. Delete user
       await user.destroy({ transaction: t })
@@ -492,6 +511,9 @@ router.post('/achievements', requireAuth, async (req, res, next) => {
     if (!title) {
       return res.status(400).json({ detail: 'Title is required.' })
     }
+    if (!isValidHttpUrl(url)) {
+      return res.status(400).json({ detail: 'URL must be a valid http(s) URL.' })
+    }
 
     const validTypes = Achievement.TYPES || ['HACKATHON', 'CERTIFICATION', 'AWARD', 'COMPETITION', 'OTHER']
     const safeType = validTypes.includes(type) ? type : 'OTHER'
@@ -524,6 +546,9 @@ router.put('/achievements/:id', requireAuth, async (req, res, next) => {
 
     const { type, title, description, issuer, date_awarded, url } = req.body
     const validTypes = Achievement.TYPES || ['HACKATHON', 'CERTIFICATION', 'AWARD', 'COMPETITION', 'OTHER']
+    if (url !== undefined && !isValidHttpUrl(url)) {
+      return res.status(400).json({ detail: 'URL must be a valid http(s) URL.' })
+    }
     if (type && validTypes.includes(type)) achievement.type = type
     if (title) achievement.title = String(title).trim()
     if (description !== undefined) achievement.description = description ? String(description).trim() : null

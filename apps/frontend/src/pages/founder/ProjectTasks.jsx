@@ -23,10 +23,12 @@ import {
 import { DragDropContext, Draggable } from '@hello-pangea/dnd'
 import { StrictModeDroppable } from '../../components/ui/StrictModeDroppable'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { api } from '../../services/api.js'
 
 export default function ProjectTasks() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('BOARD') // 'BOARD' | 'TABLE'
@@ -64,10 +66,10 @@ export default function ProjectTasks() {
 
         setMembers(memberList || [])
 
-        // Determine if current user is lead
-        const currentUser = memberList?.find(m => m.is_lead && m.user?.id === (window.localStorage.getItem('userId') || ''))
-        // Note: Using localStorage as a fallback; ideally this comes from AuthContext
-        setUserIsLead(!!memberList?.find(m => m.is_lead && m.user_id === (window.localStorage.getItem('userId') || '')))
+        // Lead = the member row marked is_lead whose user matches the
+        // authenticated user from AuthContext (#37 — the localStorage key was
+        // never written, so lead controls never rendered)
+        setUserIsLead(!!memberList?.find(m => m.is_lead && (m.user_id === user?.id || m.user?.id === user?.id)))
       } catch (err) {
         console.error('Failed to load tasks:', err)
       } finally {
@@ -75,7 +77,7 @@ export default function ProjectTasks() {
       }
     }
     fetchTasksData()
-  }, [id])
+  }, [id, user?.id])
 
   const showToast = (msg) => {
     setFeedbackToast(msg)

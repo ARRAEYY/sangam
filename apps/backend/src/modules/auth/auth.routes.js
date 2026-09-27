@@ -3,9 +3,10 @@ const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
 const { Sequelize, Op } = require('sequelize')
 const { sequelize, User, Skill, RefreshToken } = require('../../models')
-const { signToken, generateRefreshToken } = require('../../utils/auth')
+const { signToken, generateRefreshToken, hashToken, ACCESS_TOKEN_TTL_MINUTES } = require('../../utils/auth')
 const { serializeUser } = require('../../utils/serializers')
 const { validatePassword } = require('../../utils/passwordPolicy')
+const { isValidHttpUrl } = require('../../utils/urlValidation')
 const { authLimiter } = require('../../middleware/rateLimit')
 const { requireAuth } = require('../../middleware/auth')
 const { sendPasswordResetEmail, sendVerificationEmail } = require('../../utils/mailer')
@@ -13,7 +14,13 @@ const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../../utils/c
 
 const router = express.Router()
 
-const TOKEN_EXPIRE_MINUTES = Number(process.env.JWT_EXPIRE_MINUTES || 10080)
+const TOKEN_EXPIRE_MINUTES = ACCESS_TOKEN_TTL_MINUTES
+
+// Frontend origin used for links embedded in emails — never derive links from
+// the request Host header (#28).
+function getFrontendUrl() {
+  return process.env.CORS_ORIGINS?.split(',')[0]?.trim() || 'http://localhost:5173'
+}
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase()
@@ -112,8 +119,11 @@ router.post('/register', authLimiter, async (req, res, next) => {
     if (!Number.isInteger(graduationYear) || graduationYear < 2000) {
       return res.status(400).json({ detail: 'Graduation year is required.' })
     }
-    if (githubUrl && !/^https?:\/\//i.test(githubUrl)) {
-      return res.status(400).json({ detail: 'GitHub URL must be a valid URL.' })
+    const urlFields = { github_url: githubUrl, linkedin_url: payload.linkedin_url, portfolio_url: payload.portfolio_url }
+    for (const [field, value] of Object.entries(urlFields)) {
+      if (!isValidHttpUrl(value)) {
+        return res.status(400).json({ detail: `${field.replace(/_/g, ' ')} must be a valid http(s) URL.` })
+      }
     }
 
     const existing = await User.findOne({ where: { email } })
@@ -148,8 +158,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
       await assignSkills(user, skills, { transaction: t })
     })
 
-    const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
-    console.log(`\n📧 Email verification link for ${email}:\n   ${verifyUrl}\n`)
+    const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`
 
     // Send verification email via Brevo (with fallback chain)
     const mailResult = await sendVerificationEmail(email, verifyUrl)
@@ -191,9 +200,7 @@ router.get('/verify-email', async (req, res, next) => {
       email_verification_token: null,
     })
 
-    // In production, redirect to the frontend login page
-    const frontendUrl = process.env.CORS_ORIGINS?.split(',')[0]?.trim() || 'http://localhost:5173'
-    return res.redirect(`${frontendUrl}/auth?verified=true`)
+    return res.json({ message: 'Email verified successfully. You can now log in.', verified: true })
   } catch (error) {
     return next(error)
   }
@@ -240,10 +247,13 @@ router.post('/login', authLimiter, async (req, res, next) => {
     const jwt = signToken(user)
     const refreshStr = generateRefreshToken()
 
-    // Save to DB
+    // Opportunistic cleanup of expired refresh tokens (#24)
+    await RefreshToken.destroy({ where: { expires_at: { [Op.lt]: new Date() } } })
+
+    // Save hash only — the raw token exists solely in the HttpOnly cookie (#24)
     await RefreshToken.create({
       user_id: user.id,
-      token: refreshStr, // Storing in plain for simplicity in this version
+      token: hashToken(refreshStr),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 
@@ -262,7 +272,7 @@ router.post('/logout', async (req, res) => {
   if (refreshToken) {
     await RefreshToken.update(
       { is_revoked: true },
-      { where: { token: refreshToken } }
+      { where: { token: hashToken(refreshToken) } }
     )
   }
 
@@ -289,7 +299,7 @@ router.post('/refresh', async (req, res, next) => {
 
     const tokenRecord = await RefreshToken.findOne({
       where: {
-        token: refreshToken,
+        token: hashToken(refreshToken),
         is_revoked: false,
         expires_at: { [Op.gt]: new Date() },
       },
@@ -313,7 +323,7 @@ router.post('/refresh', async (req, res, next) => {
 
     await RefreshToken.create({
       user_id: tokenRecord.user_id,
-      token: newRefreshStr,
+      token: hashToken(newRefreshStr),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 
@@ -327,35 +337,35 @@ router.post('/refresh', async (req, res, next) => {
 
 // ─── Resend verification ─────────────────────────────────────
 
-router.post('/resend-verification', async (req, res, next) => {
+router.post('/resend-verification', authLimiter, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body?.email)
     if (!email) {
       return res.status(400).json({ detail: 'Email is required.' })
     }
 
+    const genericResponse = { message: 'If an account with that email exists and is unverified, a verification link has been sent.' }
+
     const user = await User.findOne({ where: { email } })
     if (!user) {
-      // Don't reveal whether the account exists
-      return res.json({ message: 'If an account with that email exists, a verification link has been sent.' })
+      // Don't reveal whether the account exists (#23)
+      return res.json(genericResponse)
     }
 
     if (user.email_verified) {
-      return res.json({ message: 'Email is already verified. You can log in.' })
+      // Same generic response — no account-state enumeration (#23)
+      return res.json(genericResponse)
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex')
     await user.update({ email_verification_token: verificationToken })
 
-    const verifyUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`
-    console.log(`\n📧 Resent verification link for ${email}:\n   ${verifyUrl}\n`)
+    const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`
 
     // Send via Brevo (with fallback chain)
     await sendVerificationEmail(email, verifyUrl)
 
-    return res.json({
-      message: 'If an account with that email exists, a verification link has been sent.',
-    })
+    return res.json(genericResponse)
   } catch (error) {
     return next(error)
   }
@@ -464,6 +474,12 @@ router.post('/reset-password', authLimiter, async (req, res, next) => {
       password_reset_expires_at: null,
     })
 
+    // Kill every existing session — a stolen cookie must not survive a reset (#25)
+    await RefreshToken.update(
+      { is_revoked: true },
+      { where: { user_id: user.id, is_revoked: false } }
+    )
+
     return res.json({
       message: 'Your password has been successfully reset. You can now log in with your new password.',
     })
@@ -501,7 +517,13 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
     const newHash = await bcrypt.hash(newPassword, 10)
     await user.update({ password_hash: newHash })
 
-    return res.json({ message: 'Password changed successfully.' })
+    // Revoke other sessions on password change (#25)
+    await RefreshToken.update(
+      { is_revoked: true },
+      { where: { user_id: user.id, is_revoked: false } }
+    )
+
+    return res.json({ message: 'Password changed successfully. Please sign in again.' })
   } catch (error) {
     return next(error)
   }
@@ -535,12 +557,14 @@ router.post('/google', authLimiter, async (req, res, next) => {
         return res.status(401).json({ detail: 'Invalid Google credential token audience.' })
       }
     } else {
-      // In production, GOOGLE_CLIENT_ID MUST be set. Warn loudly if missing.
-      if (process.env.NODE_ENV === 'production') {
-        console.error('[GOOGLE AUTH] CRITICAL: GOOGLE_CLIENT_ID env var is not set in production. Audience validation SKIPPED — this is a security risk!')
-      } else {
-        console.warn('[GOOGLE AUTH] GOOGLE_CLIENT_ID not set — skipping audience validation (dev only).')
+      // Fail closed in production — accepting tokens without an audience
+      // check would honor ID tokens minted for other OAuth clients (#26)
+      const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
+      if (isProd) {
+        console.error('[GOOGLE AUTH] GOOGLE_CLIENT_ID env var is not set in production. Rejecting Google sign-in.')
+        return res.status(503).json({ detail: 'Google sign-in is not configured. Please contact support.' })
       }
+      console.warn('[GOOGLE AUTH] GOOGLE_CLIENT_ID not set — skipping audience validation (dev only).')
     }
 
     // --- Security: Google must attest the email is verified ---
@@ -596,7 +620,7 @@ router.post('/google', authLimiter, async (req, res, next) => {
 
     await RefreshToken.create({
       user_id: user.id,
-      token: refreshStr,
+      token: hashToken(refreshStr),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     })
 

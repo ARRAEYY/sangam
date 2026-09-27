@@ -44,10 +44,21 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .map((origin) => origin.trim())
   .filter(Boolean)
 
+// Dev origins must match exactly (scheme + host + optional port). Substring
+// matching here previously allowed any host containing "localhost" to make
+// credentialed cross-origin requests (see issue #21).
+const DEV_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      // No Origin header = non-browser client; cors emits no ACAO headers,
+      // so the response is unreadable to pages either way.
+      if (!origin) {
+        callback(null, true)
+        return
+      }
+      if (allowedOrigins.includes(origin) || DEV_ORIGIN_PATTERN.test(origin)) {
         callback(null, true)
         return
       }
@@ -57,8 +68,8 @@ app.use(
   })
 )
 app.use(cookieParser())
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ limit: '50mb', extended: true }))
+app.use(express.json({ limit: '1mb' }))
+app.use(express.urlencoded({ limit: '1mb', extended: true }))
 
 // Configure Helmet to allow cross-origin API access and popups (for Google OAuth)
 app.use(helmet({
@@ -66,8 +77,15 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" }
 }))
 
-// HTTP request logging
-app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }))
+// HTTP request logging — query-string tokens (email verification) are redacted
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message) =>
+        logger.info(message.trim().replace(/([?&])token=[^&\s]+/g, '$1token=[REDACTED]')),
+    },
+  })
+)
 
 app.use(generalLimiter)
 
@@ -118,7 +136,7 @@ app.use('/api/applications', customCsrfProtection, applicationRoutes)
 app.use('/api/notifications', customCsrfProtection, notificationRoutes)
 app.use('/api/connections', customCsrfProtection, connectionRoutes)
 app.use('/api/founder', customCsrfProtection, founderRoutes)
-app.use('/api/admin', customCsrfProtection, adminRoutes)
+// adminRoutes handlers read req.params.id from this mount path only (#59)
 app.use('/api/projects/:id/manage', customCsrfProtection, adminRoutes)
 
 
@@ -129,11 +147,6 @@ app.get('/api/health', async (req, res) => {
   } catch (error) {
     res.status(503).json({ status: 'error', database: 'unreachable' })
   }
-});
-
-// Test route to verify basic routing is working
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Basic routing is working!' });
 });
 
 // Kept for backwards compatibility with the original /health path.
@@ -163,15 +176,14 @@ app.use(errorHandler)
 
 async function start() {
   try {
-    app.listen(port, '0.0.0.0', () => {
-      logger.info(`Server running on port ${port}`)
-      console.log(`Campus Platform API running on port ${port}`)
-    })
-
+    // Migrate first, listen after — traffic must never hit a half-migrated DB (#49)
     await sequelize.authenticate()
 
-    // Sync creates any tables that don't yet exist
-    await sequelize.sync()
+    // Sync only creates missing tables in non-production; production schema is
+    // owned by sequelize-cli migrations (npm run migrate).
+    if (process.env.NODE_ENV !== 'production') {
+      await sequelize.sync()
+    }
 
     // Safety net: ensure new columns exist even if migrations were skipped or DB already existed
     const queryInterface = sequelize.getQueryInterface()
@@ -358,6 +370,11 @@ async function start() {
       } else {
         logger.warn(`[SMTP WARN] ${smtpStatus.status}`)
       }
+    })
+
+    app.listen(port, '0.0.0.0', () => {
+      logger.info(`Server running on port ${port}`)
+      console.log(`Campus Platform API running on port ${port}`)
     })
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`, error)

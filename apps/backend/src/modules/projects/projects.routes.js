@@ -101,7 +101,8 @@ router.get('/', requireAuth, async (req, res, next) => {
     }
 
     const result = projects.map((p) => {
-      const serialized = serializeProject(p)
+      // List responses stay lean — base64 logos can be megabytes (#43)
+      const serialized = serializeProject(p, { includeLogo: false })
       serialized.member_count = memberCounts[p.id] || 0
       return serialized
     })
@@ -160,13 +161,15 @@ router.get('/:id/context', requireAuth, async (req, res, next) => {
       where: {
         project_id: id,
         user_id: userId,
-        is_lead: true,
         status: 'ACTIVE',
       },
     });
 
+    // Explicit flags for the frontend guards (#36)
     return res.json({
-      is_lead: isOwner || !!member,
+      is_lead: isOwner || !!(member && member.is_lead),
+      is_owner: isOwner,
+      is_member: isOwner || !!member,
       role: isOwner ? 'Owner' : (member ? member.role : 'Member'),
     });
   } catch (error) {
@@ -247,10 +250,14 @@ router.post('/', requireAuth, async (req, res, next) => {
         { transaction: t }
       )
 
-      // Add optional team members
+      // Add optional team members — every user_id must exist, and additions
+      // stay within the team-size cap (consent flow tracked in #31)
       for (const m of members) {
         if (!m.user_id || !m.role || m.user_id === req.user.id) continue
-        
+
+        const targetUser = await User.findByPk(m.user_id, { attributes: ['id'], transaction: t })
+        if (!targetUser) continue
+
         await ProjectMember.create(
           {
             project_id: project.id,
@@ -263,7 +270,7 @@ router.post('/', requireAuth, async (req, res, next) => {
           { transaction: t }
         )
         addedMemberCount++
-        
+
         // Notify the added member
         await Notification.create(
           {
@@ -400,6 +407,19 @@ router.patch('/:id/status', requireAuth, async (req, res, next) => {
     const validStatuses = ['OPEN', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ detail: 'Status must be OPEN, IN_PROGRESS, COMPLETED, or ARCHIVED.' })
+    }
+
+    // Enforced lifecycle — arbitrary transitions (e.g. COMPLETED → OPEN) are rejected (#55)
+    const ALLOWED_TRANSITIONS = {
+      OPEN: ['IN_PROGRESS', 'ARCHIVED'],
+      IN_PROGRESS: ['OPEN', 'COMPLETED', 'ARCHIVED'],
+      COMPLETED: ['ARCHIVED', 'OPEN'],
+      ARCHIVED: ['OPEN'],
+    }
+    if (status !== project.status && !(ALLOWED_TRANSITIONS[project.status] || []).includes(status)) {
+      return res.status(400).json({
+        detail: `Cannot change status from ${project.status} to ${status}. Allowed: ${(ALLOWED_TRANSITIONS[project.status] || []).join(', ')}.`,
+      })
     }
 
     await project.update({ status })

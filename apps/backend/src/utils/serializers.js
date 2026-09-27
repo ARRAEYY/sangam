@@ -129,8 +129,10 @@ function serializeConnectionRequest(connectionRequest) {
   }
 }
 
-function serializeProject(project) {
+function serializeProject(project, opts = {}) {
   if (!project) return null
+
+  const includeLogo = opts.includeLogo !== false
 
   const plain = project.toJSON ? project.toJSON() : project
   const createdAt = plain.created_at || plain.createdAt || null
@@ -141,7 +143,8 @@ function serializeProject(project) {
     id: safeProject.id,
     title: safeProject.title,
     description: safeProject.description,
-    logo_url: safeProject.logo_url || null,
+    // List callers pass { includeLogo: false } to keep payloads small (#43)
+    logo_url: includeLogo ? safeProject.logo_url || null : null,
     status: safeProject.status,
     team_size_needed: safeProject.team_size_needed,
     created_at: createdAt,
@@ -164,6 +167,9 @@ function serializeProject(project) {
     tech_stack: safeProject.tech_stack || [],
     time_horizon: safeProject.time_horizon || null,
     open_roles: safeProject.open_roles || [],
+    project_url: safeProject.project_url || null,
+    visibility: safeProject.visibility || 'Public',
+    hiring_requirements: safeProject.hiring_requirements || null,
     members: safeProject.members ? safeProject.members.map(m => ({
       user_id: m.user_id,
       role: m.role,
