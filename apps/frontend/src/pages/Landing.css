@@ -76,7 +76,7 @@
 /* Hero Section */
 .landing-hero { position: relative; display: grid; grid-template-columns: 0.85fr 1.15fr; align-items: center; width: min(1400px, calc(100% - 8vw)); margin: 0 auto; padding: 20px 4vw 0px; }
 .hero-copy { position: relative; z-index: 2; }
-.hero-copy h1 { max-width: 700px; margin: 18px 0 26px; font-family: "Sora", sans-serif; font-size: clamp(50px, 7.5vw, 110px); font-weight: 400; letter-spacing: -.07em; line-height: .9; }
+.hero-copy h1 { max-width: 700px; margin: 18px 0 26px; font-family: "Sora", sans-serif; font-size: clamp(40px, 6vw, 75px); font-weight: 400; letter-spacing: -.07em; line-height: .95; }
 .hero-copy h1 em, .story-heading h2 em, .how-layout h2 em, .section-heading-row h2 em, .opportunity-copy h2 em, .community-layout h2 em { color: var(--maroon); font-style: normal; }
 .hero-copy p { max-width: 380px; color: var(--landing-soft); font-size: 16px; line-height: 1.7; }
 .hero-copy .hero-actions { margin-top: 50px; }

@@ -206,8 +206,8 @@ export default function Landing() {
                 </div>
 
                 <div className="hero-actions">
-                  <Link to="/explore" className="button button-primary">Explore Sangam <ArrowRight size={16} /></Link>
-                  <Link to="/talent" className="button button-quiet">Find your team <ArrowUpRight size={16} /></Link>
+                  <Link to="/explore" className="button button-primary" style={{height:'50px',width:'170px',fontSize:'14px',margin:'0px'}}>Explore Sangam <ArrowRight size={40} /></Link>
+                  <Link to="/talent" className="button button-quiet" style={{height:'50px',width:'170px',fontSize:'14px',margin:'0px'}}>Find your team <ArrowUpRight size={16} /></Link>
                 </div>
               </div>
               <div className="hero-network reveal-element delay-2">

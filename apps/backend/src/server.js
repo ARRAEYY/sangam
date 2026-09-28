@@ -145,11 +145,12 @@ app.get('/health', (req, res) => {
 app.get('/api/platform-stats', async (req, res) => {
   try {
     const { Project, User } = require('./models')
-    const [openProjectsCount, totalUsersCount] = await Promise.all([
+    const [openProjectsCount, totalUsersCount, totalOpenings] = await Promise.all([
       Project.count({ where: { status: 'OPEN' } }),
       User.count(),
+      Project.sum('team_size_needed', { where: { status: 'OPEN' } })
     ])
-    res.json({ openProjects: openProjectsCount, totalUsers: totalUsersCount })
+    res.json({ openProjects: openProjectsCount, totalUsers: totalUsersCount, totalOpenings: totalOpenings || 0 })
   } catch (err) {
     res.status(500).json({ detail: 'Failed to fetch platform stats.' })
   }
