@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { DragDropContext, Draggable } from '@hello-pangea/dnd'
 import { StrictModeDroppable } from '../../components/ui/StrictModeDroppable'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectTasks() {
@@ -36,6 +36,9 @@ export default function ProjectTasks() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState(null)
   const [members, setMembers] = useState([])
+  const [userIsLead, setUserIsLead] = useState(true)
+  const [editingTaskIdRef, setEditingTaskIdRef] = useState(null)
+
 
   // Form state for Task Modal
   const [title, setTitle] = useState('')
@@ -60,6 +63,11 @@ export default function ProjectTasks() {
         }
 
         setMembers(memberList || [])
+
+        // Determine if current user is lead
+        const currentUser = memberList?.find(m => m.is_lead && m.user?.id === (window.localStorage.getItem('userId') || ''))
+        // Note: Using localStorage as a fallback; ideally this comes from AuthContext
+        setUserIsLead(!!memberList?.find(m => m.is_lead && m.user_id === (window.localStorage.getItem('userId') || '')))
       } catch (err) {
         console.error('Failed to load tasks:', err)
       } finally {
@@ -85,6 +93,12 @@ export default function ProjectTasks() {
 
   const handleUpdateStatus = async (taskId, newStatus) => {
     try {
+      // Non-leads can move tasks to READY_FOR_REVIEW, but only leads can move to COMPLETED
+      if (newStatus === 'COMPLETED' && !userIsLead) {
+        alert('Only the project lead can mark tasks as completed.');
+        return;
+      }
+
       await api.updateTask(id, taskId, { status: newStatus })
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
       showToast(`Task status updated to ${newStatus.replace(/_/g, ' ')}`)
@@ -94,6 +108,10 @@ export default function ProjectTasks() {
   }
 
   const handleReviewAction = async (taskId, action) => {
+    if (!userIsLead) {
+      alert('Only the project lead can perform review actions.');
+      return;
+    }
     try {
       if (action === 'APPROVE') {
         await api.reviewTask(id, taskId, { decision: 'APPROVE' })
@@ -254,7 +272,7 @@ export default function ProjectTasks() {
   ]
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* ── Toast Notification ───────────────────────────────────────────── */}
         {feedbackToast && (
@@ -434,9 +452,11 @@ export default function ProjectTasks() {
                                 <button onClick={() => openEditModal(task)} className="p-1 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="Edit Task">
                                   <Pencil size={14} />
                                 </button>
-                                <button onClick={() => handleDeleteTask(task.id)} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors" title="Delete Task">
-                                  <Trash2 size={14} />
-                                </button>
+                                {userIsLead && (
+                                  <button onClick={() => handleDeleteTask(task.id)} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors" title="Delete Task">
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
                               </div>
                             </div>
 
@@ -485,7 +505,7 @@ export default function ProjectTasks() {
                                 </button>
                               )}
 
-                              {task.status === 'READY_FOR_REVIEW' && (
+                              {task.status === 'READY_FOR_REVIEW' && userIsLead && (
                                 <div className="flex items-center gap-1">
                                   <button
                                     onClick={() => handleReviewAction(task.id, 'APPROVE')}
@@ -619,9 +639,11 @@ export default function ProjectTasks() {
                               <button onClick={() => openEditModal(t)} className="text-[11px] text-slate-400 hover:text-brand-700 font-medium flex items-center gap-1 transition-colors">
                                 <Pencil size={12} /> Edit
                               </button>
-                              <button onClick={() => handleDeleteTask(t.id)} className="text-[11px] text-slate-400 hover:text-rose-600 font-medium flex items-center gap-1 transition-colors">
-                                <Trash2 size={12} /> Delete
-                              </button>
+                              {userIsLead && (
+                                <button onClick={() => handleDeleteTask(t.id)} className="text-[11px] text-slate-400 hover:text-rose-600 font-medium flex items-center gap-1 transition-colors">
+                                  <Trash2 size={12} /> Delete
+                                </button>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -734,6 +756,6 @@ export default function ProjectTasks() {
           </div>
         )}
       </div>
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

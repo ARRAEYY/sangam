@@ -13,7 +13,7 @@ import {
   Sparkles,
   Inbox
 } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectApplications() {
@@ -72,7 +72,7 @@ export default function ProjectApplications() {
   const rejectedCount = applications.filter(a => (a.status || '').toUpperCase() === 'REJECTED').length
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Toast Notification */}
         {toastMessage && (
@@ -267,6 +267,6 @@ export default function ProjectApplications() {
           </div>
         )}
       </div>
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

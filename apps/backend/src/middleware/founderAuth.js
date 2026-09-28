@@ -11,7 +11,19 @@ async function FounderGuard(req, res, next) {
   }
 
   try {
-    // Check if user is an owner of any project
+    // Check if user is an active member of any project (including owners and leads)
+    const isMember = await ProjectMember.findOne({
+      where: {
+        user_id: userId,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (isMember) {
+      return next();
+    }
+
+    // Check if user is an owner of any project (in case they aren't in ProjectMember yet)
     const isOwner = await Project.findOne({
       where: { owner_id: userId },
     });
@@ -20,23 +32,49 @@ async function FounderGuard(req, res, next) {
       return next();
     }
 
-    // Check if user is a lead of any project
-    const isLead = await ProjectMember.findOne({
+    return res.status(403).json({ detail: 'Access denied. Only project members or owners can access this resource.' });
+  } catch (error) {
+    console.error(`[FounderGuard Error]: ${error.message}`);
+    return res.status(500).json({ detail: 'Internal server error while verifying member status.' });
+  }
+}
+
+async function checkProjectMember(req, res, next) {
+  const { projectId } = req.params;
+  const userId = req.user?.id;
+
+  if (!projectId || !userId) {
+    return res.status(400).json({ detail: 'Project ID and User ID are required.' });
+  }
+
+  try {
+    // 1. Check if user is the project owner
+    const project = await Project.findByPk(projectId);
+    if (!project) {
+      return res.status(403).json({ detail: 'Project not found or access denied.' });
+    }
+
+    if (project.owner_id === userId) {
+      return next();
+    }
+
+    // 2. Check if user is an active member of the project
+    const isMember = await ProjectMember.findOne({
       where: {
+        project_id: projectId,
         user_id: userId,
-        is_lead: true,
         status: 'ACTIVE',
       },
     });
 
-    if (isLead) {
+    if (isMember) {
       return next();
     }
 
-    return res.status(403).json({ detail: 'Access denied. Only founders can access this resource.' });
+    return res.status(403).json({ detail: 'Access denied. You must be a member of this project.' });
   } catch (error) {
-    console.error(`[FounderGuard Error]: ${error.message}`);
-    return res.status(500).json({ detail: 'Internal server error while verifying founder status.' });
+    console.error(`[checkProjectMember Error]: ${error.message}`);
+    return res.status(500).json({ detail: 'Internal server error while verifying project membership.' });
   }
 }
 
@@ -87,5 +125,6 @@ async function checkProjectLead(req, res, next) {
 
 module.exports = {
   FounderGuard,
+  checkProjectMember,
   checkProjectLead,
 };

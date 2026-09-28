@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, AlertTriangle, Image as ImageIcon, FileText, CheckCircle2, ShieldAlert, Globe, Tags, Users, X } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectSettings() {
@@ -142,7 +142,7 @@ export default function ProjectSettings() {
   ]
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Header */}
         <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
@@ -430,6 +430,6 @@ export default function ProjectSettings() {
           </div>
         </div>
       )}
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

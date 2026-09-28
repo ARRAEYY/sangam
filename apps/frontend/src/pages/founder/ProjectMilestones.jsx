@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Plus, Flag, MoreHorizontal, CheckCircle2, Clock, Pencil, Trash2, X, Calendar } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
 
 export default function ProjectMilestones() {
@@ -138,7 +138,7 @@ export default function ProjectMilestones() {
   }
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Header */}
         <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -318,6 +318,6 @@ export default function ProjectMilestones() {
           </div>
         )}
       </div>
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }

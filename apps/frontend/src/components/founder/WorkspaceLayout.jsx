@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api.js'
 
-export default function FounderLayout({ children }) {
+export default function WorkspaceLayout({ children }) {
   const { id } = useParams()
   const location = useLocation()
   const { user } = useAuth()
@@ -72,38 +72,46 @@ export default function FounderLayout({ children }) {
   const pendingAppsCount = attention?.pendingApplicants?.length || 0
   const pendingReviewCount = attention?.tasksAwaitingReview?.length || 0
   const totalDecisions = pendingAppsCount + pendingReviewCount
+  
+  const isLead = project?.owner?.id === user?.id
 
-  const navItems = [
-    { label: 'Overview', path: `/founder/projects/${id}/overview`, icon: LayoutDashboard },
+  const allNavItems = [
+    { label: 'Overview', path: `/workspace/${id}/overview`, icon: LayoutDashboard },
     { 
       label: 'Tasks', 
-      path: `/founder/projects/${id}/tasks`, 
+      path: `/workspace/${id}/tasks`, 
       icon: CheckSquare,
       badge: pendingReviewCount > 0 ? pendingReviewCount : null,
     },
     { 
       label: 'Applications', 
-      path: `/founder/projects/${id}/applications`, 
+      path: `/workspace/${id}/applications`, 
       icon: FileText,
       badge: pendingAppsCount > 0 ? pendingAppsCount : null,
+      adminOnly: true,
     },
-    { label: 'Milestones', path: `/founder/projects/${id}/milestones`, icon: Flag },
-    { label: 'Team', path: `/founder/projects/${id}/team`, icon: Users },
-    { label: 'Hiring', path: `/founder/projects/${id}/hiring`, icon: Briefcase },
-    { label: 'Analytics', path: `/founder/projects/${id}/analytics`, icon: BarChart3 },
-    { label: 'Settings', path: `/founder/projects/${id}/settings`, icon: Settings },
+    { label: 'Milestones', path: `/workspace/${id}/milestones`, icon: Flag },
+    { label: 'Team', path: `/workspace/${id}/team`, icon: Users },
+    { label: 'Hiring', path: `/workspace/${id}/hiring`, icon: Briefcase, adminOnly: true },
+    { label: 'Analytics', path: `/workspace/${id}/analytics`, icon: BarChart3, adminOnly: true },
+    { label: 'Settings', path: `/workspace/${id}/settings`, icon: Settings, adminOnly: true },
   ]
+  
+  const navItems = allNavItems.filter(item => !item.adminOnly || isLead)
+
+  const backLink = isLead ? '/founder' : '/dashboard'
+  const backLabel = isLead ? 'Founder Hub' : 'Dashboard'
 
   const SidebarContent = () => (
     <div className="flex h-full w-full flex-col items-start gap-[11px] pt-[30px] pb-6 px-4 overflow-hidden">
       
-      <Link to="/founder" className="flex w-full items-center focus-visible:outline-none mb-4">
+      <Link to={backLink} className="flex w-full items-center focus-visible:outline-none mb-4">
         <div className="icon-nav-btn shrink-0 bg-brand-50 text-brand-700">
           <ChevronLeft size={18} strokeWidth={1.75} />
         </div>
         <div className="opacity-0 w-0 -translate-x-3 group-hover:w-auto group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out ml-[15px] whitespace-nowrap overflow-hidden pointer-events-none group-hover:pointer-events-auto">
           <p className="text-[13px] font-bold text-slate-900 truncate max-w-[120px]">{project?.title || 'Project'}</p>
-          <p className="text-[10px] text-slate-500 font-medium">Founder Hub</p>
+          <p className="text-[10px] text-slate-500 font-medium">{backLabel}</p>
         </div>
       </Link>
 
@@ -197,11 +205,11 @@ export default function FounderLayout({ children }) {
             <div className="mb-6 flex shrink-0 items-start justify-between border-b border-slate-100 pb-4">
               <div>
                 <Link
-                  to="/founder"
+                  to={backLink}
                   onClick={() => setMobileMenuOpen(false)}
                   className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors mb-4 text-sm font-medium"
                 >
-                  <ChevronLeft size={16} /> Back to Hub
+                  <ChevronLeft size={16} /> Back to {backLabel}
                 </Link>
                 <div className="flex items-center gap-3">
                   {project?.logo_url ? (
@@ -229,12 +237,12 @@ export default function FounderLayout({ children }) {
             
             <div className="flex-1 overflow-y-auto pb-4 space-y-1">
                <Link
-                to="/founder"
+                to={backLink}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-[15px] font-medium transition text-slate-700 hover:bg-slate-100 mb-2"
               >
                 <ChevronLeft size={20} />
-                <span>Founder Hub</span>
+                <span>{backLabel}</span>
               </Link>
               
               {navItems.map((item) => {

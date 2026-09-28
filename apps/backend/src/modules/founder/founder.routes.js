@@ -2,7 +2,7 @@ const express = require('express')
 const { Op, Sequelize } = require('sequelize')
 const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone, Notification, TaskComment } = require('../../models')
 const { requireAuth } = require('../../middleware/auth')
-const { FounderGuard, checkProjectLead } = require('../../middleware/founderAuth')
+const { FounderGuard, checkProjectLead, checkProjectMember } = require('../../middleware/founderAuth')
 const { serializeProject } = require('../../utils/serializers')
 const { notifyProjectApplication } = require('../../services/notificationService')
 
@@ -15,12 +15,17 @@ router.get('/projects', requireAuth, async (req, res, next) => {
     const userId = req.user.id;
 
     const projects = await Project.findAll({
-      where: { owner_id: userId },
       include: [
         { model: Skill, as: 'required_skills' },
         { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url'] },
         { model: ProjectMember, as: 'members' },
       ],
+      where: {
+        [Op.or]: [
+          { owner_id: userId },
+          { '$members.user_id$': userId }
+        ]
+      },
       order: [['created_at', 'DESC']],
     });
 
@@ -58,7 +63,7 @@ router.get('/projects', requireAuth, async (req, res, next) => {
 
 // ─── Attention API ────────────────────────────────────────────────────
 
-router.get('/projects/:projectId/attention', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
+router.get('/projects/:projectId/attention', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
   try {
     const { projectId } = req.params;
 
@@ -133,7 +138,7 @@ router.get('/projects/:projectId/attention', requireAuth, FounderGuard, checkPro
 
 // ─── Task Management ──────────────────────────────────────────────────
 
-router.post('/projects/:projectId/tasks', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
+router.post('/projects/:projectId/tasks', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const { title, description, priority, due_date, assignee_id } = req.body || {};
@@ -237,7 +242,7 @@ router.post('/projects/:projectId/tasks/:taskId/review', requireAuth, FounderGua
   }
 });
 
-router.patch('/projects/:projectId/tasks/:taskId', requireAuth, FounderGuard, checkProjectLead, async (req, res, next) => {
+router.patch('/projects/:projectId/tasks/:taskId', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
   try {
     const { projectId, taskId } = req.params;
     const { title, description, priority, due_date, assignee_id } = req.body || {};
@@ -439,7 +444,7 @@ router.post('/projects/:projectId/applicants/:appId/action', requireAuth, checkP
 
 // ─── Analytics API ───────────────────────────────────────────────────
 
-router.get('/projects/:projectId/analytics', requireAuth, checkProjectLead, async (req, res, next) => {
+router.get('/projects/:projectId/analytics', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
   try {
     const { projectId } = req.params;
 

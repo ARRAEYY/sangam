@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Plus, User, ShieldCheck, Mail } from 'lucide-react'
-import FounderLayout from '../../components/founder/FounderLayout'
+import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { MemberPickerModal } from '../../components/profile/MemberPickerModal'
 import { TalentModal } from '../../components/profile/TalentModal'
 import { api } from '../../services/api.js'
@@ -12,6 +12,7 @@ export default function ProjectTeam() {
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState(null)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [userIsLead, setUserIsLead] = useState(true)
 
   const handleAddMember = async (payload) => {
     try {
@@ -47,6 +48,9 @@ export default function ProjectTeam() {
         if (memberList) {
           setMembers(memberList)
         }
+
+        // Determine if current user is lead
+        setUserIsLead(!!memberList?.find(m => m.is_lead && m.user_id === (window.localStorage.getItem('userId') || '')))
       } catch (err) {
         console.error('Failed to load team data:', err)
       } finally {
@@ -57,7 +61,7 @@ export default function ProjectTeam() {
   }, [id])
 
   return (
-    <FounderLayout>
+    <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
         {/* Header */}
         <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -66,12 +70,16 @@ export default function ProjectTeam() {
             <p className="text-[15px] text-slate-500 mt-1">Manage team members and roles.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="button button-secondary">
-              <Mail size={14} className="mr-1" /> Invite by Email
-            </button>
-            <button onClick={() => setIsPickerOpen(true)} className="button button-primary">
-              Add Member <Plus size={14} />
-            </button>
+            {userIsLead && (
+              <>
+                <button className="button button-secondary">
+                  <Mail size={14} className="mr-1" /> Invite by Email
+                </button>
+                <button onClick={() => setIsPickerOpen(true)} className="button button-primary">
+                  Add Member <Plus size={14} />
+                </button>
+              </>
+            )}
           </div>
         </section>
 
@@ -110,8 +118,8 @@ export default function ProjectTeam() {
                         <p className="text-[12px] font-bold tracking-widest uppercase text-slate-500 mt-1">{member.role}</p>
                       </div>
                     </div>
-                    {!member.is_lead && (
-                      <button 
+                    {!member.is_lead && userIsLead && (
+                      <button
                         onClick={(e) => handleRemoveMember(e, member.user_id)}
                         className="text-[12px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
                       >
@@ -145,6 +153,6 @@ export default function ProjectTeam() {
         onAddMember={handleAddMember}
         excludeUserIds={members.map(m => m.user_id)}
       />
-    </FounderLayout>
+    </WorkspaceLayout>
   )
 }
