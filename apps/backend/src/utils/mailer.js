@@ -198,13 +198,6 @@ async function sendPasswordResetEmail(toEmail, resetUrl) {
 }
 
 /**
- * Backwards-compatible sendForgotPasswordEmail
- */
-async function sendForgotPasswordEmail(toEmail, tempPassword) {
-  return sendPasswordResetEmail(toEmail, `http://localhost:5173/reset-password?temp=${tempPassword}`)
-}
-
-/**
  * Send email verification email containing a secure one-time verification link.
  */
 async function sendVerificationEmail(toEmail, verifyUrl) {
@@ -307,7 +300,6 @@ module.exports = {
   verifyTransporter,
   verifyEmailService,
   sendPasswordResetEmail,
-  sendForgotPasswordEmail,
   sendVerificationEmail,
 }
 

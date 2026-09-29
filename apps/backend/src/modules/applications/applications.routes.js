@@ -4,6 +4,8 @@ const { requireAuth } = require('../../middleware/auth')
 const { checkProjectLead } = require('../../middleware/founderAuth')
 const { serializeApplication } = require('../../utils/serializers')
 const { notifyApplicationDecision, createNotification } = require('../../services/notificationService')
+const { logAudit } = require('../../utils/auditLogger')
+const { parsePagination, paginated } = require('../../utils/pagination')
 
 const router = express.Router()
 
@@ -11,7 +13,9 @@ router.get('/mine', requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id
 
-    const applications = await Application.findAll({
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 50 })
+
+    const { rows: applications, count: total } = await Application.findAndCountAll({
       where: { user_id: userId },
       include: [
         {
@@ -24,10 +28,11 @@ router.get('/mine', requireAuth, async (req, res, next) => {
         },
       ],
       order: [['created_at', 'DESC']],
+      limit,
+      offset,
     })
 
-    return res.json(
-      applications.map((application) => ({
+    const mapped = applications.map((application) => ({
         id: application.id,
         project_id: application.project_id,
         status: application.status,
@@ -47,7 +52,8 @@ router.get('/mine', requireAuth, async (req, res, next) => {
             }
           : null,
       }))
-    )
+
+    return res.json(paginated({ items: mapped, page, limit, total }))
   } catch (error) {
     return next(error)
   }
@@ -148,9 +154,29 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
       }).catch(() => {}) // non-critical
     }
 
+    // Non-acceptance decisions persist directly; ACCEPTED is updated inside
+    // its membership transaction above
+    if (status !== 'ACCEPTED') {
+      await application.update({ status })
+    }
+
     if (status === 'ACCEPTED' || status === 'REJECTED') {
       await notifyApplicationDecision({ project: application.project, applicant: application.applicant, status })
     }
+
+    logAudit({
+      action: status === 'WITHDRAWN' ? 'application.withdrawn' : 'application.decided',
+      req,
+      actorId: req.user.id,
+      actorEmail: req.user.email,
+      entityType: 'application',
+      entityId: application.id,
+      metadata: {
+        decision: status,
+        project_id: application.project_id,
+        applicant_id: application.user_id,
+      },
+    })
 
     const refreshed = await Application.findByPk(application.id, {
       include: [

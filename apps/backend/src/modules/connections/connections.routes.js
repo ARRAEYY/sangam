@@ -4,6 +4,7 @@ const { sequelize, ConnectionRequest, Connection, User } = require('../../models
 const { requireAuth } = require('../../middleware/auth')
 const { notifyConnectionRequest, notifyConnectionDecision } = require('../../services/notificationService')
 const { serializeUser, serializeConnectionRequest } = require('../../utils/serializers')
+const { parsePagination, paginated } = require('../../utils/pagination')
 
 const router = express.Router()
 
@@ -58,6 +59,15 @@ router.post('/requests', requireAuth, async (req, res, next) => {
       recipient_id: recipientId,
       status: 'PENDING',
       message,
+    }).catch((err) => {
+      // The partial unique index is the authoritative guard — a request that
+      // raced past the check above still gets the same 409, not a 500 (AUD-036)
+      if (err.name === 'SequelizeUniqueConstraintError') {
+        const conflict = new Error('A pending connection request already exists between you two.')
+        conflict.status = 409
+        throw conflict
+      }
+      throw err
     })
 
     await notifyConnectionRequest({ connectionRequest, requester: req.user })
@@ -170,7 +180,9 @@ router.delete('/requests/:id', requireAuth, async (req, res, next) => {
 // The current user's established connections.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const connections = await Connection.findAll({
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 50 })
+
+    const { rows: connections, count: total } = await Connection.findAndCountAll({
       where: {
         [Op.or]: [{ user_a_id: req.user.id }, { user_b_id: req.user.id }],
       },
@@ -179,6 +191,8 @@ router.get('/', requireAuth, async (req, res, next) => {
         { model: User, as: 'userB', attributes: { exclude: ['password_hash'] } },
       ],
       order: [['created_at', 'DESC']],
+      limit,
+      offset,
     })
 
     const others = connections.map((c) => {
@@ -186,7 +200,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       return { connection_id: c.id, connected_at: c.created_at || c.createdAt, user: serializeUser(other) }
     })
 
-    return res.json(others)
+    return res.json(paginated({ items: others, page, limit, total }))
   } catch (error) {
     return next(error)
   }

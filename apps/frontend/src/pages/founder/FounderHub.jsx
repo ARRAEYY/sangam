@@ -14,8 +14,8 @@ export default function FounderHub() {
     async function loadProjects() {
       try {
         setLoading(true)
-        const data = await api.getFounderProjects()
-        setProjects(data)
+        const res = await api.getFounderProjects()
+        setProjects(res?.data || res || [])
       } catch (err) {
         console.error('Failed to fetch founder projects:', err)
         setError(err.message)

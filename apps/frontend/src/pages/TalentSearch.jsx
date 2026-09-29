@@ -26,14 +26,16 @@ export default function TalentSearch() {
     setLoading(true)
     setError('')
     try {
-      const [data, conns, sent, received] = await Promise.all([
-        api.searchTalent({ skill: skillFilter }),
+      const [talentRes, connsRes, sent, received] = await Promise.all([
+        api.searchTalent({ skill: skillFilter, limit: 24 }),
         api.listConnections().catch(() => []),
         api.listConnectionRequests('sent').catch(() => []),
         api.listConnectionRequests('received').catch(() => [])
       ])
-      
-      const sortedData = data.sort((a, b) => (b.profileCompletion || 0) - (a.profileCompletion || 0))
+
+      const data = talentRes?.data || talentRes || []
+      const conns = connsRes?.data || connsRes || []
+      const sortedData = [...data].sort((a, b) => (b.profileCompletion || 0) - (a.profileCompletion || 0))
       setTalent(sortedData)
       setConnectedUserIds(new Set((conns || []).map(c => c.user?.id).filter(Boolean)))
       setSentReqUserIds(new Set((sent || []).filter(r => r.status === 'PENDING').map(r => r.recipient?.id).filter(Boolean)))

@@ -6,6 +6,8 @@ const { FounderGuard, checkProjectLead } = require('../../middleware/founderAuth
 const { generalLimiter } = require('../../middleware/rateLimit')
 const { serializeProject, serializeApplication } = require('../../utils/serializers')
 const { notifyProjectApplication } = require('../../services/notificationService')
+const { logAudit } = require('../../utils/auditLogger')
+const { parsePagination, paginated } = require('../../utils/pagination')
 
 const router = express.Router()
 
@@ -83,7 +85,12 @@ router.get('/', requireAuth, async (req, res, next) => {
       query.include[0].required = true
     }
 
-    const projects = await Project.findAll(query)
+    const { page, limit, offset } = parsePagination(req.query)
+    query.limit = limit
+    query.offset = offset
+    query.distinct = true
+
+    const { rows: projects, count: total } = await Project.findAndCountAll(query)
 
     // Batch count active members per project (avoids N+1)
     const projectIds = projects.map((p) => p.id)
@@ -107,7 +114,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       return serialized
     })
 
-    return res.json(result)
+    return res.json(paginated({ items: result, page, limit, total }))
   } catch (error) {
     return next(error)
   }
@@ -422,6 +429,7 @@ router.patch('/:id/status', requireAuth, async (req, res, next) => {
       })
     }
 
+    const previousStatus = project.status
     await project.update({ status })
     const refreshed = await Project.findByPk(project.id, {
       include: [
@@ -429,6 +437,17 @@ router.patch('/:id/status', requireAuth, async (req, res, next) => {
         { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url'] },
       ],
     })
+
+    logAudit({
+      action: 'project.status_changed',
+      req,
+      actorId: req.user.id,
+      actorEmail: req.user.email,
+      entityType: 'project',
+      entityId: project.id,
+      metadata: { from: previousStatus, to: status },
+    })
+
     return res.json(serializeProject(refreshed))
   } catch (error) {
     return next(error)
@@ -468,6 +487,16 @@ router.post('/:id/apply', requireAuth, async (req, res, next) => {
     })
 
     await notifyProjectApplication({ project, applicant: req.user })
+
+    logAudit({
+      action: 'application.submitted',
+      req,
+      actorId: req.user.id,
+      actorEmail: req.user.email,
+      entityType: 'application',
+      entityId: application.id,
+      metadata: { project_id: project.id },
+    })
 
     return res.status(201).json({
       id: application.id,
@@ -791,28 +820,31 @@ router.post('/:id/milestones', requireAuth, async (req, res, next) => {
       return res.status(400).json({ detail: 'Milestone title is required.' })
     }
 
-    // Auto-increment order_index
-    const maxOrder = await Milestone.max('order_index', { where: { project_id: project.id } })
-    const nextOrder = (maxOrder ?? -1) + 1
+    // Auto-increment order_index — computed and written inside one transaction
+    // so concurrent creations cannot collide on the same slot (AUD-036)
+    const milestone = await sequelize.transaction(async (t) => {
+      const maxOrder = await Milestone.max('order_index', { where: { project_id: project.id }, transaction: t })
+      const nextOrder = (maxOrder ?? -1) + 1
 
-    const createPayload = {
-      project_id: project.id,
-      title: String(title).trim(),
-      description: description ? String(description).trim() : null,
-      due_date: due_date || null,
-      order_index: nextOrder,
-      created_by: req.user.id,
-      custom_properties: { type: 'milestone' },
-    }
-    
-    if (status && Milestone.STATUSES.includes(status)) {
-      createPayload.status = status;
-      if (status === 'COMPLETED') {
-        createPayload.completed_at = new Date();
+      const createPayload = {
+        project_id: project.id,
+        title: String(title).trim(),
+        description: description ? String(description).trim() : null,
+        due_date: due_date || null,
+        order_index: nextOrder,
+        created_by: req.user.id,
+        custom_properties: { type: 'milestone' },
       }
-    }
 
-    const milestone = await Milestone.create(createPayload)
+      if (status && Milestone.STATUSES.includes(status)) {
+        createPayload.status = status;
+        if (status === 'COMPLETED') {
+          createPayload.completed_at = new Date();
+        }
+      }
+
+      return Milestone.create(createPayload, { transaction: t })
+    })
 
     return res.status(201).json({
       id: milestone.id,
@@ -970,6 +1002,16 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
       await project.setRequired_skills([], { transaction: t })
       // Delete project
       await project.destroy({ transaction: t })
+    })
+
+    logAudit({
+      action: 'project.deleted',
+      req,
+      actorId: req.user.id,
+      actorEmail: req.user.email,
+      entityType: 'project',
+      entityId: project.id,
+      metadata: { title: project.title },
     })
 
     return res.json({ message: 'Project deleted successfully.' })

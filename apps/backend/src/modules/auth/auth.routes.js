@@ -11,6 +11,7 @@ const { authLimiter } = require('../../middleware/rateLimit')
 const { requireAuth } = require('../../middleware/auth')
 const { sendPasswordResetEmail, sendVerificationEmail } = require('../../utils/mailer')
 const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../../utils/courses')
+const { logAudit } = require('../../utils/auditLogger')
 
 const router = express.Router()
 
@@ -242,6 +243,13 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ detail: 'Invalid email or password.' })
     }
 
+    // Suspension is only revealed after valid credentials (#57)
+    if (user.is_suspended) {
+      return res.status(403).json({
+        detail: 'Your account has been suspended. Please contact a platform administrator.',
+      })
+    }
+
     // Email verification check removed as requested by user
 
     const jwt = signToken(user)
@@ -312,6 +320,16 @@ router.post('/refresh', async (req, res, next) => {
       res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
       res.clearCookie('refresh_token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
       return res.status(401).json({ detail: 'Invalid or expired refresh token.' })
+    }
+
+    // A suspension revokes outstanding refresh tokens, but a token that slips
+    // through before the revocation must not mint a new session (#57)
+    if (tokenRecord.user.is_suspended) {
+      await tokenRecord.update({ is_revoked: true })
+      const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
+      res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
+      res.clearCookie('refresh_token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'None' : 'Lax', path: '/' })
+      return res.status(403).json({ detail: 'Your account has been suspended. Please contact a platform administrator.' })
     }
 
     // Revoke old refresh token (token rotation)
@@ -480,6 +498,15 @@ router.post('/reset-password', authLimiter, async (req, res, next) => {
       { where: { user_id: user.id, is_revoked: false } }
     )
 
+    logAudit({
+      action: 'auth.password_reset_completed',
+      req,
+      actorId: user.id,
+      actorEmail: user.email,
+      entityType: 'user',
+      entityId: user.id,
+    })
+
     return res.json({
       message: 'Your password has been successfully reset. You can now log in with your new password.',
     })
@@ -522,6 +549,15 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
       { is_revoked: true },
       { where: { user_id: user.id, is_revoked: false } }
     )
+
+    logAudit({
+      action: 'auth.password_changed',
+      req,
+      actorId: user.id,
+      actorEmail: user.email,
+      entityType: 'user',
+      entityId: user.id,
+    })
 
     return res.json({ message: 'Password changed successfully. Please sign in again.' })
   } catch (error) {

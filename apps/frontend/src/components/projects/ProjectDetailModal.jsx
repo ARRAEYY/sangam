@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X as XIcon, Calendar, Users, Briefcase, CheckCircle2, Loader2, Sparkles, AlertCircle, Edit2, Plus, Flag, Trash2, Check, Clock, Play, Zap } from 'lucide-react';
 import { api } from '../../services/api.js';
+import { useToast } from '../ui/ToastProvider.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { MemberPickerModal } from '../profile/MemberPickerModal.jsx';
 
@@ -15,6 +16,7 @@ function getInitials(name) {
 export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [project, setProject] = useState(null);
   const [context, setContext] = useState(null);
@@ -124,7 +126,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       setIsAddingMilestone(false);
       fetchProject();
     } catch (err) {
-      alert('Failed to add milestone: ' + err.message);
+      toast.error('Failed to add milestone: ' + err.message);
     }
   };
 
@@ -133,7 +135,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       await api.updateMilestone(project.id, mid, { status: newStatus });
       fetchProject();
     } catch (err) {
-      alert('Failed to update milestone: ' + err.message);
+      toast.error('Failed to update milestone: ' + err.message);
     }
   };
 
@@ -142,7 +144,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       await api.updateTask(project.id, tid, { status: newStatus });
       fetchProject();
     } catch (err) {
-      alert('Failed to update task: ' + err.message);
+      toast.error('Failed to update task: ' + err.message);
     }
   };
 
@@ -155,7 +157,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
       });
       fetchProject();
     } catch (err) {
-      alert('Failed to add member: ' + err.message);
+      toast.error('Failed to add member: ' + err.message);
     }
   };
 

@@ -15,6 +15,7 @@ const ProjectMember = require('./ProjectMember')
 const Milestone = require('./Milestone')
 const TaskComment = require('./TaskComment')
 const RefreshToken = require('./RefreshToken')
+const AuditLog = require('./AuditLog')
 
 User.belongsToMany(Skill, {
   through: UserSkill,
@@ -143,4 +144,5 @@ module.exports = {
   Milestone,
   TaskComment,
   RefreshToken,
+  AuditLog,
 }

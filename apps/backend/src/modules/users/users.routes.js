@@ -27,6 +27,8 @@ const {
 } = require('../../utils/serializers')
 const { normalizeCourse, isValidCourse, VALID_COURSES } = require('../../utils/courses')
 const { isValidHttpUrl } = require('../../utils/urlValidation')
+const { logAudit } = require('../../utils/auditLogger')
+const { parsePagination, paginated } = require('../../utils/pagination')
 
 const router = express.Router()
 
@@ -203,6 +205,18 @@ router.delete('/profile', requireAuth, async (req, res, next) => {
       await user.destroy({ transaction: t })
     })
 
+    // Audit trail must survive the deleted account, so it is written after the
+    // transaction with an email snapshot (issue #54)
+    logAudit({
+      action: 'account.deleted',
+      req,
+      actorId: userId,
+      actorEmail: user.email,
+      entityType: 'user',
+      entityId: userId,
+      metadata: { deletedEmail: user.email },
+    })
+
     res.clearCookie('token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -220,10 +234,15 @@ router.get('/talent', requireAuth, async (req, res, next) => {
   try {
     const skillFilter = String(req.query.skill || '').trim()
 
+    const { page, limit, offset } = parsePagination(req.query)
+
     const query = {
       attributes: { exclude: ['password_hash'] },
       include: [{ model: Skill, as: 'skills' }],
       order: [['full_name', 'ASC']],
+      limit,
+      offset,
+      distinct: true,
     }
 
     if (skillFilter) {
@@ -235,8 +254,8 @@ router.get('/talent', requireAuth, async (req, res, next) => {
       query.include[0].required = true
     }
 
-    const users = await User.findAll(query)
-    return res.json(users.map(serializeUser))
+    const { rows: users, count: total } = await User.findAndCountAll(query)
+    return res.json(paginated({ items: users.map(serializeUser), page, limit, total }))
   } catch (error) {
     return next(error)
   }

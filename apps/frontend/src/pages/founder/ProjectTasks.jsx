@@ -25,10 +25,14 @@ import { StrictModeDroppable } from '../../components/ui/StrictModeDroppable'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider.jsx'
 
 export default function ProjectTasks() {
   const { id } = useParams()
   const { user } = useAuth()
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('BOARD') // 'BOARD' | 'TABLE'
@@ -49,7 +53,6 @@ export default function ProjectTasks() {
   const [priority, setPriority] = useState('MEDIUM')
   const [dueDate, setDueDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [feedbackToast, setFeedbackToast] = useState('')
 
   useEffect(() => {
     async function fetchTasksData() {
@@ -80,8 +83,7 @@ export default function ProjectTasks() {
   }, [id, user?.id])
 
   const showToast = (msg) => {
-    setFeedbackToast(msg)
-    setTimeout(() => setFeedbackToast(''), 3500)
+    toast.success(msg)
   }
 
   const onDragEnd = (result) => {
@@ -97,7 +99,7 @@ export default function ProjectTasks() {
     try {
       // Non-leads can move tasks to READY_FOR_REVIEW, but only leads can move to COMPLETED
       if (newStatus === 'COMPLETED' && !userIsLead) {
-        alert('Only the project lead can mark tasks as completed.');
+        toast.error('Only the project lead can mark tasks as completed.');
         return;
       }
 
@@ -105,13 +107,13 @@ export default function ProjectTasks() {
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
       showToast(`Task status updated to ${newStatus.replace(/_/g, ' ')}`)
     } catch (err) {
-      alert(err.message || 'Failed to update task status')
+      toast.error(err.message || 'Failed to update task status')
     }
   }
 
   const handleReviewAction = async (taskId, action) => {
     if (!userIsLead) {
-      alert('Only the project lead can perform review actions.');
+      toast.error('Only the project lead can perform review actions.');
       return;
     }
     try {
@@ -125,7 +127,7 @@ export default function ProjectTasks() {
         showToast('Feedback logged: Task sent back to In Progress.')
       }
     } catch (err) {
-      alert(err.message || 'Failed to submit review')
+      toast.error(err.message || 'Failed to submit review')
     }
   }
 
@@ -150,13 +152,13 @@ export default function ProjectTasks() {
   }
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return
+    if (!(await confirmDialog({ title: 'Delete this task?', message: 'The task will be permanently removed from the workspace.', confirmLabel: 'Delete', danger: true }))) return
     try {
       await api.deleteFounderTask(id, taskId).catch(() => null)
       setTasks(prev => prev.filter(t => t.id !== taskId))
       showToast('Task deleted successfully')
     } catch (err) {
-      alert(err.message || 'Failed to delete task')
+      toast.error(err.message || 'Failed to delete task')
     }
   }
 
@@ -198,7 +200,7 @@ export default function ProjectTasks() {
       setEditingTaskId(null)
       showToast('Task updated successfully!')
     } catch (err) {
-      alert(err.message || 'Failed to update task')
+      toast.error(err.message || 'Failed to update task')
     } finally {
       setSubmitting(false)
     }
@@ -239,7 +241,7 @@ export default function ProjectTasks() {
       setAssigneeId('')
       showToast('Task added to workspace successfully!')
     } catch (err) {
-      alert(err.message || 'Failed to create task')
+      toast.error(err.message || 'Failed to create task')
     } finally {
       setSubmitting(false)
     }
@@ -276,19 +278,6 @@ export default function ProjectTasks() {
   return (
     <WorkspaceLayout>
       <div className="page-stack max-w-[1200px] mx-auto w-full mb-16">
-        {/* ── Toast Notification ───────────────────────────────────────────── */}
-        {feedbackToast && (
-          <div className="flex items-center justify-between p-3.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200/80 text-[13px] font-semibold shadow-sm animate-in fade-in duration-150 mb-6">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={16} className="text-emerald-600" />
-              <span>{feedbackToast}</span>
-            </div>
-            <button onClick={() => setFeedbackToast('')} className="p-1 text-emerald-600 hover:text-emerald-900">
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
         {/* ── Top Header Strip ────────────────────────────────────────────── */}
         <section className="reveal-in flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>

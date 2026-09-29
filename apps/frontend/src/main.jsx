@@ -5,6 +5,8 @@ import App from './App.jsx'
 import './index.css'
 import { AuthProvider } from './context/AuthContext.jsx'
 import ErrorBoundary from './components/ui/ErrorBoundary.jsx'
+import { ToastProvider } from './components/ui/ToastProvider.jsx'
+import { ConfirmDialogProvider } from './components/ui/ConfirmDialogProvider.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,9 +17,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           v7_relativeSplatPath: true,
         }}
       >
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ConfirmDialogProvider>
+              <App />
+            </ConfirmDialogProvider>
+          </AuthProvider>
+        </ToastProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>,

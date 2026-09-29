@@ -14,7 +14,9 @@ const Skill = sequelize.define(
       allowNull: false,
       unique: true,
       set(value) {
-        this.setDataValue('name', value.trim())
+        // Store skills canonically lowercase so case-variant duplicates
+        // ("React" vs "react") can never be created (AUD-036).
+        this.setDataValue('name', String(value).trim().toLowerCase())
       },
     },
   },

@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Plus, Flag, MoreHorizontal, CheckCircle2, Clock, Pencil, Trash2, X, Calendar } from 'lucide-react'
+import { Plus, Flag, MoreHorizontal, Clock, Pencil, Trash2, X, Calendar } from 'lucide-react'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider.jsx'
 
 export default function ProjectMilestones() {
   const { id } = useParams()
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [milestones, setMilestones] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -20,13 +24,7 @@ export default function ProjectMilestones() {
   const [status, setStatus] = useState('NOT_STARTED')
   const [submitting, setSubmitting] = useState(false)
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState('')
 
-  const showToast = (msg) => {
-    setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 3000)
-  }
 
   useEffect(() => {
     let isMounted = true
@@ -65,13 +63,13 @@ export default function ProjectMilestones() {
   }
 
   const handleDelete = async (milestoneId) => {
-    if (!window.confirm('Are you sure you want to delete this milestone?')) return
+    if (!(await confirmDialog({ title: 'Delete this milestone?', message: 'This milestone and its progress tracking will be permanently removed.', confirmLabel: 'Delete', danger: true }))) return
     try {
       await api.deleteMilestone(id, milestoneId)
       setMilestones(prev => prev.filter(m => m.id !== milestoneId))
-      showToast('Milestone deleted')
+      toast.success('Milestone deleted')
     } catch (err) {
-      alert(err.message || 'Failed to delete')
+      toast.error(err.message || 'Failed to delete')
     }
   }
 
@@ -79,9 +77,9 @@ export default function ProjectMilestones() {
     try {
       await api.updateMilestone(id, milestoneId, { status: newStatus })
       setMilestones(prev => prev.map(m => m.id === milestoneId ? { ...m, status: newStatus } : m))
-      showToast('Status updated')
+      toast.success('Status updated')
     } catch (err) {
-      alert(err.message || 'Failed to update status')
+      toast.error(err.message || 'Failed to update status')
     }
   }
 
@@ -105,7 +103,7 @@ export default function ProjectMilestones() {
           status,
           due_date: dueDate || null
         } : m))
-        showToast('Milestone updated')
+        toast.success('Milestone updated')
       } else {
         const newM = await api.createMilestone(id, {
           title: title.trim(),
@@ -114,11 +112,11 @@ export default function ProjectMilestones() {
           due_date: dueDate || null
         })
         setMilestones(prev => [...prev, newM])
-        showToast('Milestone created')
+        toast.success('Milestone created')
       }
       setIsModalOpen(false)
     } catch (err) {
-      alert(err.message || 'Failed to save milestone')
+      toast.error(err.message || 'Failed to save milestone')
     } finally {
       setSubmitting(false)
     }
@@ -308,13 +306,6 @@ export default function ProjectMilestones() {
                 </div>
               </form>
             </div>
-          </div>
-        )}
-
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 flex items-center gap-2 p-4 bg-slate-900 text-white rounded-xl shadow-2xl text-[13px] font-medium animate-in slide-in-from-bottom-5">
-            <CheckCircle2 size={16} className="text-emerald-400" />
-            {toastMessage}
           </div>
         )}
       </div>

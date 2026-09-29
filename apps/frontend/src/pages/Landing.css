@@ -54,6 +54,8 @@
 .landing-site .eyebrow { color: #999da0; font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
 
 /* Navbar */
+.nav-grid-line-1 { top: 67px; }
+.nav-grid-line-2 { top: 113px; }
 .landing-nav { position: fixed; top: 67px; left: 50%; transform: translateX(-50%); z-index: 50; width: min(1400px, calc(100% - 8vw)); background: transparent; height: 46px; display: flex; align-items: center; justify-content: space-between; margin: 0 auto; }
 .landing-nav .public-brand { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-family: "Inter", sans-serif; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
 .landing-nav nav { display: flex; align-items: center; gap: 40px; color: var(--ink); font-family: "Inter", sans-serif; font-size: 16px; font-weight: 400; }
@@ -81,7 +83,7 @@
 .hero-copy p { max-width: 380px; color: var(--landing-soft); font-size: 16px; line-height: 1.7; }
 .hero-copy .hero-actions { margin-top: 50px; }
 .hero-index { position: absolute; left: 0; bottom: 80px; display: flex; flex-direction: column; gap: 8px; color: #a4abb2; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
-.hero-scroll { position: absolute; right: 0; bottom: 80px; display: flex; align-items: center; gap: 10px; color: #8e9499; font-size: 11px; font-weight: 700; }
+.hero-scroll { position: absolute; right: 0; bottom: 80px; display: flex; align-items: center; gap: 10px; color: #5f6673; font-size: 11px; font-weight: 700; }
 
 .hero-network { position: relative; right: -2vw; width: 100%; height: min(50vh, 450px); display: flex; justify-content: center; align-items: center; }
 
@@ -328,7 +330,6 @@
     scroll-padding-top: 76px !important;
   }
   .snap-section,
-  #section-0,
   #section-1,
   #section-2,
   #section-3,
@@ -343,9 +344,17 @@
     overflow: visible !important;
     justify-content: flex-start !important;
   }
+  
   .snap-section:first-child,
   #section-0 {
-    padding-top: 100px !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding-top: 76px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
   }
   .snap-section .story-section,
   .snap-section .how-section,
@@ -358,15 +367,20 @@
     display: none !important;
   }
  
-  .landing-nav { height: 76px; width: calc(100% - 40px); }
+  .landing-nav { top: 20px; height: 54px; width: calc(100% - 40px); }
+  .nav-grid-line-1 { top: 20px; }
+  .nav-grid-line-2 { top: 74px; }
   .landing-menu { display: grid; }
   .landing-nav nav { position: absolute; top: 66px; right: 0; width: 220px; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: 12px; border: 1px solid rgba(24,34,50,.1); border-radius: 16px; background: rgba(250,249,245,.98); box-shadow: 0 16px 32px rgba(67,58,47,.1); }
   .landing-nav nav.is-open { display: flex; }
   .landing-nav nav a { padding: 12px; }
   
-  .landing-hero { display: block; width: calc(100% - 40px); min-height: auto; padding: 20px 20px 40px; }
-  .hero-copy h1 { font-size: clamp(40px, 10vw, 75px); }
-  .hero-network { top: auto; right: 0; bottom: 0; width: 94%; height: 350px; margin-top: 40px; }
+  .landing-hero { display: flex; flex-direction: column; width: calc(100% - 40px); height: 100%; padding: 15px 20px 90px; justify-content: flex-start; }
+  .hero-copy { flex-shrink: 0; }
+  .hero-copy h1 { font-size: clamp(46px, 13vw, 70px); line-height: 0.95; letter-spacing: -0.03em; margin-top: 15px; }
+  .hero-copy .hero-actions { margin-top: 32px; flex-wrap: nowrap; justify-content: flex-start; align-items: center; }
+  .hero-network { flex: 1; top: auto; right: 0; bottom: 0; width: 100%; height: auto; min-height: 150px; margin-top: 30px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .hero-network img { max-height: 100%; max-width: 100%; object-fit: contain; }
   .hero-index { top: 103px; left: auto; right: 12px; }
   .hero-scroll { display: none; }
   

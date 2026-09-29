@@ -133,9 +133,10 @@ export default function Dashboard() {
         const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
         // Fetch projects globally to show on dashboard feed
-        const projectsData = await api.listProjects({})
+        const projectsRes = await api.listProjects({})
         if (!isMounted) return;
 
+        const projectsData = projectsRes?.data || projectsRes || []
         const openProjects = projectsData.filter(p => p.status === 'OPEN')
         setOpenProjectsCount(openProjects.length)
 
@@ -174,7 +175,8 @@ export default function Dashboard() {
         let signal = 0
 
         try {
-          const connections = await api.listConnections()
+          const connectionsRes = await api.listConnections()
+          const connections = connectionsRes?.data || connectionsRes || []
 
           const uniqueProjectIds = new Set();
           if (fullProfile.project_roles) {

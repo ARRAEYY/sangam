@@ -88,7 +88,7 @@ export default function Onboarding() {
 
       <div className="card p-6 sm:p-7">
         {error && (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          <div id="onboarding-error" role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -115,11 +115,13 @@ export default function Onboarding() {
             <p className="mt-1 text-xs text-slate-500">Your verified Google email.</p>
           </Field>
 
-          <Field label="Create Password">
+          <Field label="Create Password" errorId="onboarding-error" hasError={Boolean(error)}>
             <input
               type="password"
               required
               minLength={12}
+              autoComplete="new-password"
+              aria-describedby={error ? 'onboarding-error' : undefined}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="input"
@@ -177,9 +179,9 @@ export default function Onboarding() {
   )
 }
 
-function Field({ label, children }) {
+function Field({ label, children, errorId, hasError }) {
   return (
-    <label className="block">
+    <label className="block" aria-describedby={hasError ? errorId : undefined}>
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       {children}
     </label>
