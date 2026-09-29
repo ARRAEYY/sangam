@@ -5,12 +5,14 @@ const path = require('path')
 // export plain per-environment config, not the Sequelize instance used by
 // the app itself (see ./database.js).
 const useSSL = process.env.DATABASE_SSL !== 'false'
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false'
 
 const postgresConfig = {
   use_env_variable: 'DATABASE_URL',
   dialect: 'postgres',
   dialectOptions: {
-    ssl: useSSL ? { require: true, rejectUnauthorized: false } : undefined,
+    // Mirrors src/config/database.js — cert validation on by default (#48)
+    ssl: useSSL ? { require: true, rejectUnauthorized } : undefined,
   },
   define: {
     underscored: true,

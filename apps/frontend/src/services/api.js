@@ -17,6 +17,36 @@ async function getCsrfToken() {
   return null
 }
 
+let refreshPromise = null
+
+// Single in-flight refresh: the backend rotates and revokes refresh tokens on
+// every refresh, so parallel 401s each firing their own refresh would revoke
+// each other's new tokens and randomly log the user out (#39).
+function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const csrfToken = await getCsrfToken()
+        const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+          method: 'POST',
+          headers: csrfToken ? { 'CSRF-Token': csrfToken } : {},
+          credentials: 'include',
+        })
+        if (!res.ok) {
+          // Refresh failed — session is gone; let the app react once
+          window.dispatchEvent(new Event('sangam:session-expired'))
+        }
+        return res.ok
+      } catch {
+        return false
+      } finally {
+        refreshPromise = null
+      }
+    })()
+  }
+  return refreshPromise
+}
+
 async function request(path, { method = 'GET', body, token, params, _retry = false } = {}) {
   let url = `${API_BASE}${path}`
   if (params) {
@@ -54,27 +84,16 @@ async function request(path, { method = 'GET', body, token, params, _retry = fal
   if (!res.ok) {
     // Attempt silent refresh on 401 if we haven't retried yet and it's not an auth route
     if (
-      res.status === 401 && 
-      !_retry && 
-      !path.startsWith('/api/auth/login') && 
+      res.status === 401 &&
+      !_retry &&
+      !path.startsWith('/api/auth/login') &&
       !path.startsWith('/api/auth/refresh') &&
       !path.startsWith('/api/auth/google')
     ) {
-      try {
-        // Fetch new CSRF token first just in case
-        const csrfToken = await getCsrfToken()
-        const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, { 
-          method: 'POST', 
-          headers: csrfToken ? { 'CSRF-Token': csrfToken } : {},
-          credentials: 'include' 
-        })
-        
-        if (refreshRes.ok) {
-          // Token refreshed successfully, retry original request
-          return request(path, { method, body, token, params, _retry: true })
-        }
-      } catch (err) {
-        // Refresh attempt failed, fall through to throw original error
+      const refreshed = await refreshSession()
+      if (refreshed) {
+        // Token refreshed successfully, retry original request
+        return request(path, { method, body, token, params, _retry: true })
       }
     }
 
@@ -108,6 +127,7 @@ export const api = {
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   resendVerification: (email) =>
     request('/api/auth/resend-verification', { method: 'POST', body: { email } }),
+  verifyEmail: (token) => request('/api/auth/verify-email', { params: { token } }),
   forgotPassword: (email) =>
     request('/api/auth/forgot-password', { method: 'POST', body: { email } }),
   resetPassword: (token, new_password) =>

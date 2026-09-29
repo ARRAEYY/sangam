@@ -21,6 +21,30 @@ const Project = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    project_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        isHttpUrlOrEmpty(value) {
+          if (value === null || value === '' || value === undefined) return
+          try {
+            const parsed = new URL(value)
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('bad scheme')
+          } catch {
+            throw new Error('Project URL must be a valid http(s) URL.')
+          }
+        },
+      },
+    },
+    visibility: {
+      type: DataTypes.ENUM('Public', 'Private'),
+      allowNull: false,
+      defaultValue: 'Public',
+    },
+    hiring_requirements: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     short_description: {
       type: DataTypes.STRING(500),
       allowNull: true,

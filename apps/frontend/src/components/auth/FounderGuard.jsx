@@ -26,7 +26,8 @@ export default function FounderGuard({ children }) {
 
       try {
         const context = await api.getProjectContext(projectId)
-        setIsLead(context.is_lead || context.is_owner)
+        // is_lead already includes ownership server-side (#36)
+        setIsLead(Boolean(context.is_lead || context.is_owner))
       } catch (err) {
         console.error('Error checking lead status:', err)
         setIsLead(false)

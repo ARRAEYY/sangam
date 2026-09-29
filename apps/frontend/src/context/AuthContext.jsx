@@ -16,6 +16,11 @@ export function AuthProvider({ children }) {
     }).finally(() => {
       setLoading(false)
     })
+
+    // Emitted once when a shared token refresh fails (services/api.js)
+    const onSessionExpired = () => setUser(null)
+    window.addEventListener('sangam:session-expired', onSessionExpired)
+    return () => window.removeEventListener('sangam:session-expired', onSessionExpired)
   }, [])
 
 

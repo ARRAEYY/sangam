@@ -1,41 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Users2, PlusCircle, User, Network } from 'lucide-react'
+import { Users2, PlusCircle, User, Network, Bell } from 'lucide-react'
 import ExploreIcon from '../ui/ExploreIcon.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { api } from '../../services/api.js'
+import useUnreadCount from '../../hooks/useUnreadCount.js'
 
 export default function MobileBottomNav() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const location = useLocation()
-  const [unreadCount, setUnreadCount] = useState(0)
-
-  useEffect(() => {
-    if (!user || !token) {
-      setUnreadCount(0)
-      return
-    }
-
-    let isMounted = true
-
-    const fetchCount = async () => {
-      try {
-        const { count } = await api.unreadNotificationCount(token)
-        if (isMounted) {
-          setUnreadCount(typeof count === 'number' ? count : 0)
-        }
-      } catch {
-        // Ignore transient errors
-      }
-    }
-
-    fetchCount()
-    const interval = setInterval(fetchCount, 10000)
-    return () => {
-      isMounted = false
-      clearInterval(interval)
-    }
-  }, [user, token, location.pathname])
+  const unreadCount = useUnreadCount(user)
 
   const items = [
     { key: 'explore', to: '/explore', label: 'Explore', icon: ExploreIcon },
@@ -47,6 +20,14 @@ export default function MobileBottomNav() {
       label: 'Network',
       icon: Network,
     },
+    // Live unread badge — previously the badge slot existed but was never fed (#38)
+    {
+      key: 'notifications',
+      to: user ? '/notifications' : '/auth',
+      label: 'Alerts',
+      icon: Bell,
+      badge: user ? unreadCount : 0,
+    },
     {
       key: 'profile',
       to: user ? '/profile' : '/auth',
@@ -56,8 +37,8 @@ export default function MobileBottomNav() {
   ]
 
   return (
-    <aside aria-label="Mobile Navigation" className="fixed bottom-0 left-0 right-0 z-40 block border-t border-slate-200/80 bg-white/95 px-3 py-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden">
-      <nav className="mx-auto flex max-w-sm items-center justify-between">
+    <aside aria-label="Mobile Navigation" className="fixed bottom-0 left-0 right-0 z-40 block border-t border-slate-200/80 bg-white/95 px-1.5 py-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden">
+      <nav className="mx-auto flex max-w-md items-center justify-between">
         {items.map(({ key, to, label, icon: Icon, isAction, badge }) => {
           const active = location.pathname === to
 

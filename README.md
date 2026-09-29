@@ -81,24 +81,28 @@ flowchart TD
 
 ```
 sangam/
-├── frontend/             # React Single Page Application
-│   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── context/      # React contexts (AuthContext)
-│   │   ├── pages/        # Main route components
-│   │   └── api.js        # API client and request handlers
-│   └── package.json
-├── backend/              # Express API Server
-│   ├── src/
-│   │   ├── config/       # Database & environment configuration
-│   │   ├── middleware/   # Authentication, CSRF, and rate limiting
-│   │   ├── models/       # Sequelize ORM models
-│   │   ├── routes/       # API endpoint definitions
-│   │   ├── services/     # Business logic (e.g., notifications)
-│   │   ├── utils/        # Helpers (mailer, logger, serializers)
-│   │   └── server.js     # Server entry point
-│   └── package.json
-└── render.yaml           # Render deployment configuration
+├── apps/
+│   ├── frontend/         # React Single Page Application
+│   │   ├── src/
+│   │   │   ├── components/  # Reusable UI components
+│   │   │   ├── context/     # React contexts (AuthContext)
+│   │   │   ├── hooks/       # Shared hooks (useUnreadCount)
+│   │   │   ├── pages/       # Main route components
+│   │   │   └── services/    # api.js fetch wrapper
+│   │   └── package.json
+│   └── backend/          # Express API Server
+│       ├── src/
+│       │   ├── config/      # Database & environment configuration
+│       │   ├── middleware/  # Auth, CSRF, rate limiting, role guards
+│       │   ├── migrations/  # sequelize-cli migrations (schema source of truth)
+│       │   ├── models/      # Sequelize ORM models
+│       │   ├── modules/     # API route modules (auth, users, projects, ...)
+│       │   ├── services/    # Business logic (e.g., notifications)
+│       │   ├── utils/       # Helpers (mailer, logger, serializers)
+│       │   └── server.js    # Server entry point
+│       └── package.json
+├── packages/             # Shared workspace packages
+└── render.yaml           # Render deployment configuration (apps/backend)
 ```
 
 ## Data Model

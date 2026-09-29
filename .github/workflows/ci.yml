@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [master, legend]
+  pull_request:
+    branches: [master]
+
+jobs:
+  backend:
+    name: Backend tests & audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/backend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Security audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
+
+  frontend:
+    name: Frontend tests & audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - name: Install
+        run: npm install
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npx vite build
+      - name: Security audit (production deps)
+        run: npm audit --omit=dev --audit-level=high

@@ -143,9 +143,12 @@ export default function Explore() {
   const [projectsData, setProjectsData] = useState([]);
   const [stats, setStats] = useState({ openProjects: 0, totalUsers: 0, totalOpenings: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
+    setError("");
     const fetchProjects = async () => {
       try {
         const data = await api.listProjects({}, token);
@@ -166,6 +169,7 @@ export default function Explore() {
         if (isMounted) setProjectsData(mapped);
       } catch (e) {
         console.error("Failed to load projects", e);
+        if (isMounted) setError("We couldn't load projects right now. Please try again.");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -181,7 +185,9 @@ export default function Explore() {
     fetchProjects();
     fetchStats();
     return () => { isMounted = false; };
-  }, [token]);
+  }, [token, reloadKey]);
+
+  const retryLoad = () => setReloadKey(k => k + 1);
 
   const baseFiltered = useFilteredItems(projectsData, query);
   const filtered = useMemo(() => {
@@ -364,7 +370,18 @@ export default function Explore() {
       </SearchToolbar>
 
       {/* Grid or Empty State */}
-      {loading ? (
+      {error ? (
+        <section className="reveal-in delay-2 border border-red-100 bg-red-50 rounded-[24px] p-8 text-center">
+          <p className="text-sm text-red-700 mb-4">{error}</p>
+          <button
+            type="button"
+            onClick={retryLoad}
+            className="rounded-full bg-[#7f1d3b] px-5 py-2 text-[13px] font-bold text-white transition-colors hover:bg-[#5c132b]"
+          >
+            Try again
+          </button>
+        </section>
+      ) : loading ? (
         <section className="reveal-in delay-2 py-20 text-center text-slate-400 border border-slate-100 rounded-[24px] bg-white">
           Discovering campus signals...
         </section>

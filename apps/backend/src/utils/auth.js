@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 
+// Single source of truth for the access-token lifetime, used by both the
+// signer and the cookie setter (#50). Default 60 minutes; refresh rotation
+// renews sessions silently.
+const ACCESS_TOKEN_TTL_MINUTES = Number(process.env.JWT_EXPIRE_MINUTES || 60)
+
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET
   if (!secret || secret === 'change_this') {
@@ -11,21 +16,24 @@ function getJwtSecret() {
 
 function signToken(user) {
   const secret = getJwtSecret()
-  // Default to 15 minutes for access tokens
-  const expiresInMinutes = Number(process.env.JWT_EXPIRE_MINUTES || 15)
-
   return jwt.sign(
     {
       sub: user.id,
       email: user.email,
     },
     secret,
-    { expiresIn: expiresInMinutes * 60 }
+    { expiresIn: ACCESS_TOKEN_TTL_MINUTES * 60 }
   )
 }
 
 function generateRefreshToken() {
   return crypto.randomBytes(40).toString('hex')
+}
+
+// Refresh tokens are stored as SHA-256 hashes so a database dump never
+// yields usable sessions (#24). Same scheme as password-reset tokens.
+function hashToken(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex')
 }
 
 function verifyToken(token) {
@@ -37,4 +45,6 @@ module.exports = {
   signToken,
   verifyToken,
   generateRefreshToken,
+  hashToken,
+  ACCESS_TOKEN_TTL_MINUTES,
 }

@@ -4,6 +4,7 @@ const { sequelize, Project, User, Skill, Application, ProjectMember, Milestone, 
 const { requireAuth } = require('../../middleware/auth')
 const { FounderGuard, checkProjectLead, checkProjectMember } = require('../../middleware/founderAuth')
 const { serializeProject } = require('../../utils/serializers')
+const { isValidHttpUrl } = require('../../utils/urlValidation')
 const { notifyProjectApplication } = require('../../services/notificationService')
 
 const router = express.Router()
@@ -29,30 +30,44 @@ router.get('/projects', requireAuth, async (req, res, next) => {
       order: [['created_at', 'DESC']],
     });
 
-    // We need to calculate applicant counts and alert status for each project
-    const result = await Promise.all(projects.map(async (project) => {
-      const pendingApps = await Application.count({
-        where: { project_id: project.id, status: 'PENDING' },
-      });
+    // Batched aggregates — one query each instead of 4 per project (#45)
+    const projectIds = projects.map((p) => p.id);
+    const pendingApps = projectIds.length
+      ? await Application.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: 'PENDING' },
+          attributes: ['project_id', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const pendingMap = Object.fromEntries(pendingApps.map((r) => [r.project_id, parseInt(r.count, 10)]));
 
-      const hasBlockedTasks = await Milestone.findOne({
-        where: { project_id: project.id, status: 'BLOCKED' },
-      });
+    const alertTasks = projectIds.length
+      ? await Milestone.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: { [Op.in]: ['BLOCKED', 'READY_FOR_REVIEW'] } },
+          attributes: ['project_id'],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const alertSet = new Set(alertTasks.map((r) => r.project_id));
 
-      const hasReviewRequests = await Milestone.findOne({
-        where: { project_id: project.id, status: 'READY_FOR_REVIEW' },
-      });
+    const memberCounts = projectIds.length
+      ? await ProjectMember.findAll({
+          where: { project_id: { [Op.in]: projectIds }, status: 'ACTIVE' },
+          attributes: ['project_id', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['project_id'],
+          raw: true,
+        })
+      : [];
+    const memberMap = Object.fromEntries(memberCounts.map((r) => [r.project_id, parseInt(r.count, 10)]));
 
-      const memberCount = await ProjectMember.count({
-        where: { project_id: project.id, status: 'ACTIVE' },
-      });
-
-      return {
-        ...serializeProject(project),
-        applicant_count: pendingApps,
-        member_count: memberCount,
-        has_alerts: !!(hasBlockedTasks || hasReviewRequests || pendingApps > 0),
-      };
+    const result = projects.map((project) => ({
+      // List payload — logos excluded to keep responses small (#43)
+      ...serializeProject(project, { includeLogo: false }),
+      applicant_count: pendingMap[project.id] || 0,
+      member_count: memberMap[project.id] || 0,
+      has_alerts: alertSet.has(project.id) || (pendingMap[project.id] || 0) > 0,
     }));
 
     return res.json(result);
@@ -138,7 +153,8 @@ router.get('/projects/:projectId/attention', requireAuth, FounderGuard, checkPro
 
 // ─── Task Management ──────────────────────────────────────────────────
 
-router.post('/projects/:projectId/tasks', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
+// Task creation is lead/owner-only, matching the /api/projects policy (#30)
+router.post('/projects/:projectId/tasks', requireAuth, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const { title, description, priority, due_date, assignee_id } = req.body || {};
@@ -242,7 +258,9 @@ router.post('/projects/:projectId/tasks/:taskId/review', requireAuth, FounderGua
   }
 });
 
-router.patch('/projects/:projectId/tasks/:taskId', requireAuth, FounderGuard, checkProjectMember, async (req, res, next) => {
+// Field edits are lead/owner-only; members move task status through
+// PATCH /api/projects/:id/tasks/:tid (same policy as projects.routes.js) (#30)
+router.patch('/projects/:projectId/tasks/:taskId', requireAuth, checkProjectLead, async (req, res, next) => {
   try {
     const { projectId, taskId } = req.params;
     const { title, description, priority, due_date, assignee_id } = req.body || {};
@@ -392,21 +410,37 @@ router.post('/projects/:projectId/applicants/:appId/action', requireAuth, checkP
     if (action === 'ACCEPT') {
       const roleTitle = String(role || 'Team Member').trim();
 
+      // Atomic acceptance with duplicate + team-size guards (#32)
       await sequelize.transaction(async (t) => {
-        // 1. Update Application status
+        const existingMember = await ProjectMember.findOne({
+          where: { project_id: projectId, user_id: application.user_id },
+          transaction: t,
+        });
+        if (!existingMember) {
+          const activeCount = await ProjectMember.count({
+            where: { project_id: projectId, status: 'ACTIVE' },
+            transaction: t,
+          });
+          const project = await Project.findByPk(projectId, { transaction: t });
+          if (project && activeCount >= project.team_size_needed) {
+            const err = new Error(
+              `This project already has ${activeCount} of ${project.team_size_needed} allowed active members.`
+            );
+            err.statusCode = 409;
+            throw err;
+          }
+          await ProjectMember.create({
+            project_id: projectId,
+            user_id: application.user_id,
+            role: roleTitle,
+            role_category: 'OTHER',
+            is_lead: false,
+            status: 'ACTIVE',
+          }, { transaction: t });
+        }
         await application.update({ status: 'ACCEPTED' }, { transaction: t });
 
-        // 2. Create ProjectMember
-        await ProjectMember.create({
-          project_id: projectId,
-          user_id: application.user_id,
-          role: roleTitle,
-          role_category: 'OTHER', // Default to OTHER, can be refined
-          is_lead: false,
-          status: 'ACTIVE',
-        }, { transaction: t });
-
-        // 3. Increment filled_count in Project.open_roles
+        // Increment filled_count in Project.open_roles
         const project = await Project.findByPk(projectId, { transaction: t });
         if (project && project.open_roles) {
           const roles = project.open_roles.map(r => ({ ...r }));
@@ -506,8 +540,18 @@ router.patch('/projects/:projectId/settings', requireAuth, checkProjectLead, asy
     const updates = {};
     if (title !== undefined) updates.title = String(title).trim();
     if (category !== undefined) updates.category = category;
-    if (project_url !== undefined) updates.project_url = project_url;
-    if (visibility !== undefined) updates.visibility = visibility;
+    if (project_url !== undefined) {
+      if (!isValidHttpUrl(project_url)) {
+        return res.status(400).json({ detail: 'Project URL must be a valid http(s) URL.' });
+      }
+      updates.project_url = project_url;
+    }
+    if (visibility !== undefined) {
+      if (!['Public', 'Private'].includes(visibility)) {
+        return res.status(400).json({ detail: 'Visibility must be Public or Private.' });
+      }
+      updates.visibility = visibility;
+    }
     if (logo_url !== undefined) updates.logo_url = logo_url;
     if (description !== undefined) updates.description = description;
     if (hiring_requirements !== undefined) updates.hiring_requirements = hiring_requirements;
@@ -519,17 +563,27 @@ router.patch('/projects/:projectId/settings', requireAuth, checkProjectLead, asy
   }
 });
 
-router.post('/projects/:projectId/transfer', requireAuth, checkProjectLead, async (req, res, next) => {
+router.post('/projects/:projectId/transfer', requireAuth, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const { newOwnerId } = req.body;
-    
+
     if (!newOwnerId) {
       return res.status(400).json({ detail: 'New owner ID is required.' });
     }
 
     const project = await Project.findByPk(projectId);
     if (!project) return res.status(404).json({ detail: 'Project not found.' });
+
+    // Only the current owner may transfer ownership — a non-owner lead must
+    // not be able to take the project away from its owner (#29)
+    if (project.owner_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Only the current project owner can transfer ownership.' });
+    }
+
+    if (newOwnerId === req.user.id) {
+      return res.status(400).json({ detail: 'You already own this project.' });
+    }
 
     const newOwnerMember = await ProjectMember.findOne({
       where: { project_id: projectId, user_id: newOwnerId, status: 'ACTIVE' }

@@ -4,10 +4,12 @@ import { Plus, User, ShieldCheck, Mail } from 'lucide-react'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { MemberPickerModal } from '../../components/profile/MemberPickerModal'
 import { TalentModal } from '../../components/profile/TalentModal'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { api } from '../../services/api.js'
 
 export default function ProjectTeam() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState(null)
@@ -49,8 +51,9 @@ export default function ProjectTeam() {
           setMembers(memberList)
         }
 
-        // Determine if current user is lead
-        setUserIsLead(!!memberList?.find(m => m.is_lead && m.user_id === (window.localStorage.getItem('userId') || '')))
+        // Lead detection from AuthContext — the localStorage key was never
+        // written, so this was always false (#37)
+        setUserIsLead(!!memberList?.find(m => m.is_lead && (m.user_id === user?.id || m.user?.id === user?.id)))
       } catch (err) {
         console.error('Failed to load team data:', err)
       } finally {
@@ -58,7 +61,7 @@ export default function ProjectTeam() {
       }
     }
     loadTeamData()
-  }, [id])
+  }, [id, user?.id])
 
   return (
     <WorkspaceLayout>
