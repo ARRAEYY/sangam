@@ -1,21 +1,92 @@
 'use strict'
 
 // AUD-036 / issue #56 — database-enforced data integrity:
-//  1. Deduplicate PENDING connection requests, then add a partial unique index
-//     on (requester_id, recipient_id) WHERE status = 'PENDING' so a duplicate
-//     pending request can never be persisted, even under a race.
-//  2. Merge case-variant duplicate skills (e.g. "React" vs "react") into one
-//     canonical lowercase row, then enforce case-insensitive uniqueness with a
-//     unique index on lower(name) (Postgres; SQLite relies on the model-level
-//     lowercase setter plus the existing unique(name) index).
+//  1. Merge case-variant duplicate skills ("React" vs "react") into one
+//     canonical row, then enforce case-insensitive uniqueness (Postgres).
+//  2. Deduplicate PENDING connection requests, then add a partial unique
+//     index on (requester_id, recipient_id) WHERE status = 'PENDING'.
+//
+// sequelize-cli passes the Sequelize constructor (not an instance) as the
+// second argument — the live connection is queryInterface.sequelize.
 
+async function up(queryInterface) {
+  const db = queryInterface.sequelize
+  const dialect = db.getDialect()
 
-async function up(queryInterface, sequelize) {
-  const dialect = sequelize.getDialect()
+  // ─── 1. Skills ───────────────────────────────────────────────────────
+  // Canonical row per lower(name) = lowest id. The join tables carry unique
+  // composite indexes, so remapping must not leave an owner pointing at two
+  // variants: first drop the redundant variant rows (owners keeping a single
+  // row per case-insensitive name), then remap the survivors to the canonical
+  // id — which can no longer collide. Only after the duplicate skill rows are
+  // gone do we lowercase, so unique(name) is never violated mid-flight.
 
-  // ─── 1. Pending connection requests ─────────────────────────────────
-  // Collapse any existing PENDING duplicates per ordered pair (keep oldest).
-  await sequelize.query(`
+  const collapseVariants = (table, ownerCol) => `
+    DELETE FROM ${table}
+    WHERE EXISTS (
+      SELECT 1 FROM skills mine
+      WHERE mine.id = ${table}.skill_id
+        AND EXISTS (
+          SELECT 1 FROM skills better
+          WHERE lower(better.name) = lower(mine.name)
+            AND better.id < mine.id
+        )
+    )
+    AND EXISTS (
+      SELECT 1 FROM ${table} other
+      JOIN skills other_s ON other_s.id = other.skill_id
+      WHERE other.${ownerCol} = ${table}.${ownerCol}
+        AND other.skill_id <> ${table}.skill_id
+        AND lower(other_s.name) = lower(
+          (SELECT cur.name FROM skills cur WHERE cur.id = ${table}.skill_id)
+        )
+    )
+  `
+
+  const remapToCanonical = (table, ownerCol) => `
+    UPDATE ${table}
+    SET skill_id = (
+      SELECT MIN(canon.id)
+      FROM skills canon
+      WHERE lower(canon.name) = (
+        SELECT lower(cur.name) FROM skills cur WHERE cur.id = ${table}.skill_id
+      )
+    )
+    WHERE EXISTS (
+      SELECT 1 FROM skills better
+      WHERE lower(better.name) = (
+          SELECT lower(cur.name) FROM skills cur WHERE cur.id = ${table}.skill_id
+        )
+        AND better.id < ${table}.skill_id
+    )
+  `
+
+  await db.query(collapseVariants('user_skills', 'user_id'))
+  await db.query(remapToCanonical('user_skills', 'user_id'))
+  await db.query(collapseVariants('project_skills', 'project_id'))
+  await db.query(remapToCanonical('project_skills', 'project_id'))
+
+  await db.query(`
+    DELETE FROM skills
+    WHERE EXISTS (
+      SELECT 1 FROM skills canon
+      WHERE lower(canon.name) = lower(skills.name)
+        AND canon.id < skills.id
+    )
+  `)
+
+  await db.query(`UPDATE skills SET name = lower(name) WHERE name <> lower(name)`)
+
+  if (dialect === 'postgres') {
+    await db.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "skills_name_case_insensitive_unique" ON skills (lower(name))`
+    )
+  }
+
+  // ─── 2. Pending connection requests ─────────────────────────────────
+  // Collapse any existing PENDING duplicates per ordered pair (keep oldest),
+  // then let the partial unique index guarantee the invariant going forward.
+  await db.query(`
     DELETE FROM connection_requests
     WHERE status = 'PENDING'
       AND id NOT IN (
@@ -26,98 +97,18 @@ async function up(queryInterface, sequelize) {
       )
   `)
 
-  const pendingIndexName = 'connection_requests_unique_pending_per_pair'
-  const [pendingIndexExists] = await sequelize.query(
-    `SELECT 1 FROM pg_indexes WHERE indexname = '${pendingIndexName}'`,
-    { raw: true }
-  ).catch(() => [[]])
-
-  if (dialect === 'postgres') {
-    if (!pendingIndexExists.length) {
-      await sequelize.query(`
-        CREATE UNIQUE INDEX "${pendingIndexName}"
-        ON connection_requests (requester_id, recipient_id)
-        WHERE status = 'PENDING'
-      `)
-    }
-  } else {
-    // SQLite supports partial indexes natively; sync() recreates it for fresh DBs.
-    await sequelize.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "${pendingIndexName}"
-      ON connection_requests (requester_id, recipient_id)
-      WHERE status = 'PENDING'
-    `)
-  }
-
-  // ─── 2. Case-variant skill duplicates ───────────────────────────────
-  // Canonical row = lowest id (oldest). Re-point join rows, then drop dupes.
-  await sequelize.query(`
-    UPDATE user_skills
-    SET skill_id = (
-      SELECT c.canonical_id FROM (
-        SELECT dup.skill_id AS duplicate_id, MIN(canon.id) AS canonical_id
-        FROM skills dup
-        JOIN skills canon
-          ON lower(canon.name) = lower(dup.name)
-         AND canon.id < dup.id
-        GROUP BY dup.skill_id
-      ) c
-      WHERE user_skills.skill_id = c.duplicate_id
-    )
-    WHERE skill_id IN (
-      SELECT dup.skill_id FROM skills dup
-      JOIN skills canon ON lower(canon.name) = lower(dup.name) AND canon.id < dup.id
-    )
+  await db.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "connection_requests_unique_pending_per_pair"
+    ON connection_requests (requester_id, recipient_id)
+    WHERE status = 'PENDING'
   `)
-
-  await sequelize.query(`
-    UPDATE project_skills
-    SET skill_id = (
-      SELECT c.canonical_id FROM (
-        SELECT dup.skill_id AS duplicate_id, MIN(canon.id) AS canonical_id
-        FROM skills dup
-        JOIN skills canon
-          ON lower(canon.name) = lower(dup.name)
-         AND canon.id < dup.id
-        GROUP BY dup.skill_id
-      ) c
-      WHERE project_skills.skill_id = c.duplicate_id
-    )
-    WHERE skill_id IN (
-      SELECT dup.skill_id FROM skills dup
-      JOIN skills canon ON lower(canon.name) = lower(dup.name) AND canon.id < dup.id
-    )
-  `)
-
-  // Lowercase the surviving canonical rows
-  await sequelize.query(`UPDATE skills SET name = lower(name) WHERE name <> lower(name)`)
-
-  await sequelize.query(`
-    DELETE FROM skills
-    WHERE id NOT IN (
-      SELECT MIN(id) FROM skills GROUP BY lower(name)
-    )
-  `)
-
-  if (dialect === 'postgres') {
-    const [lowerIndexExists] = await sequelize.query(
-      `SELECT 1 FROM pg_indexes WHERE indexname = 'skills_name_case_insensitive_unique'`,
-      { raw: true }
-    ).catch(() => [[]])
-    if (!lowerIndexExists.length) {
-      await sequelize.query(
-        `CREATE UNIQUE INDEX "skills_name_case_insensitive_unique" ON skills (lower(name))`
-      )
-    }
-  }
 }
 
-async function down(queryInterface, sequelize) {
-  const dialect = sequelize.getDialect()
-
-  await sequelize.query(`DROP INDEX IF EXISTS "skills_name_case_insensitive_unique"`)
-  await sequelize.query(`DROP INDEX IF EXISTS "connection_requests_unique_pending_per_pair"`)
-  // Merged skills/deduped requests cannot be restored.
+async function down(queryInterface) {
+  const db = queryInterface.sequelize
+  await db.query(`DROP INDEX IF EXISTS "skills_name_case_insensitive_unique"`)
+  await db.query(`DROP INDEX IF EXISTS "connection_requests_unique_pending_per_pair"`)
+  // Merged skills / deduped requests cannot be restored.
 }
 
 module.exports = { up, down }
