@@ -14,6 +14,7 @@ import {
   Settings,
   Network,
   LayoutGrid,
+  MessageSquareText,
 } from 'lucide-react'
 import ExploreIcon from '../ui/ExploreIcon.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -149,6 +150,15 @@ export default function Navbar() {
                   >
                     <LayoutGrid size={15} /> Founder Hub
                   </Link>
+                  <a
+                    href="https://forms.gle/72nf4aiRbjeq6Qct6"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                  >
+                    <MessageSquareText size={15} /> Feedback
+                  </a>
                   <Link
                     to="/settings"
                     onClick={() => setProfileMenuOpen(false)}
