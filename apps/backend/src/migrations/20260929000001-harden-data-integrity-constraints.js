@@ -46,11 +46,13 @@ async function up(queryInterface) {
   const remapToCanonical = (table, ownerCol) => `
     UPDATE ${table}
     SET skill_id = (
-      SELECT MIN(canon.id)
+      SELECT canon.id
       FROM skills canon
       WHERE lower(canon.name) = (
         SELECT lower(cur.name) FROM skills cur WHERE cur.id = ${table}.skill_id
       )
+      ORDER BY canon.id ASC
+      LIMIT 1
     )
     WHERE EXISTS (
       SELECT 1 FROM skills better
@@ -87,13 +89,20 @@ async function up(queryInterface) {
   // Collapse any existing PENDING duplicates per ordered pair (keep oldest),
   // then let the partial unique index guarantee the invariant going forward.
   await db.query(`
-    DELETE FROM connection_requests
-    WHERE status = 'PENDING'
-      AND id NOT IN (
-        SELECT MIN(id)
-        FROM connection_requests
-        WHERE status = 'PENDING'
-        GROUP BY requester_id, recipient_id
+    DELETE FROM connection_requests AS cr
+    WHERE cr.status = 'PENDING'
+      AND EXISTS (
+        SELECT 1 FROM connection_requests older
+        WHERE older.status = 'PENDING'
+          AND older.requester_id = cr.requester_id
+          AND older.recipient_id = cr.recipient_id
+          AND (
+            older.created_at < cr.created_at
+            OR (
+              older.created_at = cr.created_at
+              AND CAST(older.id AS TEXT) < CAST(cr.id AS TEXT)
+            )
+          )
       )
   `)
 
