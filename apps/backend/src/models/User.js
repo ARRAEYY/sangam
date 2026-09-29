@@ -45,6 +45,19 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    is_suspended: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    suspended_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    suspended_reason: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     password_reset_token: {
       type: DataTypes.STRING,
       allowNull: true,

@@ -12,6 +12,7 @@ const notificationRoutes = require('./modules/notifications/notifications.routes
 const connectionRoutes = require('./modules/connections/connections.routes')
 const adminRoutes = require('./modules/admin/admin.routes')
 const founderRoutes = require('./modules/founder/founder.routes')
+const platformRoutes = require('./modules/platform/platform.routes')
 const errorHandler = require('./middleware/errorHandler')
 const { generalLimiter } = require('./middleware/rateLimit')
 const helmet = require('helmet')
@@ -19,9 +20,50 @@ const crypto = require('crypto')
 const compression = require('compression')
 const morgan = require('morgan')
 const logger = require('./utils/logger')
+const { reportError, initProcessMonitoring } = require('./utils/monitoring')
 
 const app = express()
 const port = Number(process.env.PORT || 8000)
+// How long to wait for in-flight requests/DB work before force-exiting
+const SHUTDOWN_TIMEOUT_MS = Number(process.env.SHUTDOWN_TIMEOUT_MS || 15000)
+let httpServer = null
+let isShuttingDown = false
+
+async function shutdown(signal, exitCode = 0) {
+  if (isShuttingDown) return
+  isShuttingDown = true
+  logger.info(`[SHUTDOWN] ${signal} received — draining connections (timeout ${SHUTDOWN_TIMEOUT_MS}ms)`)
+
+  const forceExit = setTimeout(() => {
+    logger.error(`[SHUTDOWN] Timed out after ${SHUTDOWN_TIMEOUT_MS}ms — forcing exit`)
+    process.exit(1)
+  }, SHUTDOWN_TIMEOUT_MS)
+  // A pending timer would keep the event loop alive past close()
+  forceExit.unref()
+
+  try {
+    if (httpServer) {
+      // Stop accepting new connections; existing keep-alive sockets are
+      // closed so close() only waits on requests actually in flight
+      if (typeof httpServer.closeIdleConnections === 'function') {
+        httpServer.closeIdleConnections()
+      }
+      await new Promise((resolve) => httpServer.close(resolve))
+    }
+    await sequelize.close()
+    clearTimeout(forceExit)
+    logger.info('[SHUTDOWN] Drained HTTP server and closed database pool — exiting')
+    process.exit(exitCode)
+  } catch (err) {
+    logger.error(`[SHUTDOWN] Error during shutdown: ${err.message}`)
+    process.exit(1)
+  }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
+
+initProcessMonitoring({ onFatal: (err) => shutdown(`uncaughtException (${err.message})`, 1) })
 
 // Configure compression to gzip/brotli responses over 1KB
 // This will ignore already-compressed files (images) and only apply to text/json
@@ -138,6 +180,8 @@ app.use('/api/connections', customCsrfProtection, connectionRoutes)
 app.use('/api/founder', customCsrfProtection, founderRoutes)
 // adminRoutes handlers read req.params.id from this mount path only (#59)
 app.use('/api/projects/:id/manage', customCsrfProtection, adminRoutes)
+// Platform administration — guarded internally by requirePlatformAdmin (#57)
+app.use('/api/platform/admin', customCsrfProtection, platformRoutes)
 
 
 app.get('/api/health', async (req, res) => {
@@ -373,7 +417,7 @@ async function start() {
       }
     })
 
-    app.listen(port, '0.0.0.0', () => {
+    httpServer = app.listen(port, '0.0.0.0', () => {
       logger.info(`Server running on port ${port}`)
       console.log(`Campus Platform API running on port ${port}`)
     })

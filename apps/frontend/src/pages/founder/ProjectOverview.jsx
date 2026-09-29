@@ -22,10 +22,12 @@ import {
 } from 'lucide-react'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
 import { useAuth } from '../../context/AuthContext'
 
 export default function ProjectOverview() {
   const { id } = useParams()
+  const toast = useToast()
   const { user } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -96,7 +98,7 @@ export default function ProjectOverview() {
       setActionSuccessMessage(`Applicant ${action === 'ACCEPT' ? 'accepted & welcomed to the team' : 'declined'}.`)
       setTimeout(() => setActionSuccessMessage(''), 4000)
     } catch (err) {
-      alert(err.message || 'Failed to update applicant status')
+      toast.error(err.message || 'Failed to update applicant status')
     }
   }
 
@@ -113,7 +115,7 @@ export default function ProjectOverview() {
       }
       setTimeout(() => setActionSuccessMessage(''), 4000)
     } catch (err) {
-      alert(err.message || 'Failed to process task review')
+      toast.error(err.message || 'Failed to process task review')
     }
   }
 
@@ -134,7 +136,7 @@ export default function ProjectOverview() {
       setTimeout(() => setActionSuccessMessage(''), 4000)
       loadOverviewData()
     } catch (err) {
-      alert(err.message || 'Failed to create task')
+      toast.error(err.message || 'Failed to create task')
     } finally {
       setNewTaskSubmitting(false)
     }

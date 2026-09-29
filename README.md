@@ -101,7 +101,6 @@ sangam/
 │       │   ├── utils/       # Helpers (mailer, logger, serializers)
 │       │   └── server.js    # Server entry point
 │       └── package.json
-├── packages/             # Shared workspace packages
 └── render.yaml           # Render deployment configuration (apps/backend)
 ```
 

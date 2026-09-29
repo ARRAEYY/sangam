@@ -168,18 +168,21 @@ router.post('/tasks', requireAuth, ManageGuard, checkProjectLead, async (req, re
       return res.status(400).json({ detail: 'Priority must be LOW, MEDIUM, or HIGH.' });
     }
 
-    // Auto-increment order_index
-    const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId } });
-    const nextOrder = (maxOrder ?? -1) + 1;
+    // Auto-increment order_index — computed and written inside one transaction
+    // so concurrent creations cannot collide on the same slot (AUD-036)
+    const milestone = await sequelize.transaction(async (t) => {
+      const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId }, transaction: t });
+      const nextOrder = (maxOrder ?? -1) + 1;
 
-    const milestone = await Milestone.create({
-      project_id: projectId,
-      title: trimmedTitle,
-      description: description ? String(description).trim() : null,
-      priority: trimmedPriority || 'MEDIUM',
-      order_index: nextOrder,
-      created_by: req.user.id,
-      status: 'NOT_STARTED',
+      return Milestone.create({
+        project_id: projectId,
+        title: trimmedTitle,
+        description: description ? String(description).trim() : null,
+        priority: trimmedPriority || 'MEDIUM',
+        order_index: nextOrder,
+        created_by: req.user.id,
+        status: 'NOT_STARTED',
+      }, { transaction: t });
     });
 
     return res.status(201).json({

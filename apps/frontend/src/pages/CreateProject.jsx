@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { SkillPickerModal } from '../components/profile/SkillPickerModal.jsx';
 import { MemberPickerModal } from '../components/profile/MemberPickerModal.jsx';
 import { PROJECT_CATEGORIES } from '../utils/projectCategories.js';
+import { useToast } from '../components/ui/ToastProvider.jsx';
 
 const DEFAULT_SKILL_OPTIONS = ["Product", "Design", "Engineering", "Research", "Community", "Storytelling", "Climate", "Data"];
 const DEFAULT_TECH_OPTIONS = ["React", "Node.js", "Python", "TypeScript", "PostgreSQL", "MongoDB", "AWS", "Figma", "Tailwind CSS"];
@@ -16,6 +17,7 @@ function getInitials(name) {
 }
 
 export default function CreateProject({ mode = "create" }) {
+  const toast = useToast();
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
@@ -62,7 +64,7 @@ export default function CreateProject({ mode = "create" }) {
 
         setLoading(false);
       }).catch(err => {
-        alert("Failed to load project.");
+        toast.error("Failed to load project.");
         navigate(-1);
       });
     }
@@ -90,7 +92,7 @@ export default function CreateProject({ mode = "create" }) {
   async function submit(event) {
     event.preventDefault();
     if (!title.trim() || !shortDescription.trim() || !detailedDescription.trim() || !lookingFor.trim()) {
-      alert("Please fill out the title, descriptions, and what role you are looking for.");
+      toast.error("Please fill out the title, descriptions, and what role you are looking for.");
       return;
     }
 
@@ -126,7 +128,7 @@ export default function CreateProject({ mode = "create" }) {
       }, 800);
 
     } catch (err) {
-      alert(err.message || "Something went wrong.");
+      toast.error(err.message || "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
@@ -139,10 +141,10 @@ export default function CreateProject({ mode = "create" }) {
       setApplicants(apps);
       // optionally refresh team members here if accepted, but it requires a reload or refetch.
       if (newStatus === 'ACCEPTED') {
-        alert('Applicant accepted and added to the team!');
+        toast.success('Applicant accepted and added to the team!');
       }
     } catch (err) {
-      alert("Failed to update applicant: " + err.message);
+      toast.error("Failed to update applicant: " + err.message);
     }
   };
 
@@ -453,7 +455,7 @@ export default function CreateProject({ mode = "create" }) {
           </div>
 
           <div className="form-actions mt-8 pt-8 border-t border-slate-100">
-            <button type="button" className="button button-quiet" onClick={() => alert("Draft saved locally.")}>
+            <button type="button" className="button button-quiet" onClick={() => toast.info("Draft saved locally.")}>
               <Sparkles size={15} /> Save draft
             </button>
             <button type="submit" className="button button-primary" disabled={submitting}>
@@ -504,7 +506,7 @@ export default function CreateProject({ mode = "create" }) {
                   <div className="flex -space-x-1">
                     {teamMembers.slice(0, 2).map((m, i) => (
                       <div key={i} className="w-5 h-5 rounded-full border border-white bg-slate-200 overflow-hidden">
-                        {m.user.avatar_url ? <img src={m.user.avatar_url} className="w-full h-full object-cover" /> : null}
+                        {m.user.avatar_url ? <img src={m.user.avatar_url} alt="" className="w-full h-full object-cover" /> : null}
                       </div>
                     ))}
                   </div>

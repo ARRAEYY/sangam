@@ -15,8 +15,10 @@ import {
 } from 'lucide-react'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
 
 export default function ProjectApplications() {
+  const toast = useToast()
   const { id } = useParams()
   const [applications, setApplications] = useState([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ export default function ProjectApplications() {
       setApplications(prev => prev.map(a => a.id === appId ? { ...a, status: nextStatus } : a))
       showToast(`Applicant successfully ${action === 'ACCEPT' ? 'accepted & invited' : action === 'SHORTLIST' ? 'shortlisted' : 'declined'}.`)
     } catch (err) {
-      alert(err.message || 'Action failed')
+      toast.error(err.message || 'Action failed')
     }
   }
 

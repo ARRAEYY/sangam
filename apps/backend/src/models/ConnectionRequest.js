@@ -32,10 +32,18 @@ const ConnectionRequest = sequelize.define(
   {
     tableName: 'connection_requests',
     indexes: [
+      // Non-unique lookup index for the common requester/recipient queries
       {
-        // Prevent more than one PENDING request between the same pair at once
-        // (enforced additionally in application logic for direction-independence).
         fields: ['requester_id', 'recipient_id'],
+      },
+      // DB-enforced invariant (AUD-036): at most one PENDING request per pair.
+      // The unique violation surfaces as SequelizeUniqueConstraintError, which
+      // POST /requests maps to a 409.
+      {
+        unique: true,
+        name: 'connection_requests_unique_pending_per_pair',
+        fields: ['requester_id', 'recipient_id'],
+        where: { status: 'PENDING' },
       },
     ],
   }

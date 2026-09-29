@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, Check, MessageSquare, MoreHorizontal, UserX, Clock, UserPlus } from 'lucide-react'
 import { api } from '../services/api.js'
+import { useToast } from '../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../components/ui/ConfirmDialogProvider.jsx'
 
 export default function Connections() {
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [connections, setConnections] = useState([])
   const [pendingRequests, setPendingRequests] = useState([])
   const [sentRequests, setSentRequests] = useState([])
@@ -16,12 +20,12 @@ export default function Connections() {
 
   const loadData = async () => {
     try {
-      const [conns, received, sent] = await Promise.all([
+      const [connsRes, received, sent] = await Promise.all([
         api.listConnections().catch(() => []),
         api.listConnectionRequests('received').catch(() => []),
         api.listConnectionRequests('sent').catch(() => [])
       ])
-      setConnections(conns || [])
+      setConnections(connsRes?.data || connsRes || [])
       setPendingRequests((received || []).filter(r => r.status === 'PENDING'))
       setSentRequests((sent || []).filter(r => r.status === 'PENDING'))
       setError('')
@@ -37,11 +41,12 @@ export default function Connections() {
   }, [])
 
   const handleRemoveConnection = async (connectionId) => {
-    if (!window.confirm('Are you sure you want to remove this connection?')) return
+    if (!(await confirmDialog({ title: 'Remove this connection?', message: 'You will no longer be connected and can always reconnect later.', confirmLabel: 'Remove', danger: true }))) return
     try {
       await api.removeConnection(connectionId)
       setConnections(connections.filter(c => c.connection_id !== connectionId))
       setOpenDropdownId(null)
+      toast.success('Connection removed')
     } catch (err) {
       setError(err.message)
     }
@@ -57,10 +62,11 @@ export default function Connections() {
   }
 
   const handleWithdrawRequest = async (id) => {
-    if (!window.confirm('Are you sure you want to withdraw this connection request?')) return
+    if (!(await confirmDialog({ title: 'Withdraw this request?', message: 'The recipient will no longer see your pending connection request.', confirmLabel: 'Withdraw', danger: true }))) return
     try {
       await api.withdrawConnectionRequest(id)
       setSentRequests(sentRequests.filter(r => r.id !== id))
+      toast.success('Request withdrawn')
     } catch (err) {
       setError(err.message)
     }
@@ -221,7 +227,7 @@ export default function Connections() {
                         {/* Actions */}
                         <div className="flex items-center gap-2 shrink-0 relative">
                           <button
-                            onClick={() => alert(`Messaging with ${person.full_name} coming soon!`)}
+                            onClick={() => toast.info(`Messaging with ${person.full_name} is coming soon!`)}
                             className="px-3.5 py-1.5 rounded-full border border-brand-700 text-brand-700 hover:bg-brand-50 transition text-xs sm:text-sm font-semibold flex items-center gap-1.5"
                           >
                             <MessageSquare size={14} /> Message

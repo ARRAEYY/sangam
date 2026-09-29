@@ -127,15 +127,15 @@ export default function Auth() {
 
       {/* Main Grid Layout */}
       <main className="flex-1 flex w-full h-full items-center justify-center px-6">
-        <div className="w-full max-w-[1060px] grid grid-cols-1 md:grid-cols-[1fr_380px] gap-12 md:gap-20 items-center mt-12 md:mt-0">
+        <div className="w-full max-w-[1060px] grid grid-cols-1 md:grid-cols-[1fr_380px] gap-12 md:gap-20 items-center mt-24 md:mt-0">
 
           {/* Left Editorial Side */}
           <div className="relative z-10 w-full">
             <div className="max-w-[500px]">
-              <span className="text-[10px] font-bold tracking-[0.17em] text-[#8e9499] uppercase block mb-6">
+              <span className="text-[10px] font-bold tracking-[0.17em] text-[#5f6673] uppercase block mb-6">
                 The campus, in motion
               </span>
-              <h1 className="font-display text-[clamp(52px,6.5vw,88px)] leading-[0.85] tracking-tight mb-6">
+              <h1 className="font-display text-[clamp(40px,11vw,88px)] md:text-[clamp(52px,6.5vw,88px)] leading-[0.85] tracking-tight mb-6">
                 <span className="text-[#182232] whitespace-nowrap">There's a place</span><br />
                 <span className="text-[#7f1d3b]">for you.</span>
               </h1>
@@ -151,7 +151,7 @@ export default function Auth() {
 
               {/* Card Header */}
               <div className="mb-7">
-                <span className="text-[9px] font-bold tracking-[0.2em] text-[#8e9499] uppercase block mb-3">
+                <span className="text-[9px] font-bold tracking-[0.2em] text-[#5f6673] uppercase block mb-3">
                   Login
                 </span>
                 <h2 className="font-display text-[28px] text-[#182232] leading-[1.1] mb-1.5">Welcome to <span className="text-[#7f1d3b]">Sangam</span></h2>
@@ -160,11 +160,11 @@ export default function Auth() {
 
               {/* Error/Info States */}
               {infoMsg && (
-                <div className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{infoMsg}</div>
+                <div role="status" className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{infoMsg}</div>
               )}
 
               {error && (
-                <div className="mb-5 rounded-[12px] bg-red-50 px-4 py-3 text-[12px] text-red-700 border border-red-100">
+                <div id="auth-error" role="alert" className="mb-5 rounded-[12px] bg-red-50 px-4 py-3 text-[12px] text-red-700 border border-red-100">
                   {error}
                   {resendEmail && (
                     <div className="mt-2">
@@ -181,7 +181,7 @@ export default function Auth() {
               )}
 
               {resendSuccess && (
-                <div className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{resendSuccess}</div>
+                <div role="status" className="mb-5 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{resendSuccess}</div>
               )}
 
               {/* Authentication Form */}
@@ -191,12 +191,14 @@ export default function Auth() {
                     Enter your campus email and we'll send you a link to reset your password.
                   </p>
                   {forgotMsg && (
-                    <div className="mb-4 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{forgotMsg}</div>
+                    <div role="status" className="mb-4 rounded-[12px] bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 border border-emerald-100">{forgotMsg}</div>
                   )}
-                  <Field label="Email">
+                  <Field label="Email" errorId="auth-error" hasError={Boolean(error)}>
                     <input
                       type="email"
                       required
+                      autoComplete="email"
+                      aria-describedby={error ? 'auth-error' : undefined}
                       placeholder="you@rishihood.edu.in"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
@@ -207,16 +209,18 @@ export default function Auth() {
                     <SubmitButton submitting={forgotSubmitting} label="Reset password" />
                   </div>
                   <div className="mt-4 text-center">
-                    <button type="button" onClick={() => setForgotMode(false)} className="text-[11px] font-medium text-[#8e9499] hover:text-[#7f1d3b] transition-colors">Back to sign in</button>
+                    <button type="button" onClick={() => setForgotMode(false)} className="text-[11px] font-medium text-[#5f6673] hover:text-[#7f1d3b] transition-colors">Back to sign in</button>
                   </div>
                 </form>
               ) : (
                 <>
                   <form onSubmit={handleLogin} className="space-y-4">
-                    <Field label="Email">
+                    <Field label="Email" errorId="auth-error" hasError={Boolean(error)}>
                       <input
                         type="email"
                         required
+                        autoComplete="email"
+                        aria-describedby={error ? 'auth-error' : undefined}
                         placeholder="you@rishihood.edu.in"
                         value={loginForm.email}
                         onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
@@ -226,10 +230,12 @@ export default function Auth() {
                         <p className="mt-1.5 text-[10px] text-amber-600">Please use your Rishihood campus email address.</p>
                       )}
                     </Field>
-                    <Field label="Password">
+                    <Field label="Password" errorId="auth-error" hasError={Boolean(error)}>
                       <input
                         type="password"
                         required
+                        autoComplete="current-password"
+                        aria-describedby={error ? 'auth-error' : undefined}
                         placeholder="Your password"
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
@@ -248,7 +254,7 @@ export default function Auth() {
 
                   <div className="relative my-6 flex items-center justify-center">
                     <div className="w-full border-t border-slate-100" />
-                    <span className="absolute bg-white px-3 text-[11px] text-[#8e9499]">
+                    <span className="absolute bg-white px-3 text-[11px] text-[#5f6673]">
                       or
                     </span>
                   </div>
@@ -275,9 +281,9 @@ export default function Auth() {
   )
 }
 
-function Field({ label, children }) {
+function Field({ label, children, errorId, hasError }) {
   return (
-    <label className="block">
+    <label className="block" aria-describedby={hasError ? errorId : undefined}>
       <span className="mb-2 block text-[11px] font-bold text-[#182232]">{label}</span>
       {children}
     </label>

@@ -61,7 +61,7 @@ export default function ResetPassword() {
         </div>
 
         {error && (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div id="reset-error" role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -91,6 +91,8 @@ export default function ResetPassword() {
               <input
                 type="password"
                 required
+                autoComplete="new-password"
+                aria-describedby={error ? 'reset-error' : undefined}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••••••"
@@ -105,6 +107,8 @@ export default function ResetPassword() {
               <input
                 type="password"
                 required
+                autoComplete="new-password"
+                aria-describedby={error ? 'reset-error' : undefined}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"

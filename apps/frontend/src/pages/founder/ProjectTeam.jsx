@@ -6,10 +6,14 @@ import { MemberPickerModal } from '../../components/profile/MemberPickerModal'
 import { TalentModal } from '../../components/profile/TalentModal'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider.jsx'
 
 export default function ProjectTeam() {
   const { id } = useParams()
   const { user } = useAuth()
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState(null)
@@ -27,18 +31,19 @@ export default function ProjectTeam() {
       setMembers(updated)
       setIsPickerOpen(false)
     } catch (err) {
-      alert(err.message || 'Failed to add member')
+      toast.error(err.message || 'Failed to add member')
     }
   }
 
   const handleRemoveMember = async (e, userId) => {
     e.stopPropagation()
-    if (!window.confirm('Are you sure you want to remove this member?')) return
+    if (!(await confirmDialog({ title: 'Remove this member?', message: 'They will lose access to this project workspace.', confirmLabel: 'Remove', danger: true }))) return
     try {
       await api.removeMember(id, userId)
       setMembers(prev => prev.filter(m => m.user_id !== userId))
+      toast.success('Member removed')
     } catch (err) {
-      alert(err.message || 'Failed to remove member')
+      toast.error(err.message || 'Failed to remove member')
     }
   }
 

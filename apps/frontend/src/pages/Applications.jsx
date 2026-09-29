@@ -77,8 +77,8 @@ export default function Applications() {
     // Fetch applications regardless of auth state (backend handles it)
     api
       .myApplications()
-      .then(data => {
-        setApplications(data || [])
+      .then(res => {
+        setApplications(res?.data || res || [])
       })
       .catch(err => {
         console.error('Fetch applications error:', err)

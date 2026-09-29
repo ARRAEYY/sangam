@@ -23,12 +23,12 @@ export function MemberPickerModal({ isOpen, onClose, onAddMember, excludeUserIds
       try {
         let data;
         if (!query.trim()) {
-          data = await api.searchTalent({ skill: '' });
+          data = await api.searchTalent({ skill: '', limit: 100 });
         } else {
           data = await api.searchUsers(query);
         }
         
-        const usersArray = Array.isArray(data) ? data : (data?.users || []);
+        const usersArray = Array.isArray(data) ? data : (data?.data || data?.users || []);
         
         // Sort by profile completion if it's the empty query case, else keep search rank
         if (!query.trim()) {

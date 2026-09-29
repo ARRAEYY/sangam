@@ -145,14 +145,20 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 24;
 
   useEffect(() => {
     let isMounted = true;
     setError("");
     const fetchProjects = async () => {
       try {
-        const data = await api.listProjects({}, token);
-        const mapped = (data || []).map((p, i) => ({
+        const res = await api.listProjects({ page: 1, limit: PAGE_SIZE }, token);
+        const data = res?.data || [];
+        setHasMore(Boolean(res?.hasMore));
+        const mapped = data.map((p, i) => ({
           id: p.id,
           title: p.title,
           summary: stripMarkdown(p.description),
@@ -187,7 +193,38 @@ export default function Explore() {
     return () => { isMounted = false; };
   }, [token, reloadKey]);
 
-  const retryLoad = () => setReloadKey(k => k + 1);
+  const retryLoad = () => { setPage(1); setReloadKey(k => k + 1); };
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api.listProjects({ page: page + 1, limit: PAGE_SIZE });
+      const data = res?.data || [];
+      const mapped = data.map((p, i) => ({
+        id: p.id,
+        title: p.title,
+        summary: stripMarkdown(p.description),
+        creator: p.owner?.full_name || 'Anonymous',
+        initials: getInitials(p.owner?.full_name),
+        status: p.status === 'OPEN' ? 'Open' : p.status === 'IN_PROGRESS' ? 'In progress' : 'Completed',
+        category: p.category || 'Other',
+        looking_for: p.looking_for,
+        team: p.member_count > 0 ? `${p.member_count} member${p.member_count > 1 ? 's' : ''}` : 'Seeking members',
+        time: timeAgo(p.created_at),
+        skills: (p.required_skills || []).map(s => s.name),
+        accent: ['maroon', 'blue', 'sand'][((page + 1) * PAGE_SIZE + i) % 3]
+      }));
+      setProjectsData(prev => [...prev, ...mapped]);
+      setHasMore(Boolean(res?.hasMore));
+      setPage(p => p + 1);
+    } catch (e) {
+      console.error("Failed to load more projects", e);
+      setError("We couldn't load more projects right now. Please try again.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const baseFiltered = useFilteredItems(projectsData, query);
   const filtered = useMemo(() => {
@@ -406,6 +443,19 @@ export default function Explore() {
         <section className="reveal-in delay-2">
           <EmptyState type="projects" onReset={() => { setQuery(""); setRoleFilter(""); setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete("category"); return p; }); }} />
         </section>
+      )}
+
+      {hasMore && !loading && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-2.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-60 transition-all"
+          >
+            {loadingMore ? 'Loading…' : 'Load more projects'}
+          </button>
+        </div>
       )}
     </div>
   );

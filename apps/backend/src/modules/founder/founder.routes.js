@@ -6,6 +6,8 @@ const { FounderGuard, checkProjectLead, checkProjectMember } = require('../../mi
 const { serializeProject } = require('../../utils/serializers')
 const { isValidHttpUrl } = require('../../utils/urlValidation')
 const { notifyProjectApplication } = require('../../services/notificationService')
+const { logAudit } = require('../../utils/auditLogger')
+const { parsePagination, paginated } = require('../../utils/pagination')
 
 const router = express.Router()
 
@@ -15,7 +17,9 @@ router.get('/projects', requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const projects = await Project.findAll({
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 50 });
+
+    const { rows: projects, count: total } = await Project.findAndCountAll({
       include: [
         { model: Skill, as: 'required_skills' },
         { model: User, as: 'owner', attributes: ['id', 'full_name', 'avatar_url'] },
@@ -28,6 +32,9 @@ router.get('/projects', requireAuth, async (req, res, next) => {
         ]
       },
       order: [['created_at', 'DESC']],
+      limit,
+      offset,
+      distinct: true,
     });
 
     // Batched aggregates — one query each instead of 4 per project (#45)
@@ -70,7 +77,7 @@ router.get('/projects', requireAuth, async (req, res, next) => {
       has_alerts: alertSet.has(project.id) || (pendingMap[project.id] || 0) > 0,
     }));
 
-    return res.json(result);
+    return res.json(paginated({ items: result, page, limit, total }));
   } catch (error) {
     return next(error);
   }
@@ -174,20 +181,23 @@ router.post('/projects/:projectId/tasks', requireAuth, checkProjectLead, async (
       return res.status(400).json({ detail: 'Priority must be LOW, MEDIUM, or HIGH.' });
     }
 
-    // Auto-increment order_index
-    const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId } });
-    const nextOrder = (maxOrder ?? -1) + 1;
+    // Auto-increment order_index — computed and written inside one transaction
+    // so concurrent creations cannot collide on the same slot (AUD-036)
+    const milestone = await sequelize.transaction(async (t) => {
+      const maxOrder = await Milestone.max('order_index', { where: { project_id: projectId }, transaction: t });
+      const nextOrder = (maxOrder ?? -1) + 1;
 
-    const milestone = await Milestone.create({
-      project_id: projectId,
-      title: trimmedTitle,
-      description: description ? String(description).trim() : null,
-      priority: trimmedPriority || 'MEDIUM',
-      order_index: nextOrder,
-      created_by: req.user.id,
-      status: 'NOT_STARTED',
-      due_date: due_date || null,
-      custom_properties: { type: 'task', ...(assignee_id && { assignee_id }) },
+      return Milestone.create({
+        project_id: projectId,
+        title: trimmedTitle,
+        description: description ? String(description).trim() : null,
+        priority: trimmedPriority || 'MEDIUM',
+        order_index: nextOrder,
+        created_by: req.user.id,
+        status: 'NOT_STARTED',
+        due_date: due_date || null,
+        custom_properties: { type: 'task', ...(assignee_id && { assignee_id }) },
+      }, { transaction: t });
     });
 
     return res.status(201).json({
@@ -603,6 +613,16 @@ router.post('/projects/:projectId/transfer', requireAuth, async (req, res, next)
       if (currentOwnerMember) {
         await currentOwnerMember.update({ is_lead: false, role_category: 'MEMBER' }, { transaction: t });
       }
+    });
+
+    logAudit({
+      action: 'project.ownership_transferred',
+      req,
+      actorId: req.user.id,
+      actorEmail: req.user.email,
+      entityType: 'project',
+      entityId: projectId,
+      metadata: { from_owner: req.user.id, to_owner: newOwnerId },
     });
 
     return res.json({ message: 'Ownership transferred successfully.' });

@@ -27,6 +27,8 @@ import FormattedText from '../components/ui/FormattedText.jsx'
 import { VALID_COURSES } from '../utils/courses'
 import { formatMonthYear } from '../utils/date'
 import { WORK_TYPES, EMPLOYMENT_TYPES } from '../utils/experienceTypes'
+import { useToast } from '../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../components/ui/ConfirmDialogProvider.jsx'
 
 const STATUS_COLORS = {
   PENDING: 'bg-amber-50 text-amber-700',
@@ -38,6 +40,8 @@ const STATUS_COLORS = {
 export default function Profile() {
   const { user, refreshProfile, logout } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [myProjects, setMyProjects] = useState([])
   const [myApplications, setMyApplications] = useState([])
   const [editingProfile, setEditingProfile] = useState(false)
@@ -132,11 +136,11 @@ export default function Profile() {
     if (!user) return
     api
       .listProjects({ mine: 'true' })
-      .then((my) => setMyProjects(my))
+      .then((my) => setMyProjects(my?.data || my || []))
       .catch((err) => setError(err.message))
     api
       .myApplications()
-      .then(setMyApplications)
+      .then((apps) => setMyApplications(apps?.data || apps || []))
       .catch((err) => setError(err.message))
     loadPortfolio()
 
@@ -149,7 +153,7 @@ export default function Profile() {
     try {
       await api.updateApplicationStatus(id, 'WITHDRAWN')
       const refreshed = await api.myApplications()
-      setMyApplications(refreshed)
+      setMyApplications(refreshed?.data || refreshed || [])
     } catch (err) {
       setError(err.message)
     }
@@ -208,10 +212,11 @@ export default function Profile() {
   }
 
   const handleDeleteExperience = async (id) => {
-    if (!window.confirm('Delete this experience?')) return
+    if (!(await confirmDialog({ title: 'Delete this experience?', message: 'This entry will be permanently removed from your profile.', confirmLabel: 'Delete', danger: true }))) return
     try {
       await api.deleteExperience(id)
       setExperiences(experiences.filter((exp) => exp.id !== id))
+      toast.success('Experience deleted')
     } catch (err) {
       setError(err.message)
     }
@@ -256,10 +261,11 @@ export default function Profile() {
   }
 
   const handleDeleteEducation = async (id) => {
-    if (!window.confirm('Delete this education record?')) return
+    if (!(await confirmDialog({ title: 'Delete this education record?', message: 'This entry will be permanently removed from your profile.', confirmLabel: 'Delete', danger: true }))) return
     try {
       await api.deleteEducation(id)
       setEducations(educations.filter((edu) => edu.id !== id))
+      toast.success('Education record deleted')
     } catch (err) {
       setError(err.message)
     }
@@ -287,10 +293,11 @@ export default function Profile() {
   }
 
   const handleDeleteAchievement = async (id) => {
-    if (!window.confirm('Delete this achievement?')) return
+    if (!(await confirmDialog({ title: 'Delete this achievement?', message: 'This entry will be permanently removed from your profile.', confirmLabel: 'Delete', danger: true }))) return
     try {
       await api.deleteAchievement(id)
       setAchievements(achievements.filter((ach) => ach.id !== id))
+      toast.success('Achievement deleted')
     } catch (err) {
       setError(err.message)
     }
@@ -308,7 +315,7 @@ export default function Profile() {
 
   return (
     <div className="w-full max-w-4xl mx-auto md:ml-12 px-4 md:px-0 pb-16 pt-2">
-      {error && <div className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
+      {error && <div id="profile-error" role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
       <section className="card mb-10 p-5 sm:p-7">
 

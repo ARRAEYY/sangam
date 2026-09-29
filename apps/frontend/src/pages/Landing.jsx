@@ -134,8 +134,8 @@ export default function Landing() {
       {/* Background Grid Lines */}
       <div className="fixed inset-0 pointer-events-none flex justify-center z-0 overflow-hidden">
         <div className={`w-[min(1400px,calc(100%-8vw))] h-full relative border-l border-r border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}>
-          <div className={`absolute top-[67px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
-          <div className={`absolute top-[113px] w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
+          <div className={`nav-grid-line-1 absolute w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
+          <div className={`nav-grid-line-2 absolute w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#8e9499] font-medium text-[13px] reveal-element delay-3 z-20">
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 text-[#5f6673] font-medium text-[13px] reveal-element delay-3 z-20">
             Scroll to find your people
             <ArrowDown size={20} />
           </div>

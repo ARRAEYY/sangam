@@ -25,6 +25,11 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ detail: 'Invalid token.' })
     }
 
+    // Suspended accounts cannot use the API even with a live token (#57)
+    if (user.is_suspended) {
+      return res.status(403).json({ detail: 'Your account has been suspended. Please contact a platform administrator.' })
+    }
+
     req.user = user
     next()
   } catch (error) {

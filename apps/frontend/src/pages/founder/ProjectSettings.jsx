@@ -3,18 +3,27 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Save, AlertTriangle, Image as ImageIcon, FileText, CheckCircle2, ShieldAlert, Globe, Tags, Users, X } from 'lucide-react'
 import WorkspaceLayout from '../../components/founder/WorkspaceLayout'
 import { api } from '../../services/api.js'
+import { useToast } from '../../components/ui/ToastProvider.jsx'
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider.jsx'
 
 export default function ProjectSettings() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [activeTab, setActiveTab] = useState('GENERAL') // GENERAL, HIRING, DANGER
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
   const fileInputRef = useRef(null)
 
   const handleDeleteProject = async () => {
-    if (!window.confirm('Are you absolutely sure you want to permanently delete this project? This action cannot be undone.')) {
+    if (!(await confirmDialog({
+      title: 'Permanently delete this project?',
+      message: 'Every milestone, task, and application will be deleted. This action cannot be undone.',
+      confirmLabel: 'Delete project',
+      cancelLabel: 'Keep project',
+      danger: true,
+    }))) {
       return
     }
     try {
@@ -22,7 +31,7 @@ export default function ProjectSettings() {
       await api.deleteProject(id)
       navigate('/dashboard')
     } catch (err) {
-      alert(err.message || 'Failed to delete project')
+      toast.error(err.message || 'Failed to delete project')
       setLoading(false)
     }
   }
@@ -56,7 +65,7 @@ export default function ProjectSettings() {
         navigate('/dashboard')
       }, 1500)
     } catch (err) {
-      alert(err.message || 'Failed to transfer ownership.')
+      toast.error(err.message || 'Failed to transfer ownership.')
     } finally {
       setTransferring(false)
     }
@@ -66,7 +75,7 @@ export default function ProjectSettings() {
     const file = e.target.files[0]
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('File is too large. Please select an image under 2MB.')
+        toast.error('File is too large. Please select an image under 2MB.')
         return
       }
       // Downscale client-side so no multi-hundred-KB base64 blob is persisted
@@ -85,7 +94,7 @@ export default function ProjectSettings() {
       }
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl)
-        alert('Could not read that image. Please try another file.')
+        toast.error('Could not read that image. Please try another file.')
       }
       img.src = objectUrl
     }
@@ -141,10 +150,9 @@ export default function ProjectSettings() {
         logo_url: logoUrl,
       })
 
-      setToastMessage('Settings saved successfully!')
-      setTimeout(() => setToastMessage(''), 3000)
+      toast.success('Settings saved successfully!')
     } catch (err) {
-      alert(err.message || 'Failed to save settings')
+      toast.error(err.message || 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -165,11 +173,6 @@ export default function ProjectSettings() {
             <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Project Settings</h1>
             <p className="text-[15px] text-slate-500 mt-1">Manage project preferences and configuration.</p>
           </div>
-          {toastMessage && (
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] font-bold rounded-xl animate-in fade-in slide-in-from-top-2 shadow-sm">
-              <CheckCircle2 size={16} className="text-emerald-600" /> {toastMessage}
-            </span>
-          )}
         </section>
 
         <div className="flex flex-col md:flex-row gap-10 dashboard-section reveal-in delay-1">
