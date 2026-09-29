@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, Plus, Search, Check, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpRight, Plus, Search, Check, SlidersHorizontal, Briefcase, FileText, Users } from 'lucide-react';
 import { ProjectCard } from './Dashboard.jsx';
 import { api } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -141,6 +141,7 @@ export default function Explore() {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [projectsData, setProjectsData] = useState([]);
+  const [stats, setStats] = useState({ openProjects: 0, totalUsers: 0, totalOpenings: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -173,7 +174,16 @@ export default function Explore() {
         if (isMounted) setLoading(false);
       }
     };
+    const fetchStats = async () => {
+      try {
+        const platformStats = await api.getPlatformStats();
+        if (isMounted) setStats(platformStats);
+      } catch (e) {
+        console.error("Failed to load stats", e);
+      }
+    };
     fetchProjects();
+    fetchStats();
     return () => { isMounted = false; };
   }, [token, reloadKey]);
 
@@ -192,22 +202,55 @@ export default function Explore() {
   }, [baseFiltered, roleFilter, selectedCategories]);
 
   return (
-    <div className="page-stack discovery-page w-full max-w-[1200px] mx-auto pb-20">
+    <div className="page-stack discovery-page w-full max-w-[1200px] mx-auto pb-10">
       
       {/* Header */}
       <PageHeader 
         title="Open projects" 
-        description={<span className="text-[36px] md:text-[52px] font-display font-bold text-[#7f1d3b] leading-tight mt-2 block">We are Hiring</span>} 
+        description={<span className="text-[36px] md:text-[52px] font-display font-bold text-[#7f1d3b] leading-tight block mb-0">We are Hiring</span>} 
       />
       
-      {/* Intro Editorial Strip */}
-      <section className="discovery-intro surface-strip reveal-in delay-1 bg-white border border-slate-100">
-        <div>
-          <h2>Good rooms are
-        <br /><em className="not-italic text-[#7f1d3b]">worth finding.</em></h2>
+      {/* Stats Strip */}
+      <section className="stats-strip group reveal-in delay-1 bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-[28px] p-8 md:p-10 my-5 relative overflow-hidden flex flex-col md:flex-row items-center justify-around gap-8 md:gap-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(127,29,59,0.08)] transition-all duration-500">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-50/40 via-transparent to-slate-50/40 pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-gradient-to-tr from-[#7f1d3b]/10 to-[#7f1d3b]/5 rounded-full opacity-80 blur-2xl pointer-events-none transition-transform duration-700 group-hover:scale-110" />
+        <div className="absolute -top-16 -left-16 w-48 h-48 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl pointer-events-none" />
+        
+        {/* Stat Item 1 */}
+        <div className="stat-item flex flex-col items-center text-center z-10 w-full md:w-1/3 transform transition-transform duration-500 hover:-translate-y-1">
+          <div className="stat-icon bg-white text-[#7f1d3b] w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-slate-100/80 transition-all duration-300 group-hover:shadow-md group-hover:border-red-100 group-hover:rotate-3">
+            <Briefcase size={24} strokeWidth={1.75} />
+          </div>
+          <h3 className="text-4xl md:text-5xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-[#182232] to-[#3f5068] mb-1.5 tracking-tight drop-shadow-sm">{stats.totalOpenings || 0}+</h3>
+          <span className="text-sm font-bold text-slate-800 tracking-wide uppercase mb-1">Openings</span>
+          <p className="text-[13px] text-slate-500 font-medium">Let's build together.</p>
         </div>
-        <div className="discovery-art">
-          <img src="/manus-storage/sangam-discovery-forms_2790f846.png" alt="Abstract paper forms assembling into a project" />
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-slate-200/80 to-transparent z-10" />
+
+        {/* Stat Item 2 */}
+        <div className="stat-item flex flex-col items-center text-center z-10 w-full md:w-1/3 transform transition-transform duration-500 hover:-translate-y-1 delay-75">
+          <div className="stat-icon bg-white text-[#345b73] w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-slate-100/80 transition-all duration-300 group-hover:shadow-md group-hover:border-blue-100 group-hover:-rotate-3">
+            <FileText size={24} strokeWidth={1.75} />
+          </div>
+          <h3 className="text-4xl md:text-5xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-[#182232] to-[#3f5068] mb-1.5 tracking-tight drop-shadow-sm">{stats.openProjects || 0}+</h3>
+          <span className="text-sm font-bold text-slate-800 tracking-wide uppercase mb-1">Projects</span>
+          <p className="text-[13px] text-slate-500 font-medium">Ideas looking for people.</p>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-slate-200/80 to-transparent z-10" />
+
+        {/* Stat Item 3 */}
+        <div className="stat-item flex flex-col items-center text-center z-10 w-full md:w-1/3 transform transition-transform duration-500 hover:-translate-y-1 delay-150">
+          <div className="stat-icon bg-white text-[#7f1d3b] w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-slate-100/80 transition-all duration-300 group-hover:shadow-md group-hover:border-red-100 group-hover:rotate-3">
+            <Users size={24} strokeWidth={1.75} />
+          </div>
+          <h3 className="text-4xl md:text-5xl font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-[#7f1d3b] to-[#c4325a] mb-1.5 tracking-tight drop-shadow-sm">{stats.totalUsers || 0}+</h3>
+          <span className="text-sm font-bold text-slate-800 tracking-wide uppercase mb-1">Students</span>
+          <p className="text-[13px] text-slate-500 font-medium">On campus and growing.</p>
         </div>
       </section>
 

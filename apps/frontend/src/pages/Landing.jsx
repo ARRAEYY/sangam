@@ -167,9 +167,9 @@ export default function Landing() {
               <div className="hero-copy reveal-element delay-1">
                 <h1>Where campus<br /><em>ideas find</em> their<br />people.</h1>
 
-                <div className="hero-actions flex gap-4 mt-8">
-                  <Link to="/explore" className="button button-primary">Explore Sangam <ArrowRight size={16} /></Link>
-                  <Link to="/talent" className="font-bold text-ink hover:text-maroon transition-colors text-sm flex items-center">Find your team</Link>
+                <div className="hero-actions">
+                  <Link to="/explore" className="button button-primary" style={{height:'50px',width:'170px',fontSize:'14px',margin:'0px'}}>Explore Sangam <ArrowRight size={40} /></Link>
+                  <Link to="/talent" className="button button-quiet" style={{height:'50px',width:'170px',fontSize:'14px',margin:'0px'}}>Find your team <ArrowUpRight size={16} /></Link>
                 </div>
               </div>
               <div className="hero-network reveal-element delay-2">
