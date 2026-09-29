@@ -28,8 +28,14 @@ router.get('/projects', requireAuth, async (req, res, next) => {
       where: {
         [Op.or]: [
           { owner_id: userId },
-          { '$members.user_id$': userId }
-        ]
+          // `'$members.user_id$'` breaks on Postgres here: limit + the
+          // belongsToMany skills include makes Sequelize wrap the query in a
+          // subquery that keeps the joins outside, so the alias never reaches
+          // the WHERE. An EXISTS subquery has no such dependency (#founder-500).
+          sequelize.literal(
+            `EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = "Project"."id" AND pm.user_id = ${sequelize.escape(String(userId))})`
+          ),
+        ],
       },
       order: [['created_at', 'DESC']],
       limit,
