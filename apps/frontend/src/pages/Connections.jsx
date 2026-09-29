@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, X, Check, MessageSquare, MoreHorizontal, UserX, Clock, UserPlus } from 'lucide-react'
+import { Search, X, Check, MoreHorizontal, UserX, Clock, UserPlus } from 'lucide-react'
 import { api } from '../services/api.js'
 import { useToast } from '../components/ui/ToastProvider.jsx'
 import { useConfirm } from '../components/ui/ConfirmDialogProvider.jsx'
@@ -226,13 +226,6 @@ export default function Connections() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 shrink-0 relative">
-                          <button
-                            onClick={() => toast.info(`Messaging with ${person.full_name} is coming soon!`)}
-                            className="px-3.5 py-1.5 rounded-full border border-brand-700 text-brand-700 hover:bg-brand-50 transition text-xs sm:text-sm font-semibold flex items-center gap-1.5"
-                          >
-                            <MessageSquare size={14} /> Message
-                          </button>
-
                           <div className="relative">
                             <button
                               onClick={() => setOpenDropdownId(openDropdownId === c.connection_id ? null : c.connection_id)}
