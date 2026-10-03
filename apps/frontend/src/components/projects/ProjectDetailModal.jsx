@@ -261,8 +261,19 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 pr-10">
                 <div className="flex flex-col gap-3 w-full sm:w-auto">
                   <div className="w-full">
-                    <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
-                    <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
+                    <div className="flex items-center gap-4">
+                      {project.logo_url && (
+                        <img
+                          src={project.logo_url}
+                          alt={`${project.title} logo`}
+                          className="w-14 h-14 shrink-0 rounded-xl object-cover bg-white border border-slate-100 shadow-sm"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <h2 className="text-2xl font-display font-semibold text-slate-900">{project.title}</h2>
+                        <p className="text-sm text-slate-600 mt-0.5">Posted by {project.owner?.full_name}</p>
+                      </div>
+                    </div>
                     {project.looking_for && (
                       <div className="mt-2">
                         <div className="text-sm">

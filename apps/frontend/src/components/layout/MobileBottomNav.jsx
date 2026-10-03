@@ -37,7 +37,7 @@ export default function MobileBottomNav() {
   ]
 
   return (
-    <aside aria-label="Mobile Navigation" className="fixed bottom-0 left-0 right-0 z-40 block border-t border-slate-200/80 bg-white/95 px-1.5 py-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden">
+    <aside aria-label="Mobile Navigation" className="fixed bottom-0 left-0 right-0 z-[60] block border-t border-slate-200/80 bg-white/95 px-1.5 py-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden">
       <nav className="mx-auto flex max-w-md items-center justify-between">
         {items.map(({ key, to, label, icon: Icon, isAction, badge }) => {
           const active = location.pathname === to

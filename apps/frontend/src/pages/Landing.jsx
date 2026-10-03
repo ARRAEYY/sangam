@@ -15,6 +15,8 @@ import {
   ArrowDown
 } from "lucide-react";
 import { SangamEmblem } from "../components/ui/SangamLogo.jsx";
+import GlobalNav from "../components/layout/GlobalNav.jsx";
+import GlobalGrid from "../components/layout/GlobalGrid.jsx";
 import { api } from "../services/api.js";
 import "./Landing.css";
 
@@ -130,32 +132,22 @@ export default function Landing() {
   ];
 
   return (
-    <div className="landing-site relative">
+    <div className="landing-site relative" style={{ '--grid-line': activeSection === 6 ? 'rgba(255,255,255,0.2)' : 'rgba(24,34,50,0.15)' }}>
       {/* Background Grid Lines */}
-      <div className="fixed inset-0 pointer-events-none flex justify-center z-0 overflow-hidden">
-        <div className={`w-[min(1400px,calc(100%-8vw))] h-full relative border-l border-r border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}>
-          <div className={`nav-grid-line-1 absolute w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
-          <div className={`nav-grid-line-2 absolute w-[100vw] left-1/2 -translate-x-1/2 border-t border-dashed transition-colors duration-500 ${activeSection === 6 ? 'border-white/20' : 'border-black/20'}`}></div>
-        </div>
-      </div>
+      <GlobalGrid />
 
-      <header className="landing-nav z-50">
-        <div className="w-full h-full flex items-center justify-between">
-          <Link to="/" className="public-brand">
-            <SangamEmblem size={32} className="text-ink" />
-          </Link>
-          <nav className={menuOpen ? "is-open" : ""}>
-            <a href="#about">About</a>
-            <a href="#explore">Opportunities</a>
-            <a href="#talent">Find Talent</a>
+      <GlobalNav>
+        <nav className={menuOpen ? "is-open" : ""}>
+          <a href="#about">About</a>
+          <a href="#explore">Opportunities</a>
+          <a href="#talent">Find Talent</a>
 
-            <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
-          </nav>
-          <button className="landing-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
-            {menuOpen ? <X size={19} /> : <Menu size={19} />}
-          </button>
-        </div>
-      </header>
+          <Link to="/auth" className="button button-primary nav-cta">Login <ArrowRight size={16}></ArrowRight></Link>
+        </nav>
+        <button className="site-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
+          {menuOpen ? <X size={19} /> : <Menu size={19} />}
+        </button>
+      </GlobalNav>
 
       <main>
 

@@ -69,8 +69,8 @@ body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  max-width: 100%;
+  /* No overflow-x here: it would make body a scroll container and break position: sticky.
+     Horizontal clipping is handled by the html rule above (propagates to the viewport). */
 }
 
 h1,
@@ -216,6 +216,14 @@ h3,
   z-index: 40;
 }
 
+/* Clear the taller nav band (brand between the grid lines at 67px-113px) */
+@media (min-width: 901px) {
+  .app-rail {
+    top: 113px;
+    height: calc(100vh - 113px);
+  }
+}
+
 .app-rail:hover {
   width: 244px;
 }
@@ -228,11 +236,32 @@ h3,
 @media (min-width: 768px) {
   .app-canvas {
     margin-left: 96px;
+    margin-right: calc((100vw - min(1400px, 92vw)) / 2);
     width: calc(100% - 96px);
   }
   .app-rail:hover ~ .app-canvas {
     margin-left: 276px; /* 20px + 244px + some extra breathing room */
     width: calc(100% - 276px);
+  }
+}
+
+/* On wide screens the rail and content track the GlobalGrid container edges,
+   so the dashed vertical line frames the rail instead of cutting through it,
+   and content stops at the right dashed line */
+@media (min-width: 901px) {
+  .app-rail {
+    left: calc((100vw - min(1400px, 92vw)) / 2 + 16px);
+    top: 113px;
+    height: calc(100vh - 113px);
+  }
+  .app-canvas {
+    margin-left: calc((100vw - min(1400px, 92vw)) / 2 + 108px);
+    margin-right: calc((100vw - min(1400px, 92vw)) / 2);
+    width: auto;
+  }
+  .app-rail:hover ~ .app-canvas {
+    margin-left: calc((100vw - min(1400px, 92vw)) / 2 + 272px);
+    width: auto;
   }
 }
 
@@ -2012,4 +2041,55 @@ button:focus-visible {
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+:root { --grid-line: rgba(24, 34, 50, 0.15); }
+
+/* ---------- Shared glass nav bar for full-bleed pages (Landing, Auth, VerifyEmail, ResetPassword) ---------- */
+/* The brand/links band sits between the two dashed grid lines (67px-113px desktop, 20px-74px mobile). */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding-top: 67px;
+}
+/* Nav band between the two dashed lines — fully transparent, no glass effect */
+.site-nav-glass {
+  height: 46px;
+}
+.site-nav-inner {
+  width: min(1400px, calc(100% - 8vw));
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.site-brand { display: inline-flex; align-items: center; }
+.site-nav nav { display: flex; align-items: center; gap: 40px; color: var(--ink, #202a39); font-family: "Inter", sans-serif; font-size: 16px; font-weight: 400; }
+.site-nav nav a:not(.nav-cta) { transition: color 170ms ease, opacity 170ms ease; color: var(--ink, #202a39); text-decoration: none; }
+.site-nav nav a:hover { opacity: 0.7; }
+.site-nav .nav-cta { margin-left: -9px; }
+.site-menu { display: none; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(32, 42, 57, .1); border-radius: 50%; background: transparent; color: var(--maroon, #7f1d3b); cursor: pointer; }
+
+/* Horizontal dashed grid line positions shared by GlobalGrid */
+.nav-grid-line-1 { top: 67px; }
+.nav-grid-line-2 { top: 113px; }
+
+@media (max-width: 900px) {
+  .site-nav { padding-top: 20px; }
+  .site-nav-glass { height: 54px; }
+  .site-menu { display: grid; }
+  .site-nav nav { position: absolute; top: 86px; right: 20px; width: 220px; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: 12px; border: 1px solid rgba(24, 34, 50, .1); border-radius: 16px; background: rgba(250, 249, 245, .98); box-shadow: 0 16px 32px rgba(67, 58, 47, .1); }
+  .site-nav nav.is-open { display: flex; }
+  .site-nav nav a { padding: 12px; }
+  .nav-grid-line-1 { top: 20px; }
+  .nav-grid-line-2 { top: 74px; }
+}
+
+/* Larger variant for prominent dashboard section headings */
+.section-heading.heading-large h2 {
+  font-size: 44px;
 }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../services/api.js'
 import SangamLogo from '../components/ui/SangamLogo.jsx'
+import GlobalNav from '../components/layout/GlobalNav.jsx'
+import GlobalGrid from '../components/layout/GlobalGrid.jsx'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -50,7 +52,9 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+    <div className="relative flex min-h-[100dvh] items-center justify-center bg-[#faf9f5] px-4 pt-[74px] md:pt-[113px] pb-12">
+      <GlobalGrid />
+      <GlobalNav />
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl sm:p-8">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
