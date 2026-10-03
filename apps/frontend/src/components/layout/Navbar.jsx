@@ -102,12 +102,15 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 h-[74px] flex items-center border-b border-[rgba(32,42,57,0.06)] bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between px-5 sm:px-6">
-        {/* Brand / Logo */}
-        <Link to="/" className="flex items-center">
-          <SangamEmblem size={28} className="text-ink" />
-        </Link>
+    <nav className="sticky top-0 z-[45]">
+      {/* Same nav-band system as the full-bleed pages: brand sits between the two dashed grid lines */}
+      <div className="pt-[20px] min-[901px]:pt-[67px]">
+        <div className="h-[54px] min-[901px]:h-[46px]">
+          <div className="mx-auto flex h-full w-[min(1400px,calc(100%-8vw))] items-center justify-between">
+            {/* Brand / Logo */}
+            <Link to="/" className="flex items-center">
+              <SangamEmblem size={32} className="text-ink" />
+            </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2.5 md:flex">
@@ -314,6 +317,8 @@ export default function Navbar() {
         </div>,
         document.body
       )}
+      </div>
+      </div>
     </nav>
   )
 }

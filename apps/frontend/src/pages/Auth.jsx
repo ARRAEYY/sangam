@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { SangamEmblem } from '../components/ui/SangamLogo.jsx'
 import { api } from '../services/api.js'
+import GlobalNav from '../components/layout/GlobalNav.jsx'
+import GlobalGrid from '../components/layout/GlobalGrid.jsx'
 
 /** UX-only client-side domain check — backend is the authoritative security boundary */
 function isCampusEmail(email) {
@@ -116,38 +117,34 @@ export default function Auth() {
 
   return (
     <div className="min-h-[100dvh] bg-[#faf9f5] flex flex-col font-sans text-[#182232] relative overflow-hidden">
-      {/* Background Decor (Optional subtlety, keeping it ultra minimal) */}
+      {/* Dashed blueprint grid — same system as the landing page */}
+      <GlobalGrid />
 
-      {/* Header Logo */}
-      <header className="pt-10 absolute top-0 left-0 w-full z-10 flex justify-center">
-        <Link to="/" className="w-full max-w-[1150px] px-8 md:px-12 inline-flex items-center gap-2 font-display text-2xl text-[#182232] transition-opacity hover:opacity-80">
-          <SangamEmblem size={24} className="text-[#7f1d3b]" />
-        </Link>
-      </header>
+      {/* Shared glass nav + dashed blueprint grid */}
+      <GlobalNav />
 
-      {/* Main Grid Layout */}
-      <main className="flex-1 flex w-full h-full items-center justify-center px-6">
-        <div className="w-full max-w-[1060px] grid grid-cols-1 md:grid-cols-[1fr_380px] gap-12 md:gap-20 items-center mt-24 md:mt-0">
+      <main className="relative z-10 flex-1 w-full flex items-center pt-[74px] md:pt-[113px] pb-12 lg:pb-0">
+        <div className="w-[min(1400px,calc(100%-8vw))] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-14 lg:gap-16 items-center">
 
-          {/* Left Editorial Side */}
-          <div className="relative z-10 w-full">
-            <div className="max-w-[500px]">
-              <span className="text-[10px] font-bold tracking-[0.17em] text-[#5f6673] uppercase block mb-6">
-                The campus, in motion
-              </span>
-              <h1 className="font-display text-[clamp(40px,11vw,88px)] md:text-[clamp(52px,6.5vw,88px)] leading-[0.85] tracking-tight mb-6">
-                <span className="text-[#182232] whitespace-nowrap">There's a place</span><br />
-                <span className="text-[#7f1d3b]">for you.</span>
-              </h1>
-              <p className="text-[14px] text-[#737d88] leading-[1.6] max-w-[340px]">
-                Your next collaboration might already be<br />taking shape.
-              </p>
-            </div>
+          {/* Editorial side */}
+          <div className="lg:pl-[52px]">
+            <img
+              src="/login.png"
+              alt="Students helping each other climb toward an open door"
+              draggable="false"
+              className="w-[clamp(240px,34vw,520px)] h-auto mb-4 select-none pointer-events-none"
+            />
+            <h1 className="font-display font-medium text-[clamp(44px,6vw,84px)] leading-[0.95] tracking-[-0.04em] text-[#182232]">
+              There's a place<br />for you.
+            </h1>
+            <p className="mt-5 text-[14px] text-[#737d88] leading-[1.55]">
+              Your next collaboration might<br />already be taking shape.
+            </p>
           </div>
 
-          {/* Right Authentication Card */}
-          <div className="relative z-10 w-full max-w-[380px] mx-auto">
-            <div className="w-full bg-white rounded-[24px] p-8 md:p-9 shadow-[0_12px_40px_rgba(24,34,50,0.04)] border border-[#f4f4f4]">
+          {/* Authentication card */}
+          <div className="w-full max-w-[400px] mx-auto lg:mx-0 lg:justify-self-end">
+            <div className="w-full bg-white rounded-[24px] p-8 md:p-9 shadow-[0_18px_50px_rgba(24,34,50,0.07)] border border-[#ece7db]">
 
               {/* Card Header */}
               <div className="mb-7">
@@ -155,7 +152,6 @@ export default function Auth() {
                   Login
                 </span>
                 <h2 className="font-display text-[28px] text-[#182232] leading-[1.1] mb-1.5">Welcome to <span className="text-[#7f1d3b]">Sangam</span></h2>
-
               </div>
 
               {/* Error/Info States */}

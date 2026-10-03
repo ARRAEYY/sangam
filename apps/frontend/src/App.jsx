@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar.jsx'
 import Sidebar from './components/layout/Sidebar.jsx'
 import MobileBottomNav from './components/layout/MobileBottomNav.jsx'
+import GlobalGrid from './components/layout/GlobalGrid.jsx'
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
 import FounderGuard from './components/auth/FounderGuard.jsx'
 import WorkspaceGuard from './components/auth/WorkspaceGuard.jsx'
@@ -55,7 +56,8 @@ export default function App() {
   const hasGlobalSidebar = hasGlobalNavbar && !isFounderWorkspace
 
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden antialiased">
+    <div className="flex min-h-[100dvh] flex-col antialiased">
+      {hasGlobalNavbar && <GlobalGrid />}
       {hasGlobalNavbar && <Navbar />}
 
       <div className="flex flex-1 w-full relative">
@@ -65,8 +67,8 @@ export default function App() {
         {/* Main Content Area */}
         <main
           className={`flex-1 min-w-0 ${hasGlobalSidebar
-              ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 w-full'
-              : 'w-full'
+            ? 'app-canvas px-5 pb-24 pt-4 sm:px-6 sm:pb-16 sm:pt-6 w-full'
+            : 'w-full'
             }`}
         >
           <Suspense fallback={<RouteFallback />}>

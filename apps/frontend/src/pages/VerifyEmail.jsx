@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api.js'
 import { SangamEmblem } from '../components/ui/SangamLogo.jsx'
+import GlobalNav from '../components/layout/GlobalNav.jsx'
+import GlobalGrid from '../components/layout/GlobalGrid.jsx'
 
 // Email verification links now point here (frontend origin) instead of being
 // Host-derived API URLs — the page completes verification and routes the
@@ -52,7 +54,9 @@ export default function VerifyEmail() {
   }[state]
 
   return (
-    <div className="min-h-[100dvh] bg-[#faf9f5] flex items-center justify-center px-6">
+    <div className="min-h-[100dvh] bg-[#faf9f5] flex items-center justify-center px-6 pt-[74px] md:pt-[113px]">
+      <GlobalGrid />
+      <GlobalNav />
       <div className="w-full max-w-md rounded-[24px] bg-white p-8 shadow-[0_12px_40px_rgba(24,34,50,0.04)] border border-[#f4f4f4] text-center">
         <SangamEmblem size={40} className="mx-auto mb-5 text-[#7f1d3b]" />
         <h1 className={`font-display text-[22px] mb-2 ${content.tone}`}>{content.title}</h1>

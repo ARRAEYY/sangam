@@ -47,6 +47,7 @@ export default function Profile() {
   const [editingProfile, setEditingProfile] = useState(false)
   const [profileDraft, setProfileDraft] = useState(null)
   const [error, setError] = useState('')
+  const [profileStats, setProfileStats] = useState({ builds: 0, network: 0, signal: 0 })
 
 
   // Project Modal State
@@ -143,6 +144,33 @@ export default function Profile() {
       .then((apps) => setMyApplications(apps?.data || apps || []))
       .catch((err) => setError(err.message))
     loadPortfolio()
+
+    // Compute the sidebar stats (builds, connections, profile signal)
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+    api
+      .getUserPublicProfile(user.id, token)
+      .then((fp) => {
+        const uniqueProjectIds = new Set()
+        ;(fp.project_roles || []).forEach(pr => uniqueProjectIds.add(pr.project_id))
+        ;(fp.accepted_projects || []).forEach(p => uniqueProjectIds.add(p.id))
+        let signal = 0
+        if (fp.full_name) signal += 10
+        if (fp.headline) signal += 10
+        if (fp.bio) signal += 15
+        if (fp.avatar_url) signal += 15
+        if (fp.skills && fp.skills.length > 0) signal += 20
+        if (fp.educations && fp.educations.length > 0) signal += 15
+        if (fp.experiences && fp.experiences.length > 0) signal += 15
+        setProfileStats(prev => ({ ...prev, builds: uniqueProjectIds.size, signal: Math.min(signal, 100) }))
+      })
+      .catch(console.error)
+    api
+      .listConnections()
+      .then((res) => {
+        const conns = res?.data || res || []
+        setProfileStats(prev => ({ ...prev, network: Array.isArray(conns) ? conns.length : 0 }))
+      })
+      .catch(console.error)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
@@ -314,8 +342,11 @@ export default function Profile() {
     .toUpperCase()
 
   return (
-    <div className="w-full max-w-4xl mx-auto md:ml-12 px-4 md:px-0 pb-16 pt-2">
+    <div className="w-full max-w-6xl mx-auto md:ml-12 px-4 md:px-0 pb-16 pt-2">
       {error && <div id="profile-error" role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
+      <div className="min-w-0">
 
       <section className="card mb-10 p-5 sm:p-7">
 
@@ -994,8 +1025,38 @@ export default function Profile() {
         )}
       </section>
 
-      
-      <ProjectDetailModal 
+      </div>
+
+      <aside className="hidden lg:block lg:sticky lg:top-[129px]">
+        <div className="card p-6">
+          <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-5">Your stats</span>
+          <div className="divide-y divide-slate-100">
+            <div className="pb-5">
+              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1">Your builds</span>
+              <strong className="block font-display text-4xl font-bold text-[#182232] leading-none mb-1.5">{String(profileStats.builds).padStart(2, '0')}</strong>
+              <span className="block text-[11px] text-slate-400">Projects you are working on</span>
+            </div>
+            <div className="py-5">
+              <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1">Connections</span>
+              <strong className="block font-display text-4xl font-bold text-[#182232] leading-none mb-1.5">{String(profileStats.network).padStart(2, '0')}</strong>
+              <span className="block text-[11px] text-slate-400">Accepted connections</span>
+            </div>
+            <div className="pt-5">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="eyebrow text-[10px] font-bold tracking-widest text-slate-400 uppercase">Profile signal</span>
+                <span className="text-xs font-bold text-[#7f1d3b]">{profileStats.signal}%</span>
+              </div>
+              <div className="progress-track mb-2">
+                <span style={{ width: `${profileStats.signal}%` }} />
+              </div>
+              <span className="block text-[11px] text-slate-400">Profile completeness</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+      </div>
+
+      <ProjectDetailModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false)

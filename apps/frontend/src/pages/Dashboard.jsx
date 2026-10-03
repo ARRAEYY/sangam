@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Check, ChevronRight, CircleDashed, Clock3, Plus, Sparkles, UsersRound } from "lucide-react"
+import { ArrowDown, ArrowUpRight, Check, ChevronRight, CircleDashed, Clock3, Plus, Sparkles, UserPlus, UsersRound } from "lucide-react"
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../services/api.js'
 import { ProjectDetailModal } from '../components/projects/ProjectDetailModal.jsx'
@@ -39,8 +39,8 @@ function timeAgo(dateString) {
   return 'Just now'
 }
 
-export const SectionHeading = ({ label, title, action }) => (
-  <div className="section-heading">
+export const SectionHeading = ({ label, title, action, large }) => (
+  <div className={`section-heading ${large ? 'heading-large' : ''}`}>
     <div>
       {label && <span className="eyebrow block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1.5">{label}</span>}
       <h2>{title}</h2>
@@ -116,7 +116,11 @@ export default function Dashboard() {
 
   const [projects, setProjects] = useState([])
   const [openProjectsCount, setOpenProjectsCount] = useState(0)
-  const [activity, setActivity] = useState([])
+  const [people, setPeople] = useState([])
+  const [connectedIds, setConnectedIds] = useState(new Set())
+  const [sentIds, setSentIds] = useState(new Set())
+  const [receivedIds, setReceivedIds] = useState(new Set())
+  const [connectState, setConnectState] = useState({})
   const [stats, setStats] = useState({ builds: 0, network: 0, profileSignal: 25 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -203,22 +207,22 @@ export default function Dashboard() {
 
         setStats({ builds: buildsCount, network: networkCount, profileSignal: Math.min(signal, 100) })
 
-        // Fetch Notifications for activity feed
+        // Fetch people to connect + connection states
         try {
-          const notifs = await api.listNotifications(token)
-          const mappedActivity = (notifs || []).slice(0, 4).map((n, i) => ({
-            id: n.id,
-            name: n.title || 'Signal',
-            detail: n.message || '',
-            time: timeAgo(n.created_at),
-            tone: ['maroon', 'blue', 'sand', 'maroon'][i % 4]
-          }))
-
-          setActivity(mappedActivity.length ? mappedActivity : [
-            { id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }
+          const [talentRes, connsRes, sent, received] = await Promise.all([
+            api.searchTalent({ limit: 24 }),
+            api.listConnections().catch(() => []),
+            api.listConnectionRequests('sent').catch(() => []),
+            api.listConnectionRequests('received').catch(() => [])
           ])
+          const data = talentRes?.data || talentRes || []
+          const conns = connsRes?.data || connsRes || []
+          setConnectedIds(new Set((conns || []).map(c => c.user?.id).filter(Boolean)))
+          setSentIds(new Set((sent || []).filter(r => r.status === 'PENDING').map(r => r.recipient?.id).filter(Boolean)))
+          setReceivedIds(new Set((received || []).filter(r => r.status === 'PENDING').map(r => r.requester?.id).filter(Boolean)))
+          setPeople(data.filter(p => p.id !== user?.id).slice(0, 3))
         } catch (e) {
-          setActivity([{ id: 1, name: "Welcome to Sangam!", detail: "Complete your profile to find collaborators.", time: "Just now", tone: "maroon" }])
+          console.error('Failed to fetch people to connect', e)
         }
 
       } catch (err) {
@@ -232,6 +236,17 @@ export default function Dashboard() {
     loadData()
     return () => { isMounted = false }
   }, [user, reloadKey])
+
+  const handleConnect = async (personId) => {
+    if (connectState[personId]) return
+    setConnectState(prev => ({ ...prev, [personId]: 'sending' }))
+    try {
+      await api.sendConnectionRequest(personId, '')
+      setConnectState(prev => ({ ...prev, [personId]: 'sent' }))
+    } catch (err) {
+      setConnectState(prev => ({ ...prev, [personId]: err.message || 'Failed to send request' }))
+    }
+  }
 
   return (
     <div className="page-stack dashboard-page max-w-[1200px] mx-auto w-full">
@@ -259,40 +274,18 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="hero-art">
-          <img src="/manus-storage/sangam-hero-assembly_407994fd.png" alt="Abstract maroon paths" />
+          <img src="/dashboard.png" alt="Abstract maroon paths" />
         </div>
       </section>
 
-      {/* 2. Horizontal Stats Strip */}
-      <section className="dashboard-stats reveal-in delay-1" aria-label="Your Sangam overview">
-        <div className="stat-block">
-          <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Your builds</span>
-          <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.builds.toString().padStart(2, '0')}</strong>
-          <span className="stat-caption block text-[11px] text-slate-400">Projects you are working on</span>
-        </div>
-        <Link to="/connections" className="stat-block block hover:bg-slate-50 transition-colors rounded-xl -mx-2 px-2 py-1">
-          <span className="eyebrow block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Connections</span>
-          <strong className="block mb-1">{loading ? <div className="w-6 h-6 bg-slate-200 animate-pulse rounded inline-block" /> : stats.network.toString().padStart(2, '0')}</strong>
-          <span className="stat-caption block text-[11px] text-slate-400">Accepted connections</span>
-        </Link>
-        <div className="stat-block profile-stat flex flex-col justify-center px-6">
-          <div className="stat-line mb-2">
-            <span className="eyebrow text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile signal</span>
-            <span>{loading ? <div className="w-6 h-4 bg-slate-200 animate-pulse rounded inline-block" /> : `${stats.profileSignal}%`}</span>
-          </div>
-          <div className="progress-track mb-2">
-            <span style={{ width: loading ? '0%' : `${stats.profileSignal}%` }} className={stats.profileSignal === 100 ? 'bg-emerald-500' : ''} />
-          </div>
-          <span className="stat-caption text-[11px] text-slate-400">Profile completeness</span>
-        </div>
-        <div className="dashboard-prompt bg-[#faf9f5]">
-          
-        </div>
-      </section>
+      <div className="flex flex-col items-center gap-1.5 py-5 text-[#5f6673] font-medium text-[13px]">
+        Scroll to find your people
+        <ArrowDown size={20} />
+      </div>
 
-      {/* 3. Featured Open Projects */}
+      {/* 2. Featured Open Projects */}
       <section className="dashboard-section reveal-in delay-2 mt-8">
-        <SectionHeading title="Builds worth joining" action={<Link to="/explore" className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">View all projects <ArrowUpRight size={14} /></Link>} />
+        <SectionHeading large title="Builds worth joining" action={<Link to="/explore" className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">View all projects <ArrowUpRight size={14} /></Link>} />
 
         {loading ? (
           <div className="py-20 text-center text-slate-400 border border-slate-100 rounded-[18px]">
@@ -313,47 +306,98 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* 4. Secondary Action Area */}
-      <div className="grid md:grid-cols-[1fr_300px] gap-8 mt-12 mb-12 reveal-in delay-3">
-        <section className="dashboard-activity">
-          <SectionHeading label="Activity feed" title="Recent signals" action={<Link to="/notifications" className="text-[11px] font-bold text-slate-500 hover:text-[#7f1d3b] hover:underline transition-colors">See all</Link>} />
+      {/* 4. People to Connect */}
+      <section className="dashboard-section reveal-in delay-3 mt-12 mb-12">
+        <SectionHeading label="Find collaborators" title="People to connect" action={<Link to="/talent" className="text-[11px] font-bold text-[#7f1d3b] hover:underline flex items-center gap-1">Browse all talent <ArrowUpRight size={14} /></Link>} />
 
-          <div className="activity-list space-y-4">
-            {loading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white">
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-slate-100 animate-pulse"></div>
-                  <div className="flex-1 space-y-2 py-1">
-                    <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse"></div>
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="card p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse"></div>
                     <div className="h-3 bg-slate-100 rounded w-2/3 animate-pulse"></div>
                   </div>
                 </div>
-              ))
-            ) : (
-              activity.map((act) => (
-                <div key={act.id} className="activity-item flex gap-4 p-4 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/50 transition-colors">
-                  <div className={`activity-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400`}>
-                    <Check size={16} />
-                  </div>
-                  <div className="activity-content flex-1">
-                    <h4 className="text-sm font-semibold text-slate-800">{act.name}</h4>
-                    <p className="text-[13px] text-slate-500 mt-0.5 line-clamp-2">{act.detail}</p>
-                  </div>
-                  <time className="text-[10px] text-slate-400 font-medium whitespace-nowrap pt-0.5">{act.time}</time>
-                </div>
-              ))
-            )}
+                <div className="mt-4 h-10 bg-slate-50 rounded animate-pulse"></div>
+              </div>
+            ))}
           </div>
-        </section>
+        ) : people.length === 0 ? (
+          <div className="py-14 text-center text-sm text-slate-400 border border-slate-100 rounded-[18px]">
+            No people to suggest yet — check back once more students join.
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+            {people.map((person) => {
+              const connectionAction = (() => {
+                if (connectedIds.has(person.id)) {
+                  return (
+                    <span className="flex w-full items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                      <Check size={13} /> Connected
+                    </span>
+                  )
+                }
+                if (sentIds.has(person.id) || connectState[person.id] === 'sent') {
+                  return (
+                    <span className="flex w-full items-center justify-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
+                      <Check size={13} /> Request sent
+                    </span>
+                  )
+                }
+                if (receivedIds.has(person.id)) {
+                  return (
+                    <span className="flex w-full items-center justify-center rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                      Pending Invitation
+                    </span>
+                  )
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={() => handleConnect(person.id)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition"
+                  >
+                    <UserPlus size={13} /> Connect
+                  </button>
+                )
+              })()
 
-        <section className="dashboard-sidebar">
-          <div className="explore-card accent-maroon mb-6 p-6 rounded-[18px] bg-[#fffaf7] border border-[#7f1d3b]/10">
-            <h3 className="text-lg font-display font-semibold text-slate-900 mb-2">Build your network</h3>
-            <p className="text-sm text-slate-600 mb-4">Connect with talent across campus and start collaborating.</p>
-            <Link to="/talent" className="button button-primary w-full text-center justify-center">Browse Talent</Link>
+              return (
+                <div key={person.id} className="card h-full min-w-0 flex flex-col p-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">
+                      {person.full_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-slate-900">{person.full_name}</p>
+                      <p className="line-clamp-1 text-xs text-slate-500 mt-0.5">
+                        {person.branch ? `${person.branch}${person.graduation_year ? ` · Class of ${person.graduation_year}` : ''}` : 'Student'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 mb-1 min-h-[40px]">
+                    {person.bio && <p className="line-clamp-2 text-sm text-slate-600">{person.bio}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 h-[52px] overflow-hidden content-start">
+                    {(person.skills || []).slice(0, 4).map(s => (
+                      <span key={s.id || s.name} className="pill bg-slate-100 text-slate-600 text-[11px] py-0.5 whitespace-nowrap">{s.name}</span>
+                    ))}
+                    {(person.skills || []).length > 4 && (
+                      <span className="pill bg-slate-50 text-slate-400 text-[11px] py-0.5">+{(person.skills || []).length - 4}</span>
+                    )}
+                  </div>
+                  <div className="mt-auto pt-4 border-t border-slate-100">
+                    {connectionAction}
+                  </div>
+                </div>
+              )
+            })}
           </div>
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   )
 }
