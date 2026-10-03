@@ -175,6 +175,19 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  // Drop a deleted project from "Your Past Projects" immediately
+  useEffect(() => {
+    if (!user) return
+    const onProjectDeleted = () => {
+      api
+        .listProjects({ mine: 'true' })
+        .then((my) => setMyProjects(my?.data || my || []))
+        .catch(() => {})
+    }
+    window.addEventListener('sangam:project-deleted', onProjectDeleted)
+    return () => window.removeEventListener('sangam:project-deleted', onProjectDeleted)
+  }, [user])
+
 
 
   const withdrawApplication = async (id) => {

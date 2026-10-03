@@ -193,6 +193,13 @@ export default function Explore() {
     return () => { isMounted = false; };
   }, [token, reloadKey]);
 
+  // Refresh the list when a project is deleted from its detail modal
+  useEffect(() => {
+    const onProjectDeleted = () => setReloadKey(k => k + 1);
+    window.addEventListener('sangam:project-deleted', onProjectDeleted);
+    return () => window.removeEventListener('sangam:project-deleted', onProjectDeleted);
+  }, []);
+
   const retryLoad = () => { setPage(1); setReloadKey(k => k + 1); };
 
   const loadMore = async () => {

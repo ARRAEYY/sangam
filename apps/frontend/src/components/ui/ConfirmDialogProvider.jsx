@@ -72,7 +72,7 @@ export function ConfirmDialogProvider({ children }) {
       {dialog &&
         createPortal(
           <div
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[10100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) settle(false)
             }}

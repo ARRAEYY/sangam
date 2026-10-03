@@ -237,6 +237,13 @@ export default function Dashboard() {
     return () => { isMounted = false }
   }, [user, reloadKey])
 
+  // Refresh the project list when a project is deleted from its detail modal
+  useEffect(() => {
+    const onProjectDeleted = () => setReloadKey(k => k + 1)
+    window.addEventListener('sangam:project-deleted', onProjectDeleted)
+    return () => window.removeEventListener('sangam:project-deleted', onProjectDeleted)
+  }, [])
+
   const handleConnect = async (personId) => {
     if (connectState[personId]) return
     setConnectState(prev => ({ ...prev, [personId]: 'sending' }))

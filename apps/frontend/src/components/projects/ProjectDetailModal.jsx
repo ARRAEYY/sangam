@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { X as XIcon, Calendar, Users, Briefcase, CheckCircle2, Loader2, Sparkles, AlertCircle, Edit2, Plus, Flag, Trash2, Check, Clock, Play, Zap } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { useToast } from '../ui/ToastProvider.jsx';
+import { useConfirm } from '../ui/ConfirmDialogProvider.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { MemberPickerModal } from '../profile/MemberPickerModal.jsx';
 
@@ -17,11 +18,13 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const confirmDialog = useConfirm();
 
   const [project, setProject] = useState(null);
   const [context, setContext] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [applyStatus, setApplyStatus] = useState('idle');
   const [applyError, setApplyError] = useState('');
@@ -61,6 +64,29 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
   const isLead = context?.is_lead === true || isOwner;
   const isMember = isOwner || project?.members?.some(m => m.user_id === user?.id);
   const canManage = isLead;
+
+  const handleDeleteProject = async () => {
+    if (!project || deleting) return;
+    const ok = await confirmDialog({
+      title: 'Delete this project?',
+      message: `"${project.title}" will be permanently removed along with its members, applications and milestones. This cannot be undone.`,
+      confirmLabel: 'Delete project',
+      danger: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+      await api.deleteProject(project.id, token);
+      toast.success('Project deleted');
+      onClose();
+      window.dispatchEvent(new CustomEvent('sangam:project-deleted', { detail: { projectId: project.id } }));
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete project.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const actualMilestones = project?.milestones?.filter(m => !m.custom_properties?.type || m.custom_properties?.type === 'milestone') || [];
   const userTasks = project?.milestones?.filter(m => m.custom_properties?.type === 'task' && m.custom_properties?.assignee_id === user?.id) || [];
@@ -221,6 +247,17 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               className="btn-primary"
             >
               Manage Project
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={handleDeleteProject}
+              disabled={deleting}
+              title="Delete project"
+              aria-label="Delete project"
+              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-full shadow-sm transition-colors disabled:opacity-50"
+            >
+              {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
             </button>
           )}
           {isOwner && (
