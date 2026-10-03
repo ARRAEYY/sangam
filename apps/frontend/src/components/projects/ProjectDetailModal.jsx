@@ -249,7 +249,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               Manage Project
             </button>
           )}
-          {isOwner && (
+          {isLead && (
             <button
               onClick={handleDeleteProject}
               disabled={deleting}
@@ -260,7 +260,7 @@ export function ProjectDetailModal({ isOpen, onClose, projectPreview }) {
               {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
             </button>
           )}
-          {isOwner && (
+          {isLead && (
             <button
               onClick={() => {
                 onClose();
