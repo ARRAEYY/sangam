@@ -7,6 +7,7 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
   const containerRef = useRef(null)
   const [errorState, setErrorState] = useState(null) // null | 'UNCONFIGURED' | 'SCRIPT_FAILED' | string
   const [isInitializing, setIsInitializing] = useState(true)
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
 
   useEffect(() => {
@@ -28,9 +29,11 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
             client_id: clientId,
             callback: async (response) => {
               try {
+                setIsSigningIn(true)
                 const profile = await loginWithGoogle(response.credential)
                 onSuccess?.(profile)
               } catch (err) {
+                setIsSigningIn(false)
                 onError?.(err.message || 'Google sign-in failed.')
               }
             },
@@ -144,7 +147,13 @@ export default function GoogleSignInButton({ onSuccess, onError }) {
           Loading Google Sign-In...
         </div>
       )}
-      <div ref={containerRef} className={isInitializing ? 'hidden' : 'flex justify-center'} />
+      <div ref={containerRef} className={isInitializing || isSigningIn ? 'hidden' : 'flex justify-center'} />
+      {isSigningIn && (
+        <div className="flex flex-col items-center gap-2 py-1" role="status" aria-live="polite">
+          <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-[#7f1d3b] animate-spin" />
+          <span className="text-[12px] font-medium text-[#5f6673]">Signing you in with Google…</span>
+        </div>
+      )}
     </div>
   )
 }
