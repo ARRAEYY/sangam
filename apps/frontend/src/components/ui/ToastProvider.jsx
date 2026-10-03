@@ -71,7 +71,7 @@ export function ToastProvider({ children }) {
       {createPortal(
         <div
           aria-live="polite"
-          className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none"
+          className="fixed bottom-4 right-4 z-[10200] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none"
         >
           {toasts.map((t) => {
             const style = TOAST_STYLES[t.type] || TOAST_STYLES.info

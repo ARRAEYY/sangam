@@ -12,9 +12,9 @@ import { AlertTriangle, HelpCircle, Info } from 'lucide-react'
 const ConfirmContext = createContext(null)
 
 const INTENTS = {
-  danger: { icon: AlertTriangle, iconClass: 'text-red-600 bg-red-50', confirmClass: 'bg-red-600 hover:bg-red-700' },
-  question: { icon: HelpCircle, iconClass: 'text-[#7f1d3b] bg-[#7f1d3b]/10', confirmClass: 'bg-[#800023] hover:bg-[#7f1d3b]' },
-  info: { icon: Info, iconClass: 'text-slate-600 bg-slate-100', confirmClass: 'bg-[#2a2a2a] hover:bg-[#2a2a2a]/90' },
+  danger: { icon: AlertTriangle, iconClass: 'text-maroon bg-maroon/10' },
+  question: { icon: HelpCircle, iconClass: 'text-[#7f1d3b] bg-[#7f1d3b]/10' },
+  info: { icon: Info, iconClass: 'text-slate-600 bg-slate-100' },
 }
 
 export function ConfirmDialogProvider({ children }) {
@@ -72,7 +72,7 @@ export function ConfirmDialogProvider({ children }) {
       {dialog &&
         createPortal(
           <div
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[10100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) settle(false)
             }}
@@ -99,12 +99,12 @@ export function ConfirmDialogProvider({ children }) {
                   )}
                 </div>
               </div>
-              <div className="mt-5 flex justify-end gap-2">
+              <div className="mt-5 flex justify-end gap-3">
                 <button
                   type="button"
                   ref={cancelButtonRef}
                   onClick={() => settle(false)}
-                  className="px-4 py-2 text-sm font-medium text-[#2a2a2a] bg-white border border-[#2a2a2a]/15 rounded-xl hover:bg-[#2a2a2a]/5 transition-colors"
+                  className="btn-secondary"
                 >
                   {dialog.cancelLabel}
                 </button>
@@ -112,7 +112,7 @@ export function ConfirmDialogProvider({ children }) {
                   type="button"
                   ref={confirmButtonRef}
                   onClick={() => settle(true)}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors ${style.confirmClass}`}
+                  className="btn-primary"
                 >
                   {dialog.confirmLabel}
                 </button>
