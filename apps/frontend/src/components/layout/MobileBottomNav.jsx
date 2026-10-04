@@ -20,14 +20,6 @@ export default function MobileBottomNav() {
       label: 'Network',
       icon: Network,
     },
-    // Live unread badge — previously the badge slot existed but was never fed (#38)
-    {
-      key: 'notifications',
-      to: user ? '/notifications' : '/auth',
-      label: 'Alerts',
-      icon: Bell,
-      badge: user ? unreadCount : 0,
-    },
     {
       key: 'profile',
       to: user ? '/profile' : '/auth',
