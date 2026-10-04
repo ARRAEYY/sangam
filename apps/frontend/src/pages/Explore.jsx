@@ -255,32 +255,32 @@ export default function Explore() {
           description={<span className="text-[36px] md:text-[52px] font-display font-bold text-[#7f1d3b] leading-tight block mb-0">We are Hiring</span>}
         />
 
-        <div className="flex items-center gap-8 lg:gap-10 shrink-0 lg:pt-[60px] reveal-in delay-1">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-8 lg:gap-10 shrink-0 lg:pt-[60px] reveal-in delay-1">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[#7f1d3b]">
               <Briefcase size={18} strokeWidth={1.75} />
             </div>
             <div>
-              <p className="text-2xl font-display font-bold text-[#182232] leading-none">{stats.totalOpenings || 0}+</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Openings</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-[#182232] leading-none">{stats.totalOpenings || 0}+</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Openings</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[#345b73]">
               <FileText size={18} strokeWidth={1.75} />
             </div>
             <div>
-              <p className="text-2xl font-display font-bold text-[#182232] leading-none">{stats.openProjects || 0}+</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Projects</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-[#182232] leading-none">{stats.openProjects || 0}+</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Projects</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[#7f1d3b]">
               <Users size={18} strokeWidth={1.75} />
             </div>
             <div>
-              <p className="text-2xl font-display font-bold text-[#7f1d3b] leading-none">{stats.totalUsers || 0}+</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Students</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-[#7f1d3b] leading-none">{stats.totalUsers || 0}+</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Students</p>
             </div>
           </div>
         </div>
